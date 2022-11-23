@@ -1,0 +1,11 @@
+/antlr4.jar
+/hypergraph_parser/himeko_parser/gen/hypergraphlang/HimekoHypergraphLang.interp
+/hypergraph_parser/himeko_parser/gen/hypergraphlang/HimekoHypergraphLang.tokens
+/hypergraph_parser/himeko_parser/gen/hypergraphlang/HimekoHypergraphLangLexer.interp
+/hypergraph_parser/himeko_parser/gen/hypergraphlang/HimekoHypergraphLangLexer.py
+/hypergraph_parser/himeko_parser/gen/hypergraphlang/HimekoHypergraphLangLexer.tokens
+/hypergraph_parser/himeko_parser/gen/hypergraphlang/HimekoHypergraphLangListener.py
+/hypergraph_parser/himeko_parser/gen/hypergraphlang/HimekoHypergraphLangParser.py
+/hypergraph_parser/himeko_parser/gen/hypergraphlang/HimekoHypergraphLangVisitor.py
+/.idea/
+*/*.iml
