@@ -20,16 +20,20 @@ h_edge: h_element_signature '#' (h_edge_rel)*;
 h_edge_rel: dir=rel_dir ref=elem_reference;
 h_edge_field: space=STR h_var;
 // Signature defining a hypergraph element and extension of elements (REQ:NODE_03, REQ:EDGE_05)
-h_element_signature: name=ID_NAME (h_extend)?;
+h_element_signature: name=ID_NAME (h_extend)? (h_element_parameters)?;
+h_element_parameters: ('(' h_element_param (',' h_element_param)* ')');
+h_element_param: name=ID_NAME;
 // Extend element
-h_extend: OUT_DIR elem_reference;
+h_extend: OUT_DIR elem_reference (h_element_parameters)?;
 // Variable definition
 h_var: (h_field)*;
-h_field: (value=STR | value=NUMERIC | reference=elem_reference);
+h_field: (h_elem_type)? ('=' h_field_assignment);
+h_elem_type: elem_reference(h_element_parameters)?;
+h_field_assignment: (value=STR | value=NUMERIC | reference=elem_reference);
 
 rel_dir: OUT_DIR | IN_DIR | BI_DIR;
 
-elem_reference: (value='{'ID_NAME '}' | uri=h_uri);
+elem_reference: (value='%{'ID_NAME '}' | uri=h_uri);
 
 h_uri:  PROTOCOL_NAME '://' ID_NAME;
 
