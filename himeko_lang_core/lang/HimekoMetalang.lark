@@ -1,0 +1,36 @@
+// hi_*: abbreviation for Himeko mandatory language elements
+?start: "[" hi_meta "]"  hi_body
+
+?hi_meta: hi_metaelement
+
+hi_metaelement: element_name | [(hi_include)*]
+// Metadata elements
+hi_include: "import" ":" string
+
+hi_body: (hi_node | hi_element_field)*
+
+hi_elements: (hi_element)*
+hi_element: hi_element_signature [hi_fields] (hi_node | hi_edge)
+hi_node: "{" (hi_elements)* "}"
+hi_edge: ":" (element_reference)*
+hi_fields: hi_element_field (hi_element_field)*
+// Hypergraph elements
+hi_element_signature: element_name ["evolve" element_reference]
+hi_element_field: string ":" element_type ["=" hi_element_value]
+element_type: ("int"|"string"|"real"|element_reference) -> field_type
+hi_element_value: (SIGNED_NUMBER | string | element_reference) -> value
+// Element name
+element_name: string -> name
+element_reference: "@>" string ["(" hi_element_value ("," hi_element_value)* ")"] -> reference
+// Data aliasi
+string: ESCAPED_STRING
+// Direction
+RELATION_DIRECTION: "->"|"<-"|"--"
+
+
+%import common.SIGNED_NUMBER
+%import common.NUMBER
+%import common.ESCAPED_STRING
+%import common.WS
+
+%ignore WS
