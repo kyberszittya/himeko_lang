@@ -1,29 +1,57 @@
 import abc
 
 
-class AbstractHimekoElement(abc.ABC):
+class AbstractHimekoInfoChondrium(abc.ABC):
 
-    def __init__(self, name: str, progenitor=None, genichronos: int = 0):
+    def __init__(self, name: str, genichronos: int = 0):
         self._name = name
-        # Progenitor (hierarchical structure)
-        self._progenitor: AbstractHimekoElement = progenitor
-        # Genesis time
         self._genichronos = genichronos
 
     @property
     def name(self) -> str:
         return self._name
-    
+
+    @property
+    def genichronos(self):
+        return self._genichronos
+
+
+class AbstractHimekoRoot(AbstractHimekoInfoChondrium):
+
+    def __init__(self, name: str, target: AbstractHimekoInfoChondrium, genichronos: int = 0):
+        super(AbstractHimekoRoot, self).__init__(name, genichronos)
+        self._target = target
+
+    @property
+    def source(self):
+        return self._source
+
+    @source.setter
+    def source(self, val):
+        self._source = val
+
+    @property
+    def target(self):
+        return self._target
+
+    @target.setter
+    def target(self, val):
+        self._target = val
+
+
+class AbstractHimekoElement(AbstractHimekoInfoChondrium):
+
+    def __init__(self, name: str, progenitor=None, genichronos: int = 0):
+        super(AbstractHimekoElement, self).__init__(name, genichronos)
+        # Progenitor (hierarchical structure)
+        self._progenitor: AbstractHimekoElement = progenitor
+
     @property
     def progenitor(self):
         return self._progenitor
 
     @property
     def genesis_time(self):
-        return self._genichronos
-
-    @property
-    def genichronos(self):
         return self._genichronos
 
 
@@ -56,6 +84,7 @@ class AbstractClock(abc.ABC):
 
     @property
     def date(self):
+        # TODO: finish date handling
         self.tick()
 
 
@@ -73,5 +102,10 @@ class HimekoElement(AbstractHimekoElement):
         # Count
         self._cid = cid
 
+    @property
+    def uid(self):
+        return self._uid
 
-
+    @property
+    def uuid(self):
+        return self._uuid

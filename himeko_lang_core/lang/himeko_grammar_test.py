@@ -1,7 +1,6 @@
 from lark import Lark
 
 def main():
-    #p = "../examples/simple/minimal_example.himeko"
     p = "../examples/simple/minimal_example_with_edges.himeko"
     parser = None
     with open("HimekoMetalang.lark") as f:
@@ -9,7 +8,6 @@ def main():
     with open(p) as f:
         tree = parser.parse(''.join(f.readlines()))
         print(tree.pretty())
-
 
 
 if __name__ == "__main__":

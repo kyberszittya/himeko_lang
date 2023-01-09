@@ -22,7 +22,7 @@ hi_element_value: (SIGNED_NUMBER | string | element_reference)
 // Edge elements
 hi_edge_element: RELATION_DIRECTION element_reference
 // Element name
-element_name: string
+element_name: CNAME
 element_reference: "@>" string ("(" hi_element_value ("," hi_element_value)* ")")?
 // Data aliasi
 string: ESCAPED_STRING
@@ -34,6 +34,7 @@ EL_ATOMIC: "int"|"string"|"real"
 
 %import common.SIGNED_NUMBER
 %import common.NUMBER
+%import common.CNAME
 %import common.ESCAPED_STRING
 %import common.WS
 

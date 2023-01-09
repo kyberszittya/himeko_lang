@@ -1,16 +1,8 @@
 import abc
 import hashlib
 
-from lang.metaelements.himekoelement import AbstractHimekoElement, HimekoZygote
-
-
-def get_progenitor_name(el: AbstractHimekoElement, res=list()):
-
-    if el.progenitor is not None:
-        res.append(el.progenitor.name)
-        return res.append(get_progenitor_name(el.progenitor))
-
-    return res
+from lang.graph.search_strategies import get_progenitor_chain
+from lang.metaelements.himekoelement import HimekoZygote
 
 
 class AbstractIdentificationStrategy(abc.ABC):
@@ -34,5 +26,5 @@ class UidIdentificationStrategy(AbstractIdentificationStrategy):
 class UuidIdentificationStrategy(AbstractIdentificationStrategy):
 
     def transform(self, el: HimekoZygote, typedef: str, time: int) -> bytes:
-        progenitor_name = ''.join(get_progenitor_name(el))
+        progenitor_name = '/'.join(get_progenitor_chain(el)[1:])
         return self._generate(typedef, progenitor_name, el.name, time)

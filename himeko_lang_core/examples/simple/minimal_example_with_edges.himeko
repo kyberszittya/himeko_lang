@@ -1,15 +1,15 @@
-[ "Minimal_Example" ]
-"context"
+[ Minimal_Example ]
+context
 {
 
-"node_lev_0"
+node_lev_0
 {
-    "node0"{}
-    "node1"{}
-    "node2"{}
-    "node3"{}
+    node0{}
+    node1{}
+    node2{}
+    node3{}
 
-    "e0": -> @>"node0" -> @>"node1" -> @>"node2" <- @>"node3"
+    e0: -> @>"node0" -> @>"node1" -> @>"node2" <- @>"node3"
 
 }
 
