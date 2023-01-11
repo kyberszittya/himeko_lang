@@ -1,4 +1,6 @@
 import abc
+import typing
+from collections import deque
 
 
 class AbstractHimekoInfoChondrium(abc.ABC):
@@ -55,10 +57,10 @@ class AbstractHimekoElement(AbstractHimekoInfoChondrium):
         return self._genichronos
 
 
-class HimekoZygote(AbstractHimekoElement):
+class HimekoConcept(AbstractHimekoElement):
 
     def __init__(self, name: str, progenitor=None):
-        super(HimekoZygote, self).__init__(name, progenitor)
+        super(HimekoConcept, self).__init__(name, progenitor)
 
 
 class AbstractClock(abc.ABC):
@@ -101,6 +103,11 @@ class HimekoElement(AbstractHimekoElement):
         self._uuid = uuid
         # Count
         self._cid = cid
+        # Elements
+        self._elements_by_cid = {}
+        self._elements_by_uid = {}
+        # Storing unknown elements
+        self._unknown_elements = set()
 
     @property
     def uid(self):
@@ -109,3 +116,53 @@ class HimekoElement(AbstractHimekoElement):
     @property
     def uuid(self):
         return self._uuid
+
+    def get_element_by_name(self, name: str):
+        return filter(lambda x: x.name == name, self._elements_by_uid.values())
+
+    def search_for_index_elementtree(self, query: typing.Iterable[str]):
+        q = list(query)
+        ref_name = '/'.join(query)
+        # Count
+        cnt_match = 0
+        start = self
+        # Set
+        while start is not None:
+            visited_set = set()
+            # Search for first element
+            fringe = deque()
+            fringe.appendleft((start, 0))
+            while len(fringe) != 0:
+                current, cursor_query_element = fringe.pop()
+                visited_set.add(current.uuid)
+                if current.name == q[cursor_query_element]:
+                    cursor_query_element += 1
+                    if cursor_query_element == len(q):
+                        cnt_match += 1
+                        if ref_name in self._unknown_elements:
+                            self._unknown_elements.remove(ref_name)
+                        yield current
+                for p in current._elements_by_uid.values():
+                    if p.uuid not in visited_set and cursor_query_element < len(q):
+                        fringe.append((p, cursor_query_element))
+            start = start.progenitor
+        # If no match
+        if cnt_match == 0:
+            self._unknown_elements.add(ref_name)
+
+    def search_reference_in_context(self, query: list[str], parent) -> typing.Optional[AbstractHimekoElement]:
+        if len(query) == 1:
+            if parent is not None:
+                try:
+                    referenced_el = next(parent.get_element_by_name(query[0]))
+                except StopIteration:
+                    referenced_el = None
+            else:
+                raise RuntimeError("Invalid graph definition")
+        else:
+            try:
+                referenced_el = next(self.search_for_index_elementtree(query))
+            except StopIteration:
+                referenced_el = None
+        return referenced_el
+

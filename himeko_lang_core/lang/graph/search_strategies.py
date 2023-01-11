@@ -1,4 +1,6 @@
-from lang.metaelements.himekoelement import AbstractHimekoElement
+import typing
+
+from lang.metaelements.himekoelement import AbstractHimekoElement, HimekoElement
 
 
 def get_progenitor_chain(el: AbstractHimekoElement, res=None):
@@ -8,3 +10,7 @@ def get_progenitor_chain(el: AbstractHimekoElement, res=None):
     if el.progenitor is not None:
         return get_progenitor_chain(el.progenitor, res)
     return res
+
+
+
+

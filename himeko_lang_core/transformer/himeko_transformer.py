@@ -1,11 +1,14 @@
-import time
+import typing
+from datetime import datetime
 
-from lang.himeko_meta_parser import Visitor, Transformer, v_args, Visitor_Recursive, Tree
+from lang.himeko_meta_parser import Visitor, Transformer, v_args, Visitor_Recursive, Tree, Token
 from lang.identification.strategies import UidIdentificationStrategy, UuidIdentificationStrategy, \
     AbstractIdentificationStrategy
 from lang.metaelements.himekoedge import HimekoEdge, RelationDirection
-from lang.metaelements.himekoelement import AbstractClock, HimekoZygote
+from lang.metaelements.himekoelement import AbstractClock, HimekoConcept
 from lang.metaelements.himekonode import HimekoNode
+
+import time
 
 inline_args = v_args(inline=True)
 
@@ -18,10 +21,6 @@ class SystemTimeClock(AbstractClock):
 
     def tick(self) -> int:
         return time.time_ns()
-
-
-
-
 
 
 class HimekoElementFactory(object):
@@ -46,11 +45,20 @@ class HimekoElementFactory(object):
         r = next(t.find_data("string"))
         return str(r.children[0]).replace("\"","")
 
-    def get_direction(self, direction: str) -> RelationDirection:
+    def get_direction(self, direction: str) -> typing.Tuple[RelationDirection, float]:
         match direction:
-            case '<-': return RelationDirection.INCOMING
-            case '--': return RelationDirection.BIDIRECTIONAL
-            case '->': return RelationDirection.OUTGOING
+            case '<-': return RelationDirection.INCOMING, -1.0
+            case '--': return RelationDirection.STATIONARY, 0.0
+            case '->': return RelationDirection.OUTGOING, 1.0
+
+    def get_direction_from_value(self, value: float) -> typing.Tuple[RelationDirection, float]:
+        if value < 0.0:
+            return RelationDirection.INCOMING, value
+        elif value > 0.0:
+            return RelationDirection.OUTGOING, value
+        else:
+            return RelationDirection.STATIONARY, 0.0
+
 
     def get_element_name(self, t: Tree):
         return next(next(filter(
@@ -70,15 +78,15 @@ class HimekoElementFactory(object):
         if cnt_children != 0:
             self.fringe.append((node, cnt_children))
 
-    def ectogenesis(self, t: Tree):
+    def infogenesis(self, t: Tree):
         name = str(self.get_element_name(t))
         genichrone = self.clock.nano_sec
         parent, cnt_cursor_parent = self.get_elem_parent()
-        zyg = HimekoZygote(name, parent)
+        zyg = HimekoConcept(name, parent)
         return name, genichrone, parent, cnt_cursor_parent, zyg
 
     def generate_himekonode(self, t: Tree):
-        name, genichrone, parent, cnt_cursor_parent, zyg = self.ectogenesis(t)
+        name, genichrone, parent, cnt_cursor_parent, zyg = self.infogenesis(t)
         # Generate UID & UUID
         uid = self.f_uid_id.transform(zyg, HimekoElementFactory.__HYPERGRAPHNODE_TYPENAME, genichrone)
         uuid = self.f_uuid_id.transform(zyg, HimekoElementFactory.__HYPERGRAPHNODE_TYPENAME, genichrone)
@@ -95,21 +103,29 @@ class HimekoElementFactory(object):
         return node
 
     def generate_himekoedge(self, t: Tree):
-        name, genichrone, parent, cnt_cursor_parent, zyg = self.ectogenesis(t)
+        name, genichrone, parent, cnt_cursor_parent, zyg = self.infogenesis(t)
         uid = self.f_uid_id.transform(zyg, HimekoElementFactory.__HYPERGRAPHEDGE_TYPENAME, genichrone)
         uuid = self.f_uuid_id.transform(zyg, HimekoElementFactory.__HYPERGRAPHEDGE_TYPENAME, genichrone)
         edge = HimekoEdge(name, uuid, uid, cnt_cursor_parent, parent)
         self.update_elem_parent_fringe(t, parent, edge, cnt_cursor_parent)
         self._elements[uuid] = edge
+        time = self.clock.nano_sec
         for x in filter(lambda x: x.data == "hi_edge_element", t.children):
-            direction = self.get_direction(x.children[0])
-            ref_name = self.search_for_string_element(next(x.find_data("element_reference"))).split("/")
-            if len(ref_name) == 1:
-                referenced_el = next(parent.get_node_by_name(ref_name[0]))
-                edge.add_connection(referenced_el, direction, self.clock.nano_sec)
+            if isinstance(x.children[0], Token):
+                direction, dir_value = self.get_direction(x.children[0])
             else:
-                # TODO: reference on higher level
-                pass
+                # TODO: revise for multidimensional data
+                for v in x.children[0].find_data("hi_element_value"):
+                    direction, dir_value = self.get_direction_from_value(float(v.children[0]))
+            ref_name = self.search_for_string_element(next(x.find_data("element_reference"))).split("/")
+            referenced_el = edge.search_reference_in_context(ref_name, parent)
+            if referenced_el is not None:
+                edge.add_connection(referenced_el, ref_name, direction, [dir_value], time)
+            else:
+                edge.add_uneval_connection(ref_name, direction, [dir_value], time)
+        # Add element to parent
+        if parent is not None:
+            parent.add_children(edge)
         return edge
 
     @property
@@ -137,6 +153,7 @@ class HypergraphRecursiveVisitor(Visitor_Recursive):
     hi_metaelement = lambda self, s: None
     hi_node = lambda self, s: self._el_factory.generate_himekonode(s)
     hi_edge = lambda self, s: self._el_factory.generate_himekoedge(s)
+    hi_element_field = lambda self, s: print(s)
 
     @property
     def el_factory(self):
