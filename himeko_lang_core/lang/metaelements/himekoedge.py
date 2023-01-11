@@ -20,7 +20,7 @@ class HimekoReference(AbstractHimekoRoot):
         super().__init__(name, target, genichronos)
         self._direction = direction
         self._query = query
-        self.value = value
+        self._value = value
         # Connections
 
     @property
@@ -30,6 +30,10 @@ class HimekoReference(AbstractHimekoRoot):
     @property
     def direction(self):
         return self._direction
+
+    @property
+    def value(self):
+        return self._value
 
 
 class HimekoEdge(HimekoElement):
