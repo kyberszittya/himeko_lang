@@ -10,9 +10,12 @@ from lang.metaelements.himekonode import HimekoNode
 
 import time
 
+from lang.metaelements.himekovalue import HimekoValue
+
 inline_args = v_args(inline=True)
 
 from collections import deque
+
 
 class SystemTimeClock(AbstractClock):
 
@@ -27,6 +30,7 @@ class HimekoElementFactory(object):
 
     __HYPERGRAPHNODE_TYPENAME = "himekonode"
     __HYPERGRAPHEDGE_TYPENAME = "himekoedge"
+    __HYPERGRAPHVALUE_TYPENAME = "himekovalue"
 
     def __init__(self, clock=None):
         self.f_uid_id: AbstractIdentificationStrategy = UidIdentificationStrategy()
@@ -61,8 +65,10 @@ class HimekoElementFactory(object):
 
 
     def get_element_name(self, t: Tree):
-        return next(next(filter(
-            lambda x: x.data == "hi_element_signature", t.children)).find_data("element_name")).children[0]
+        if ("hi_element_signature" in set(map(lambda x: x.data, t.children))):
+            return next(next(filter(
+                lambda x: x.data == "hi_element_signature", t.children)).find_data("element_name")).children[0]
+        return next(t.find_data("element_name")).children[0]
 
     def get_elem_parent(self):
         if len(self.fringe) > 0:
@@ -78,7 +84,7 @@ class HimekoElementFactory(object):
         if cnt_children != 0:
             self.fringe.append((node, cnt_children))
 
-    def infogenesis(self, t: Tree):
+    def infogenesis(self, t: Tree) -> typing.Tuple[str, int, typing.Optional[HimekoNode], int, HimekoConcept]:
         name = str(self.get_element_name(t))
         genichrone = self.clock.nano_sec
         parent, cnt_cursor_parent = self.get_elem_parent()
@@ -86,16 +92,16 @@ class HimekoElementFactory(object):
         return name, genichrone, parent, cnt_cursor_parent, zyg
 
     def generate_himekonode(self, t: Tree):
-        name, genichrone, parent, cnt_cursor_parent, zyg = self.infogenesis(t)
+        name, genichrone, progenitor, cnt_cursor_parent, zyg = self.infogenesis(t)
         # Generate UID & UUID
         uid = self.f_uid_id.transform(zyg, HimekoElementFactory.__HYPERGRAPHNODE_TYPENAME, genichrone)
         uuid = self.f_uuid_id.transform(zyg, HimekoElementFactory.__HYPERGRAPHNODE_TYPENAME, genichrone)
-        node = HimekoNode(name, uuid, uid, cnt_cursor_parent, parent)
-        self.update_elem_parent_fringe(t, parent, node, cnt_cursor_parent)
+        node = HimekoNode(name, uuid, uid, cnt_cursor_parent, progenitor)
+        self.update_elem_parent_fringe(t, progenitor, node, cnt_cursor_parent)
         self._elements[uuid] = node
         # Add element to parent
-        if parent is not None:
-            parent.add_children(node)
+        if progenitor is not None:
+            progenitor.add_children(node)
         # Get parent from queue
         # Check whether this is the root element
         if self._root is None:
@@ -103,13 +109,12 @@ class HimekoElementFactory(object):
         return node
 
     def generate_himekoedge(self, t: Tree):
-        name, genichrone, parent, cnt_cursor_parent, zyg = self.infogenesis(t)
+        name, genichrone, progenitor, cnt_cursor_parent, zyg = self.infogenesis(t)
         uid = self.f_uid_id.transform(zyg, HimekoElementFactory.__HYPERGRAPHEDGE_TYPENAME, genichrone)
         uuid = self.f_uuid_id.transform(zyg, HimekoElementFactory.__HYPERGRAPHEDGE_TYPENAME, genichrone)
-        edge = HimekoEdge(name, uuid, uid, cnt_cursor_parent, parent)
-        self.update_elem_parent_fringe(t, parent, edge, cnt_cursor_parent)
+        edge = HimekoEdge(name, uuid, uid, cnt_cursor_parent, progenitor)
+        self.update_elem_parent_fringe(t, progenitor, edge, cnt_cursor_parent)
         self._elements[uuid] = edge
-        time = self.clock.nano_sec
         for x in filter(lambda x: x.data == "hi_edge_element", t.children):
             if isinstance(x.children[0], Token):
                 direction, dir_value = self.get_direction(x.children[0])
@@ -118,15 +123,53 @@ class HimekoElementFactory(object):
                 for v in x.children[0].find_data("hi_element_value"):
                     direction, dir_value = self.get_direction_from_value(float(v.children[0]))
             ref_name = self.search_for_string_element(next(x.find_data("element_reference"))).split("/")
-            referenced_el = edge.search_reference_in_context(ref_name, parent)
+            referenced_el = edge.search_reference_in_context(ref_name, progenitor)
             if referenced_el is not None:
-                edge.add_connection(referenced_el, ref_name, direction, [dir_value], time)
+                edge.add_connection(referenced_el, ref_name, direction, [dir_value], genichrone)
             else:
-                edge.add_uneval_connection(ref_name, direction, [dir_value], time)
+                edge.add_uneval_connection(ref_name, direction, [dir_value], genichrone)
         # Add element to parent
-        if parent is not None:
-            parent.add_children(edge)
+        if progenitor is not None:
+            progenitor.add_children(edge)
         return edge
+
+    def generate_himekovalue(self, t: Tree):
+        name, genichrone, progenitor, cnt_cursor_parent, zyg = self.infogenesis(t)
+        uid = self.f_uid_id.transform(zyg, HimekoElementFactory.__HYPERGRAPHVALUE_TYPENAME, genichrone)
+        uuid = self.f_uuid_id.transform(zyg, HimekoElementFactory.__HYPERGRAPHVALUE_TYPENAME, genichrone)
+        value = HimekoValue(name, uuid, uid, cnt_cursor_parent, progenitor)
+        self.update_elem_parent_fringe(t, progenitor, value, cnt_cursor_parent)
+        self._elements[uuid] = value
+        # Try getting values
+        try:
+            vt = next(t.find_data("hi_element_value"))
+            if not isinstance(vt.children[0], Token):
+                v = str(vt.children[0].children[0])
+            else:
+                v = str(vt.children[0])
+        except StopIteration:
+            v = None
+        # Try parsing values
+        try:
+            el_type = next(t.find_data("element_type"))
+            value.value_type = el_type
+            # Value
+            if v is not None:
+                match el_type.children[0]:
+                    case "string":
+                        value.value = str(v).replace('"',"")
+                    case "real":
+                        value.value = float(v)
+                    case "int":
+                        value.value = int(v)
+        except StopIteration:
+            # Assignment of variable
+            if v is not None:
+                value.value = v.replace("/", "")
+        # Add element to parent
+        if progenitor is not None:
+            progenitor.add_children(value)
+        return value
 
     @property
     def root(self) -> HimekoNode:
@@ -153,7 +196,7 @@ class HypergraphRecursiveVisitor(Visitor_Recursive):
     hi_metaelement = lambda self, s: None
     hi_node = lambda self, s: self._el_factory.generate_himekonode(s)
     hi_edge = lambda self, s: self._el_factory.generate_himekoedge(s)
-    hi_element_field = lambda self, s: print(s)
+    hi_element_field = lambda self, s: self._el_factory.generate_himekovalue(s)
 
     @property
     def el_factory(self):

@@ -4,6 +4,7 @@ from lang.graph.search_strategies import get_progenitor_chain
 from lang.himeko_meta_parser import Lark_StandAlone
 from lang.metaelements.himekoedge import HimekoEdge
 from lang.metaelements.himekonode import HimekoNode
+from lang.metaelements.himekovalue import HimekoValue
 from transformer.himeko_transformer import HypergraphRecursiveVisitor
 
 
@@ -127,7 +128,7 @@ class TestBasicTransformation(unittest.TestCase):
             self.assertEquals(len(e._connections), 3)
             self.assertEquals(len(e._uneval_connections), 1)
 
-    def test_node_hierarchy_edge_generation_hierarchy_evaluation_values(self):
+    def test_node_hierarchy_edge_generation_with_edge_values(self):
         p = "../examples/simple/minimal_example_with_hierarchy_ref_edges_with_values.himeko"
         tree = self.read_node(p)
         rvisitor = HypergraphRecursiveVisitor()
@@ -173,4 +174,19 @@ class TestBasicTransformation(unittest.TestCase):
         rvisitor = HypergraphRecursiveVisitor()
         rvisitor.visit_topdown(tree)
         self.assertEquals(rvisitor.el_factory.root.name, "context")
+        values = {}
+        for v in filter(lambda x: isinstance(x, HimekoValue), rvisitor.el_factory._elements.values()):
+            values[v.name] = v
+        self.assertEquals(values["val0"].value, 56)
+        self.assertIsInstance(values["val0"].value, int)
+        self.assertTrue(values["val0"].is_assigned, 56.891)
+        self.assertEquals(values["val1"].value, "vakond")
+        self.assertTrue(values["val1"].is_assigned)
+        self.assertEquals(values["val2"].value, 56.891)
+        self.assertTrue(values["val2"].is_assigned)
+        self.assertIsInstance(values["val2"].value, float)
+        self.assertFalse(values["val_undef"].is_assigned)
+        self.assertEquals(values["val3"].value, "3444.4623")
+        self.assertEquals(values["pi"].value, "3.14156")
+        self.assertTrue("val_float" in values)
 

@@ -1,9 +1,10 @@
 [ Minimal_Example ]
 context
 {
-    val0 56;
-    val1 "vakond";
+    val0 [int] 56;
+    val1 [string] "vakond";
     val2 [real] 56.891;
+    val_undef [real];
     val3 3444.4623;
     pi 3.14156;
     val_float;
