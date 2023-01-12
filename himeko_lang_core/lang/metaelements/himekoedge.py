@@ -45,16 +45,18 @@ class HimekoEdge(HimekoElement):
         # Unevaluated connections
         self._uneval_connections = dict()
 
-    def add_connection(self, target, query: typing.Iterable[str], direction: RelationDirection, value: list[float], time: int):
+    def add_connection(self, target, query: typing.Iterable[str], direction: RelationDirection,
+                       value: list[float], timestamp: int):
         ref_name = '/'.join(query)
         name = f"{self.name}-{ref_name}"
-        ref = HimekoReference(name, target, ref_name, direction, value, time)
+        ref = HimekoReference(name, target, ref_name, direction, value, timestamp)
         self._connections[target.uuid] = ref
 
-    def add_uneval_connection(self, query: typing.Iterable[str], direction: RelationDirection, value: list[float], time: int):
+    def add_uneval_connection(self, query: typing.Iterable[str], direction: RelationDirection,
+                              value: list[float], timestamp: int):
         ref_name = '/'.join(query)
         name = f"{self.name}-{ref_name}"
-        ref = HimekoReference(name, None, ref_name, direction, value, time)
+        ref = HimekoReference(name, None, ref_name, direction, value, timestamp)
         self._uneval_connections[ref_name] = ref
 
     def evaluate_unknown_references(self):

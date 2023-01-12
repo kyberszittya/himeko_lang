@@ -4,8 +4,8 @@ from datetime import datetime
 from lang.himeko_meta_parser import Visitor, Transformer, v_args, Visitor_Recursive, Tree, Token
 from lang.identification.strategies import UidIdentificationStrategy, UuidIdentificationStrategy, \
     AbstractIdentificationStrategy
-from lang.metaelements.himekoedge import HimekoEdge, RelationDirection
-from lang.metaelements.himekoelement import AbstractClock, HimekoConcept
+from lang.metaelements.himekoedge import HimekoEdge, RelationDirection, HimekoReference
+from lang.metaelements.himekoelement import AbstractClock, HimekoConcept, HimekoElement
 from lang.metaelements.himekonode import HimekoNode
 
 import time
@@ -48,6 +48,12 @@ class HimekoElementFactory(object):
     def search_for_string_element(self, t: Tree) -> str:
         r = next(t.find_data("string"))
         return str(r.children[0]).replace("\"","")
+
+    def generate_reference(self, name, query, target, direction, value, timestamp: int):
+        ref_name = '/'.join(query)
+        name = f"{name}-{ref_name}"
+        ref = HimekoReference(name, target, ref_name, direction, value, timestamp)
+        return ref
 
     def get_direction(self, direction: str) -> typing.Tuple[RelationDirection, float]:
         match direction:
@@ -108,6 +114,11 @@ class HimekoElementFactory(object):
             self._root = node
         return node
 
+    def get_reference(self, x: Tree, progenitor, el: HimekoElement):
+        ref_name = self.search_for_string_element(next(x.find_data("element_reference"))).split("/")
+        referenced_el = el.search_reference_in_context(ref_name, progenitor)
+        return ref_name, referenced_el
+
     def generate_himekoedge(self, t: Tree):
         name, genichrone, progenitor, cnt_cursor_parent, zyg = self.infogenesis(t)
         uid = self.f_uid_id.transform(zyg, HimekoElementFactory.__HYPERGRAPHEDGE_TYPENAME, genichrone)
@@ -122,8 +133,7 @@ class HimekoElementFactory(object):
                 # TODO: revise for multidimensional data
                 for v in x.children[0].find_data("hi_element_value"):
                     direction, dir_value = self.get_direction_from_value(float(v.children[0]))
-            ref_name = self.search_for_string_element(next(x.find_data("element_reference"))).split("/")
-            referenced_el = edge.search_reference_in_context(ref_name, progenitor)
+            ref_name, referenced_el = self.get_reference(x, progenitor, edge)
             if referenced_el is not None:
                 edge.add_connection(referenced_el, ref_name, direction, [dir_value], genichrone)
             else:
@@ -144,7 +154,11 @@ class HimekoElementFactory(object):
         try:
             vt = next(t.find_data("hi_element_value"))
             if not isinstance(vt.children[0], Token):
-                v = str(vt.children[0].children[0])
+                if vt.children[0].data == "element_reference":
+                    ref_name, referenced_el = self.get_reference(vt, progenitor, value)
+                    v = self.generate_reference(name, ref_name, referenced_el, RelationDirection.OUTGOING, 1.0, genichrone)
+                else:
+                    v = str(vt.children[0].children[0])
             else:
                 v = str(vt.children[0])
         except StopIteration:
@@ -164,8 +178,10 @@ class HimekoElementFactory(object):
                         value.value = int(v)
         except StopIteration:
             # Assignment of variable
-            if v is not None:
-                value.value = v.replace("/", "")
+            if v is not None and isinstance(v, str):
+                value.value = v.replace('"', "")
+            else:
+                value.value = v
         # Add element to parent
         if progenitor is not None:
             progenitor.add_children(value)

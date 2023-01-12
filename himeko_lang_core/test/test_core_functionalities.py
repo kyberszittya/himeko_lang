@@ -177,9 +177,10 @@ class TestBasicTransformation(unittest.TestCase):
         values = {}
         for v in filter(lambda x: isinstance(x, HimekoValue), rvisitor.el_factory._elements.values()):
             values[v.name] = v
+        # Check values
         self.assertEquals(values["val0"].value, 56)
         self.assertIsInstance(values["val0"].value, int)
-        self.assertTrue(values["val0"].is_assigned, 56.891)
+        self.assertTrue(values["val0"].is_assigned)
         self.assertEquals(values["val1"].value, "vakond")
         self.assertTrue(values["val1"].is_assigned)
         self.assertEquals(values["val2"].value, 56.891)
@@ -190,3 +191,22 @@ class TestBasicTransformation(unittest.TestCase):
         self.assertEquals(values["pi"].value, "3.14156")
         self.assertTrue("val_float" in values)
 
+    def test_node_field_references(self):
+        p = "../examples/simple/minimal_example_fields_with_reference.himeko"
+        tree = self.read_node(p)
+        rvisitor = HypergraphRecursiveVisitor()
+        rvisitor.visit_topdown(tree)
+        self.assertEquals(rvisitor.el_factory.root.name, "context")
+        values = {}
+        for v in filter(lambda x: isinstance(x, HimekoValue), rvisitor.el_factory._elements.values()):
+            values[v.name] = v
+        # Assert other values
+        self.assertEquals(values["val0"].value, 56)
+        self.assertIsInstance(values["val0"].value, int)
+        self.assertTrue(values["val0"].is_assigned)
+        self.assertEquals(values["val2"].value, 56.891)
+        self.assertTrue(values["val2"].is_assigned)
+        # Reference values
+        self.assertEquals(values["val_node"].value.name, "val_node-node/node0")
+        self.assertEquals(values["val_node"].value.target.name, "node0")
+        self.assertTrue(values["val_node"].is_assigned)
