@@ -1,3 +1,4 @@
+from lang.metaelements.himekoedge import HimekoReference
 from lang.metaelements.himekoelement import HimekoElement, AbstractHimekoElement
 
 
@@ -32,3 +33,11 @@ class HimekoValue(HimekoElement):
     @property
     def is_assigned(self):
         return self._is_assigned
+
+    def evaluate_unknown_references(self):
+        if isinstance(self._value, HimekoReference):
+            ref_name = self._value.query.split("/")
+            ref_el = self.search_reference_in_context(ref_name, self.progenitor)
+            if ref_el is not None:
+                self._value.target = ref_el
+                self._value.eval_element = True

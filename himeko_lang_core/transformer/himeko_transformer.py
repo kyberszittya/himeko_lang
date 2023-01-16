@@ -97,12 +97,30 @@ class HimekoElementFactory(object):
         zyg = HimekoConcept(name, parent)
         return name, genichrone, parent, cnt_cursor_parent, zyg
 
+    def _get_template(self, t: Tree, progenitor, genichronos: int):
+        _sig = list(filter(lambda x: x.data == "hi_element_signature", t.children))[0]
+        # Get template
+        _templ_el = list(filter(lambda x: x.data == "hi_templating", _sig.children))
+        if len(_templ_el) > 0:
+            query = _templ_el[0]
+            ref_name, _templ = self.get_reference(query, progenitor, None)
+            template_conn = HimekoReference(f"templ_{ref_name}", _templ, query, RelationDirection.OUTGOING, [1.0], genichronos)
+            return template_conn
+
+        return None
+
     def generate_himekonode(self, t: Tree):
         name, genichrone, progenitor, cnt_cursor_parent, zyg = self.infogenesis(t)
         # Generate UID & UUID
         uid = self.f_uid_id.transform(zyg, HimekoElementFactory.__HYPERGRAPHNODE_TYPENAME, genichrone)
         uuid = self.f_uuid_id.transform(zyg, HimekoElementFactory.__HYPERGRAPHNODE_TYPENAME, genichrone)
-        node = HimekoNode(name, uuid, uid, cnt_cursor_parent, progenitor)
+        # Template
+        _templ = self._get_template(t, progenitor, genichrone)
+        # Create node
+        if _templ is not None:
+            node = HimekoNode(name, uuid, uid, cnt_cursor_parent, progenitor, _templ)
+        else:
+            node = HimekoNode(name, uuid, uid, cnt_cursor_parent, progenitor)
         self.update_elem_parent_fringe(t, progenitor, node, cnt_cursor_parent)
         self._elements[uuid] = node
         # Add element to parent
@@ -114,10 +132,15 @@ class HimekoElementFactory(object):
             self._root = node
         return node
 
-    def get_reference(self, x: Tree, progenitor, el: HimekoElement):
-        ref_name = self.search_for_string_element(next(x.find_data("element_reference"))).split("/")
-        referenced_el = el.search_reference_in_context(ref_name, progenitor)
-        return ref_name, referenced_el
+    def get_reference(self, x: Tree, progenitor, el: typing.Optional[HimekoElement]):
+        if el is not None:
+            ref_name = self.search_for_string_element(next(x.find_data("element_reference"))).split("/")
+            referenced_el = el.search_reference_in_context(ref_name, progenitor)
+            return ref_name, referenced_el
+        else:
+            ref_name = self.search_for_string_element(next(x.find_data("element_reference"))).split("/")
+            referenced_el = progenitor.search_reference_in_context(ref_name, progenitor)
+            return ref_name, referenced_el
 
     def generate_himekoedge(self, t: Tree):
         name, genichrone, progenitor, cnt_cursor_parent, zyg = self.infogenesis(t)
@@ -134,10 +157,7 @@ class HimekoElementFactory(object):
                 for v in x.children[0].find_data("hi_element_value"):
                     direction, dir_value = self.get_direction_from_value(float(v.children[0]))
             ref_name, referenced_el = self.get_reference(x, progenitor, edge)
-            if referenced_el is not None:
-                edge.add_connection(referenced_el, ref_name, direction, [dir_value], genichrone)
-            else:
-                edge.add_uneval_connection(ref_name, direction, [dir_value], genichrone)
+            edge.add_connection(referenced_el, ref_name, direction, dir_value, genichrone)
         # Add element to parent
         if progenitor is not None:
             progenitor.add_children(edge)
@@ -166,7 +186,7 @@ class HimekoElementFactory(object):
         # Try parsing values
         try:
             el_type = next(t.find_data("element_type"))
-            value.value_type = el_type
+            value.value_type = el_type.children[0]
             # Value
             if v is not None:
                 match el_type.children[0]:

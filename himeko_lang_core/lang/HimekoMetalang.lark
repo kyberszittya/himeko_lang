@@ -14,7 +14,8 @@ hi_node: hi_element_signature (hi_fields)? "{" (hi_element)* "}"
 hi_edge: hi_element_signature (hi_fields)? ":" (hi_edge_element) ("," hi_edge_element)*
 hi_fields: (hi_element_field)+
 // Hypergraph elements
-hi_element_signature: element_name ("^" element_reference)?
+hi_element_signature: element_name hi_templating?
+hi_templating: "^" element_reference
 hi_element_field: element_name ("[" (element_type) "]")? (hi_element_value)?";"
 element_type: (EL_ATOMIC|"ref")
 

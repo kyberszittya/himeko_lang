@@ -150,11 +150,11 @@ class HimekoElement(AbstractHimekoElement):
         if cnt_match == 0:
             self._unknown_elements.add(ref_name)
 
-    def search_reference_in_context(self, query: list[str], parent) -> typing.Optional[AbstractHimekoElement]:
+    def search_reference_in_context(self, query: list[str], progenitor) -> typing.Optional[AbstractHimekoElement]:
         if len(query) == 1:
-            if parent is not None:
+            if progenitor is not None:
                 try:
-                    referenced_el = next(parent.get_element_by_name(query[0]))
+                    referenced_el = next(progenitor.get_element_by_name(query[0]))
                 except StopIteration:
                     referenced_el = None
             else:
@@ -165,4 +165,8 @@ class HimekoElement(AbstractHimekoElement):
             except StopIteration:
                 referenced_el = None
         return referenced_el
+
+    @abc.abstractmethod
+    def evaluate_unknown_references(self):
+        raise NotImplementedError
 
