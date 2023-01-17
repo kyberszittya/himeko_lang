@@ -1,4 +1,6 @@
-from lang.metaelements.himekoedge import HimekoReference
+import typing
+
+from lang.metaelements.himekoedge import HimekoReference, HimekoEdge
 from lang.metaelements.himekoelement import HimekoElement, AbstractHimekoElement
 
 
@@ -22,3 +24,12 @@ class HimekoNode(HimekoElement):
     @property
     def primary_template(self) -> HimekoReference:
         return self._primary_template
+
+    def get_children(self, func: typing.Callable[[typing.Any], bool]):
+        return filter(func, self._elements_by_uid.values())
+
+    def get_children_node(self):
+        return self.get_children(lambda x: isinstance(x, HimekoNode))
+
+    def get_children_edge(self):
+        return self.get_children(lambda x: isinstance(x, HimekoEdge))
