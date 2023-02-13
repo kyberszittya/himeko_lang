@@ -86,3 +86,12 @@ class HimekoEdge(HimekoElement):
                 self._eval_connections[ref_el.uuid] = e
         for x in __matches:
             self._uneval_connections.pop(x)
+
+    def get_target_uuids(self):
+        return set([x.target.uuid for x in self._eval_connections.values()])
+
+    def outgoing_targets(self):
+        return list([(x.target.uuid, x.value) for x in self._eval_connections.values() if x.value[0] > 0.0])
+
+    def incoming_targets(self):
+        return list([(x.target.uuid, x.value) for x in self._eval_connections.values() if x.value[0] < 0.0])

@@ -1,0 +1,12 @@
+[ Minimal_example_node_3 ]
+graph
+{
+    node1{}
+    node2{}
+    node3{}
+
+    e1: -> @>"node1", <- @>"node2"
+    e2: -> @>"node1", <- @>"node3"
+    e3: -> @>"node3", <- @>"node2"
+
+}
