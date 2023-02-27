@@ -58,7 +58,7 @@ class HimekoElementFactory(object):
     def get_direction(self, direction: str) -> typing.Tuple[RelationDirection, float]:
         match direction:
             case '<-': return RelationDirection.INCOMING, -1.0
-            case '--': return RelationDirection.STATIONARY, 0.0
+            case '--': return RelationDirection.BIDIRECTIONAL, 1.0
             case '->': return RelationDirection.OUTGOING, 1.0
 
     def get_direction_from_value(self, value: float) -> typing.Tuple[RelationDirection, float]:
@@ -67,7 +67,7 @@ class HimekoElementFactory(object):
         elif value > 0.0:
             return RelationDirection.OUTGOING, value
         else:
-            return RelationDirection.STATIONARY, 0.0
+            return RelationDirection.BIDIRECTIONAL, value
 
 
     def get_element_name(self, t: Tree):

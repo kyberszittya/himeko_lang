@@ -8,7 +8,7 @@ from lang.metaelements.himekoelement import HimekoElement, AbstractHimekoElement
 
 class RelationDirection(Enum):
     OUTGOING = 0
-    STATIONARY = 1
+    BIDIRECTIONAL = 1
     INCOMING = 2
 
 
@@ -24,10 +24,12 @@ class HimekoReference(AbstractHimekoRoot):
         # Connections
         self._eval_element = False
 
+    # Reference query
     @property
     def query(self):
         return self._query
 
+    # Direction value
     @property
     def direction(self):
         return self._direction
@@ -36,6 +38,7 @@ class HimekoReference(AbstractHimekoRoot):
     def value(self):
         return self._value
 
+    # Evaluated reference element
     @property
     def eval_element(self):
         return self._eval_element
@@ -91,7 +94,9 @@ class HimekoEdge(HimekoElement):
         return set([x.target.uuid for x in self._eval_connections.values()])
 
     def outgoing_targets(self):
-        return list([(x.target.uuid, x.value) for x in self._eval_connections.values() if x.value[0] > 0.0])
+        return ([(x.target.uuid, x.value, x.direction) for x in self._eval_connections.values()
+                     if x.value[0] > 0.0 or x.direction==RelationDirection.OUTGOING or x.direction==RelationDirection.BIDIRECTIONAL])
 
     def incoming_targets(self):
-        return list([(x.target.uuid, x.value) for x in self._eval_connections.values() if x.value[0] < 0.0])
+        return ([(x.target.uuid, x.value, x.direction) for x in self._eval_connections.values()
+                     if x.value[0] < 0.0 or x.direction==RelationDirection.INCOMING or x.direction==RelationDirection.BIDIRECTIONAL])
