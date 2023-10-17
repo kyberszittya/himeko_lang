@@ -7,5 +7,5 @@
 /hypergraph_parser/himeko_parser/gen/hypergraphlang/HimekoHypergraphLangListener.py
 /hypergraph_parser/himeko_parser/gen/hypergraphlang/HimekoHypergraphLangParser.py
 /hypergraph_parser/himeko_parser/gen/hypergraphlang/HimekoHypergraphLangVisitor.py
-/.idea/
 */*.iml
+/.idea/

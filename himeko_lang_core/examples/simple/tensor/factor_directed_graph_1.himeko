@@ -1,0 +1,14 @@
+[ Factor_graph ]
+graph
+{
+
+    node1 {}
+    node2 {}
+    node3 {}
+    node4 {}
+    node5 {}
+
+    e1: -> @>"node1", -> @>"node2", <- @>"node4", <- @>"node5"
+    e2: -> @>"node5", <- @>"node2", <- @>"node3"
+
+}
