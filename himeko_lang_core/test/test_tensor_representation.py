@@ -42,7 +42,7 @@ class TestBasicTransformation(unittest.TestCase):
         x_e2 = np.array([[0, 0, 0], [0, 0, 0], [1, 0, 0]])
         x_e3 = np.array([[0, 0, 0], [0, 0, 1], [0, 0, 0]])
         Tx = np.array([x_e1,x_e2,x_e3])
-        assert(np.all(Tx == _tensor[:, :n, :n]))
+        self.assertTrue(np.all(Tx == _tensor[:, :n, :n]))
 
     def test_directed3_nodes_2(self):
         p = "../examples/simple/tensor/directed_3_nodes_2.himeko"
@@ -57,7 +57,7 @@ class TestBasicTransformation(unittest.TestCase):
         x_e2 = np.array([[0, 0, 0], [0, 0, 0], [1, 0, 0]])
         x_e3 = np.array([[0, 0, 0], [0, 0, 1], [0, 0, 0]])
         Tx = np.array([x_e1,x_e2,x_e3])
-        assert(np.all(Tx == _tensor[:, :n, :n]))
+        self.assertTrue(np.all(Tx == _tensor[:, :n, :n]))
 
     def test_directed4_nodes_1(self):
         p = "../examples/simple/tensor/directed_4_nodes_1.himeko"
@@ -89,7 +89,7 @@ class TestBasicTransformation(unittest.TestCase):
                           [1, 0, 0, 0],
                           [0, 0, 0, 0]])
         Tx = np.array([x2_e1,x2_e2,x2_e3, x2_e4, x2_e5])
-        assert(np.all(Tx == _tensor[:, :n, :n]))
+        self.assertTrue(np.all(Tx == _tensor[:, :n, :n]))
 
     def test_directed_factor_graph1(self):
         p = "../examples/simple/tensor/factor_directed_graph_1.himeko"
@@ -111,7 +111,7 @@ class TestBasicTransformation(unittest.TestCase):
                           [0, 0, 0, 0, 0],
                           [0, 0, 0, 0, 0]])
         Tx = np.array([x2_e1,x2_e2])
-        assert(np.all(Tx == _tensor[:, :n, :n]))
+        self.assertTrue(np.all(Tx == _tensor[:, :n, :n]))
         print(_tensor)
 
     def test_directed_fano_graph(self):
@@ -123,4 +123,4 @@ class TestBasicTransformation(unittest.TestCase):
         root_el.evaluate_unknown_references()
         hyp_trans = HypergraphTensorTransformation()
         _tensor, n, _ = hyp_trans.encode(root_el, 1e3)
-        assert(np.all(np.sum(_tensor[:, :n, :n], axis=0) - np.eye(7)))
+        self.assertTrue(np.all(np.sum(_tensor[:, :n, :n], axis=0) - np.eye(7)))
