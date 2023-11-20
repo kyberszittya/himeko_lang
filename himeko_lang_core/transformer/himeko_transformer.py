@@ -1,14 +1,13 @@
 import typing
-from datetime import datetime
 
+from himeko.common.clock import SystemTimeClock
 from lang.himeko_meta_parser import Visitor, Transformer, v_args, Visitor_Recursive, Tree, Token
 from lang.identification.strategies import UidIdentificationStrategy, UuidIdentificationStrategy, \
     AbstractIdentificationStrategy
 from lang.metaelements.himekoedge import HimekoEdge, RelationDirection, HimekoReference
-from lang.metaelements.himekoelement import AbstractClock, HimekoConcept, HimekoElement
+from lang.metaelements.himekoelement import HimekoConcept, HimekoElement
 from lang.metaelements.himekonode import HimekoNode
 
-import time
 
 from lang.metaelements.himekovalue import HimekoValue
 
@@ -17,13 +16,7 @@ inline_args = v_args(inline=True)
 from collections import deque
 
 
-class SystemTimeClock(AbstractClock):
 
-    def __init__(self):
-        super().__init__()
-
-    def tick(self) -> int:
-        return time.time_ns()
 
 
 class HimekoElementFactory(object):
@@ -45,15 +38,13 @@ class HimekoElementFactory(object):
         # Current context
         self.fringe = deque()
 
-    def search_for_string_element(self, t: Tree) -> str:
-        r = next(t.find_data("string"))
-        return str(r.children[0]).replace("\"","")
-
     def generate_reference(self, name, query, target, direction, value, timestamp: int):
         ref_name = '/'.join(query)
         name = f"{name}-{ref_name}"
         ref = HimekoReference(name, target, ref_name, direction, value, timestamp)
         return ref
+
+
 
     def get_direction(self, direction: str) -> typing.Tuple[RelationDirection, float]:
         match direction:
@@ -70,11 +61,7 @@ class HimekoElementFactory(object):
             return RelationDirection.BIDIRECTIONAL, value
 
 
-    def get_element_name(self, t: Tree):
-        if ("hi_element_signature" in set(map(lambda x: x.data, t.children))):
-            return next(next(filter(
-                lambda x: x.data == "hi_element_signature", t.children)).find_data("element_name")).children[0]
-        return next(t.find_data("element_name")).children[0]
+
 
     def get_elem_parent(self):
         if len(self.fringe) > 0:
