@@ -206,9 +206,12 @@ class HypergraphTransformer(Transformer):
 
 
 class HypergraphVisitor(Visitor):
-    hi_metaelement = lambda self, s: print(s)
-    hi_node = lambda self, s: print(s)
-    hi_edge = lambda self, s: print(s)
+    def hi_node(self, s):
+        print("Node: "+ str(s))
+
+    def hi_element_signature(self, s):
+        print(s)
+        print(s.children)
 
 
 class HypergraphRecursiveVisitor(Visitor_Recursive):

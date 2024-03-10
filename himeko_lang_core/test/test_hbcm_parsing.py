@@ -16,7 +16,10 @@ class TestBasicTransformation(unittest.TestCase):
         return tree
 
     def test_basic_node_generation(self):
+        print("\n--- START Test: test_basic_node_generation ---")
         p = "../examples/simple/minimal_example.himeko"
         tree = self.read_node(p)
         rvisitor = HimekoHbcmTransformer()
         rvisitor.visit_topdown(tree)
+        print("--- END Test: test_basic_node_generation ---")
+
