@@ -15,3 +15,8 @@ class LarkElementMetaHimekoExtractor(object):
         r = next(t.find_data("string"))
         return str(r.children[0]).replace("\"","")
 
+    def reconstruct_parent_name(self, t: Tree):
+        if hasattr(t, "parent"):
+            return self.reconstruct_parent_name(t.parent) + "." + self.get_meta_element_name(t)
+        return self.get_meta_element_name(t)
+
