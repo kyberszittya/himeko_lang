@@ -9,8 +9,7 @@ hi_include: "import" ":" string
 
 hi_body: (hi_node | hi_element_field)+
 
-hi_element:  (hi_node | hi_edge | hi_element_field)
-hi_node: hi_element_signature (hi_fields)? "{" (hi_element)* "}"
+hi_node: hi_element_signature (hi_fields)? "{" (hi_node | hi_edge | hi_element_field)* "}"
 hi_edge: hi_element_signature (hi_fields)? ":" (hi_edge_element) ("," hi_edge_element)*
 hi_fields: (hi_element_field)+
 // Hypergraph elements
@@ -24,7 +23,7 @@ hi_element_value: (SIGNED_NUMBER | string | element_reference)
 hi_edge_element: (RELATION_DIRECTION|parameter_brackets) element_reference
 // Element name
 element_name: CNAME
-element_reference: "@>" string parameter_brackets?
+element_reference: "@>" STRING parameter_brackets?
 parameter_brackets: "(" hi_element_value ("," hi_element_value)* ")"
 // Datatype aliasi
 string: ESCAPED_STRING
@@ -37,6 +36,7 @@ EL_ATOMIC: "int"|"string"|"real"
 %import common.SIGNED_NUMBER
 %import common.NUMBER
 %import common.CNAME
+%import python (NAME, STRING, DEC_NUMBER)
 %import common.ESCAPED_STRING
 %import common.WS
 
