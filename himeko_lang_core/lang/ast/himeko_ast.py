@@ -1,10 +1,19 @@
 import sys
+import time
 from typing import List
 from dataclasses import dataclass
 
 from lark import Transformer, v_args, ast_utils
+from enum import Enum
 
 this_module = sys.modules[__name__]
+
+
+class AstEnumRelationDirection(Enum):
+    UNDEFINED = 0
+    IN = 1
+    OUT = 2
+    UNDIRECTED = 3
 
 
 class _Ast(ast_utils.Ast):
@@ -73,22 +82,27 @@ class ElementReference(_Ast):
 
 @dataclass
 class HiEdgeElement(_Ast):
-    relation_direction: Value
+    raw_relation_direction: Value
+    relation_direction: AstEnumRelationDirection
     reference: ElementReference
 
     def __init__(self, relation_direction: Value, reference: ElementReference):
-        self.relation_direction = relation_direction
+        self.raw_relation_direction = relation_direction
+        match relation_direction:
+            case '--': self.relation_direction = AstEnumRelationDirection.UNDEFINED
+            case '->': self.relation_direction = AstEnumRelationDirection.OUT
+            case '<-': self.relation_direction = AstEnumRelationDirection.IN
+            case '<>': self.relation_direction = AstEnumRelationDirection.UNDIRECTED
         self.reference = reference
-
 
 
 @dataclass
 class HiEdge(_HiAbstractElement):
-    vertices: List[HiEdgeElement]
+    relationships: List[HiEdgeElement]
 
     def __init__(self, signature: HiElementSignature, *vertices: HiEdgeElement):
         super().__init__(signature)
-        self.vertices = list(vertices)
+        self.relationships = list(vertices)
 
 
 @dataclass
@@ -105,13 +119,26 @@ class Start(_Ast):
     body: HiBody
 
 
+def extract_root_context(ast: Start):
+    return ast.body.root
+
+
 @dataclass
 class HiNode(_HiAbstractElement):
     children: List[_HiAbstractElement]
+    timestamp: int
 
     def __init__(self, signature: HiElementSignature, *children: _HiAbstractElement):
         super().__init__(signature)
         self.children = list(children)
+        self.timestamp = time.time_ns()
+
+    def __hash__(self):
+        hashed = [self.signature.name.value, self.timestamp]
+        hashed.extend([c.signature.name.value for c in self.children])
+        if self.parent is not None:
+            hashed.append(self.parent.signature.name.value)
+        return hash(tuple(hashed))
 
 
 class ToAst(Transformer):
@@ -141,9 +168,26 @@ def collect_leafs(node: HiNode):
     return leafs
 
 
-def unfold_references(edge: HiEdge):
+def collect_edges(node: HiNode):
+    edges = []
+    for n in node.children:
+        if isinstance(n, HiNode) and len(n.children) > 0:
+            edges.extend(collect_edges(n))
+        elif isinstance(n, HiEdge):
+            edges.append(n)
+    return edges
 
-    for v in edge.vertices:
+
+def unfold_references_in_context(node: HiNode):
+    for n in node.children:
+        if isinstance(n, HiNode):
+            unfold_references_in_context(n)
+        elif isinstance(n, HiEdge):
+            unfold_references(n)
+
+
+def unfold_references(edge: HiEdge):
+    for v in edge.relationships:
         context_name = v.reference.name.split('.')[::-1]
         context = edge
         for _ in context_name:
@@ -160,6 +204,13 @@ def unfold_references(edge: HiEdge):
             context = node
         if node is not None:
             v.reference.reference = node
+
+
+def create_ast(start: Start):
+    for v in extract_root_context(start):
+        if isinstance(v, HiNode):
+            set_parents(v)
+            unfold_references_in_context(v)
 
 
 transformer = ast_utils.create_transformer(this_module, ToAst())

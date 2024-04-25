@@ -1,6 +1,9 @@
 from lark import Lark
 
-from lang.ast.himeko_ast import transformer, set_parents, collect_leafs, HiNode, HiEdge, unfold_references
+from himeko.hbcm.elements.edge import HyperEdge
+from himeko.hbcm.elements.vertex import HyperVertex
+from lang.ast.ast_hbcm import AstHbcmTransformer
+from lang.ast.himeko_ast import transformer, collect_edges, create_ast
 
 
 def main(args=None):
@@ -15,16 +18,24 @@ def main(args=None):
     with open(p) as f:
         tree = parser.parse(''.join(f.readlines()))
         root = transformer.transform(tree)
-        set_parents(root.body.root[0])
-        leafs = collect_leafs(root.body.root[0])
-        for leaf in leafs:
-            if isinstance(leaf, HiNode):
-                print("Node: ", leaf.signature.name.value, leaf.parent.signature.name.value)
-            elif isinstance(leaf, HiEdge):
-                print("Edge: ", leaf.signature.name.value, leaf.parent.signature.name.value)
-                unfold_references(leaf)
-                for v in leaf.vertices:
-                    print("Unfolded ref:", v.reference.reference.signature.name.value, v.reference.reference.parent.signature.name.value)
+
+        create_ast(root)
+        for e in collect_edges(root.body.root[0]):
+            for rel in e.relationships:
+                print(rel.relation_direction, rel.reference.reference.signature.name.value)
+        hbcm_mapper = AstHbcmTransformer()
+        hyv = hbcm_mapper.create_root_hyper_vertices(root)
+        hbcm_mapper.create_edges(root)
+        for context in hyv:
+            print(context.name)
+            nodes = context.get_children(lambda x: isinstance(x, HyperVertex), None)
+            for e in nodes:
+                print(e.name, e.parent.name)
+            edges = context.get_children(lambda x: isinstance(x, HyperEdge), None)
+            for e in edges:
+                print(e.name, e.parent.name)
+                for r in e.all_relations():
+                    print(r.direction, r.target.name, r.target.parent.name)
 
 
 
