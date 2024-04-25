@@ -117,3 +117,26 @@ class TestBasicAstParsing(unittest.TestCase):
         self.assertEqual(relations[2].direction, EnumRelationDirection.OUT)
         self.assertEqual(relations[3].target.name, "node3")
         self.assertEqual(relations[3].direction, EnumRelationDirection.IN)
+
+    def test_fano(self):
+        p = "../examples/simple/base/fano_graph.himeko"
+        root = self.read_node(p)
+        self.assertIsNotNone(root, "Unable to transform tree to ast")
+        hbcm_mapper = AstHbcmTransformer()
+        hyv = hbcm_mapper.convert_tree(root)
+        context = hyv[0]
+        # Nodes
+        nodes = list(context.get_children(lambda x: isinstance(x, HyperVertex), None))
+        node_names = set(map(lambda x: x.name, nodes))
+        self.assertEqual(len(nodes), 7)
+        for i in range(0, 7):
+            self.assertIn(f"n{i}", node_names)
+        # Edge creation
+        edges = list(context.get_children(lambda x: isinstance(x, HyperEdge), None))
+        edge_names = set(map(lambda x: x.name, edges))
+        for i in range(0, 7):
+            self.assertIn(f"e{i}", edge_names)
+        # Edge relations
+
+
+

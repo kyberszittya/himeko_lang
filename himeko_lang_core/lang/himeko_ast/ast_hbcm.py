@@ -16,12 +16,13 @@ class AstHbcmTransformer(object):
         self.node_mapping = {}
 
     def create_hyper_vertex(self, node: HiNode, parent: HyperVertex) -> HyperVertex:
-        v = FactoryHypergraphElements.create_vertex_default(str(node.signature.name.value), self.clock_source(), parent)
-        self.node_mapping[node] = v
-        for n in node.children:
-            if isinstance(n, HiNode):
-                self.create_hyper_vertex(n, v)
-        return v
+        if isinstance(node, HiNode):
+            v = FactoryHypergraphElements.create_vertex_default(str(node.signature.name.value), self.clock_source(), parent)
+            self.node_mapping[node] = v
+            for n in node.children:
+                if isinstance(n, HiNode):
+                    self.create_hyper_vertex(n, v)
+            return v
 
     def create_edges(self, node: HiNode):
         if isinstance(node, Start):
@@ -49,6 +50,7 @@ class AstHbcmTransformer(object):
         contexts = []
         for v in extract_root_context(start):
             hv0 = FactoryHypergraphElements.create_vertex_default(v.signature.name.value, self.clock_source())
+            self.node_mapping[v] = hv0
             for v0 in v.children:
                 self.create_hyper_vertex(v0, hv0)
             contexts.append(hv0)
