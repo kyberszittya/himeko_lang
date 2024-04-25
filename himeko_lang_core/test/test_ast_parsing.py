@@ -1,5 +1,6 @@
 import unittest
 
+from himeko.hbcm.elements.attribute import HypergraphAttribute
 from himeko.hbcm.elements.edge import HyperEdge, EnumRelationDirection
 from himeko.hbcm.elements.vertex import HyperVertex
 from lang.himeko_ast.ast_hbcm import AstHbcmTransformer
@@ -137,6 +138,25 @@ class TestBasicAstParsing(unittest.TestCase):
         for i in range(0, 7):
             self.assertIn(f"e{i}", edge_names)
         # Edge relations
+
+    def test_value_fields(self):
+        p = "../examples/simple/minimal_example_fields.himeko"
+        root = self.read_node(p)
+        self.assertIsNotNone(root, "Unable to transform tree to ast")
+        hbcm_mapper = AstHbcmTransformer()
+        hyv = hbcm_mapper.convert_tree(root)
+        context = hyv[0]
+        # Nodes
+        nodes = list(context.get_children(lambda x: isinstance(x, HyperVertex), None))
+        self.assertEqual(len(nodes), 0)
+        # Attributes
+        attrs = list(context.get_children(lambda x: isinstance(x, HypergraphAttribute), None))
+        self.assertEqual(len(attrs), 8)
+        self.assertEqual(attrs[0].value, 56)
+        self.assertEqual(attrs[2].value, 56.891)
+        self.assertEqual(attrs[4].value, 3444.4623)
+        self.assertEqual(context["pi"].value, 3.14156)
+        self.assertEqual(context["vector"].value, [15.6, 17.8, 16.3, 12.3, 67.8, 45, 2])
 
 
 

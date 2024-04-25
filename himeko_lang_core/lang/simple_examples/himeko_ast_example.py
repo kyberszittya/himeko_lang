@@ -1,5 +1,6 @@
 from lark import Lark
 
+from himeko.hbcm.elements.attribute import HypergraphAttribute
 from himeko.hbcm.elements.edge import HyperEdge
 from himeko.hbcm.elements.vertex import HyperVertex
 from lang.himeko_ast.ast_hbcm import AstHbcmTransformer
@@ -8,7 +9,7 @@ from lang.himeko_ast.himeko_ast import transformer, collect_edges, create_ast
 
 def main(args=None):
     if args is None:
-        p = "../../examples/simple/minimal_example_with_edges.himeko"
+        p = "../../examples/simple/minimal_example_fields.himeko"
     else:
         p = args[0]
         print("Using path: " + p)
@@ -26,6 +27,7 @@ def main(args=None):
         hbcm_mapper = AstHbcmTransformer()
         hyv = hbcm_mapper.create_root_hyper_vertices(root)
         hbcm_mapper.create_edges(root)
+        hbcm_mapper.create_attributes(root)
         for context in hyv:
             print(context.name)
             nodes = context.get_children(lambda x: isinstance(x, HyperVertex), None)
@@ -38,6 +40,9 @@ def main(args=None):
                 print(e.name, e.parent.name)
                 for r in e.all_relations():
                     print(r.direction, r.target.name, r.target.parent.name)
+            attrs = context.get_children(lambda x: isinstance(x, HypergraphAttribute), None)
+            for a in attrs:
+                print(a.name, a.value)
 
 
 

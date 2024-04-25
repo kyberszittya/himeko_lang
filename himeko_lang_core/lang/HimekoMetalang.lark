@@ -15,10 +15,11 @@ hi_fields: (hi_element_field)+
 // Hypergraph elements
 hi_element_signature: element_name hi_templating?
 hi_templating: "^" element_reference
-hi_element_field: element_name ("[" (element_type) "]")? (hi_element_value)?";"
+hi_element_field: element_name ("<" (element_type) ">")? (hi_element_value|vector_field)?";"
 element_type: (EL_ATOMIC|"ref")
 
-hi_element_value: (SIGNED_NUMBER | string | element_reference)
+vector_field: "[" hi_element_value ("," hi_element_value)* "]"
+hi_element_value: (SIGNED_NUMBER | STRING | element_reference)
 // Edge elements
 hi_edge_element: (RELATION_DIRECTION|parameter_brackets) element_reference
 // Element name

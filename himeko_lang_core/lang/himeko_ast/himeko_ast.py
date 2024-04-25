@@ -1,10 +1,14 @@
 import sys
 import time
+import typing
 from typing import List
 from dataclasses import dataclass
 
 from lark import Transformer, v_args, ast_utils
 from enum import Enum
+
+from himeko.hbcm.elements.edge import HyperEdge
+from himeko.hbcm.elements.vertex import HyperVertex
 
 this_module = sys.modules[__name__]
 
@@ -47,11 +51,9 @@ class HiMeta(_Ast):
 
 
 @dataclass
-class _HiAbstractElement(_Ast):
-    signature: HiElementSignature
+class _TreeElement(_Ast):
 
-    def __init__(self, signature: HiElementSignature):
-        self.signature = signature
+    def __init__(self):
         self._parent = None
 
     @property
@@ -61,6 +63,66 @@ class _HiAbstractElement(_Ast):
     @parent.setter
     def parent(self, value):
         self._parent = value
+
+
+@dataclass
+class _HiAbstractElement(_TreeElement):
+    signature: HiElementSignature
+
+    def __init__(self, signature: HiElementSignature):
+        super().__init__()
+        self.signature = signature
+
+
+@dataclass
+class HiElementValue(_TreeElement):
+    value: Value
+
+    def __init__(self, value: Value):
+        super().__init__()
+        self.value = value
+
+
+@dataclass
+class ElementType(_Ast):
+    type: Value
+
+    def __init__(self, value: Value):
+        self.type = value
+
+
+@dataclass
+class VectorField(_Ast):
+    value: typing.List[HiElementValue]
+
+    def __init__(self, *value):
+        self.value = list(value)
+
+
+@dataclass
+class HiElementField(_Ast):
+    name: ElementName
+    type: ElementType
+    value: HiElementValue | VectorField
+
+
+
+    def __init__(self, name: ElementName,
+                 *args):
+        self.name = name
+        self.type = None
+        self.value = None
+        if len(args) == 2:
+            self.type = args[0]
+            self.value = args[1]
+        elif len(args) == 1:
+            if isinstance(args[0], ElementType):
+                self.type = args[0]
+                self.value = None
+            else:
+                self.type = None
+                self.value = args[0]
+
 
 
 @dataclass
@@ -135,7 +197,8 @@ class HiNode(_HiAbstractElement):
 
     def __hash__(self):
         hashed = [str(self.signature.name.value), self.timestamp]
-        hashed.extend([str(c.signature.name.value) for c in self.children])
+        hashed.extend([str(c.signature.name.value) for c in
+                       filter(lambda x: isinstance(x, HyperVertex) or isinstance(x, HyperEdge), self.children)])
         if self.parent is not None:
             hashed.append(str(self.parent.signature.name.value))
         return hash(tuple(hashed))
