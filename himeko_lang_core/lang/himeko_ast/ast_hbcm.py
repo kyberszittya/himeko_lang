@@ -4,7 +4,7 @@ import typing
 from himeko.hbcm.elements.edge import EnumRelationDirection
 from himeko.hbcm.elements.vertex import HyperVertex
 from himeko.hbcm.factories.creation_elements import FactoryHypergraphElements
-from lang.ast.himeko_ast import Start, extract_root_context, HiNode, HiEdge, AstEnumRelationDirection
+from lang.himeko_ast.himeko_ast import Start, extract_root_context, HiNode, HiEdge, AstEnumRelationDirection, create_ast
 
 
 class AstHbcmTransformer(object):
@@ -16,7 +16,7 @@ class AstHbcmTransformer(object):
         self.node_mapping = {}
 
     def create_hyper_vertex(self, node: HiNode, parent: HyperVertex) -> HyperVertex:
-        v = FactoryHypergraphElements.create_vertex_default(node.signature.name.value, self.clock_source(), parent)
+        v = FactoryHypergraphElements.create_vertex_default(str(node.signature.name.value), self.clock_source(), parent)
         self.node_mapping[node] = v
         for n in node.children:
             if isinstance(n, HiNode):
@@ -33,7 +33,7 @@ class AstHbcmTransformer(object):
                     self.create_edges(n)
                 elif isinstance(n, HiEdge):
                     e = FactoryHypergraphElements.create_edge_default(
-                        n.signature.name.value, self.clock_source(), self.node_mapping[n.parent])
+                        str(n.signature.name.value), self.clock_source(), self.node_mapping[n.parent])
                     for r in n.relationships:
                         match r.relation_direction:
                             case AstEnumRelationDirection.IN:
@@ -53,3 +53,9 @@ class AstHbcmTransformer(object):
                 self.create_hyper_vertex(v0, hv0)
             contexts.append(hv0)
         return contexts
+
+    def convert_tree(self, ast) -> typing.List[HyperVertex]:
+        create_ast(ast)
+        hyv = self.create_root_hyper_vertices(ast)
+        self.create_edges(ast)
+        return hyv

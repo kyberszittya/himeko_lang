@@ -134,10 +134,10 @@ class HiNode(_HiAbstractElement):
         self.timestamp = time.time_ns()
 
     def __hash__(self):
-        hashed = [self.signature.name.value, self.timestamp]
-        hashed.extend([c.signature.name.value for c in self.children])
+        hashed = [str(self.signature.name.value), self.timestamp]
+        hashed.extend([str(c.signature.name.value) for c in self.children])
         if self.parent is not None:
-            hashed.append(self.parent.signature.name.value)
+            hashed.append(str(self.parent.signature.name.value))
         return hash(tuple(hashed))
 
 

@@ -2,8 +2,8 @@ from lark import Lark
 
 from himeko.hbcm.elements.edge import HyperEdge
 from himeko.hbcm.elements.vertex import HyperVertex
-from lang.ast.ast_hbcm import AstHbcmTransformer
-from lang.ast.himeko_ast import transformer, collect_edges, create_ast
+from lang.himeko_ast.ast_hbcm import AstHbcmTransformer
+from lang.himeko_ast.himeko_ast import transformer, collect_edges, create_ast
 
 
 def main(args=None):
@@ -29,6 +29,8 @@ def main(args=None):
         for context in hyv:
             print(context.name)
             nodes = context.get_children(lambda x: isinstance(x, HyperVertex), None)
+            node_names = set(map(lambda x: x.name, nodes))
+            print(node_names)
             for e in nodes:
                 print(e.name, e.parent.name)
             edges = context.get_children(lambda x: isinstance(x, HyperEdge), None)
