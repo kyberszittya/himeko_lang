@@ -1,7 +1,7 @@
 import time
 import typing
 
-from himeko.hbcm.elements.edge import EnumRelationDirection
+from himeko.hbcm.elements.edge import EnumRelationDirection, HyperEdge
 from himeko.hbcm.elements.vertex import HyperVertex
 from himeko.hbcm.factories.creation_elements import FactoryHypergraphElements
 from lang.himeko_ast.himeko_ast import Start, extract_root_context, HiNode, HiEdge, AstEnumRelationDirection, \
@@ -25,30 +25,43 @@ class AstHbcmTransformer(object):
                     self.create_hyper_vertex(n, v)
             return v
 
+    def add_relation(self, e: HyperEdge, r):
+        val = 1.0
+        if r.value is not None:
+            val = self.attempt_to_convert_to_float(r)
+        match r.relation_direction:
+            case AstEnumRelationDirection.IN:
+                e += (self.node_mapping[r.reference.reference], EnumRelationDirection.IN, val)
+                return e
+            case AstEnumRelationDirection.OUT:
+                e += (self.node_mapping[r.reference.reference], EnumRelationDirection.OUT, val)
+                return e
+            case AstEnumRelationDirection.UNDIRECTED:
+                e += (self.node_mapping[r.reference.reference], EnumRelationDirection.UNDEFINED, val)
+                return e
+            case AstEnumRelationDirection.UNDEFINED:
+                e += (self.node_mapping[r.reference.reference], EnumRelationDirection.UNDEFINED, val)
+                return e
+        return e
+
+    def create_edges_node(self, node: HiNode):
+        for n in node.children:
+            if isinstance(n, HiNode):
+                self.create_edges_node(n)
+            elif isinstance(n, HiEdge):
+                e = FactoryHypergraphElements.create_edge_default(
+                    str(n.signature.name.value), self.clock_source(), self.node_mapping[n.parent])
+                for r in n.relationships:
+                    self.add_relation(e, r)
+
     def create_edges(self, node: HiNode):
         if isinstance(node, Start):
             for n in node.body.root:
-                self.create_edges(n)
-        else:
-            for n in node.children:
                 if isinstance(n, HiNode):
-                    self.create_edges(n)
-                elif isinstance(n, HiEdge):
-                    e = FactoryHypergraphElements.create_edge_default(
-                        str(n.signature.name.value), self.clock_source(), self.node_mapping[n.parent])
-                    for r in n.relationships:
-                        val = 1.0
-                        if r.value is not None:
-                            val = self.attempt_to_convert_to_float(r)
-                        match r.relation_direction:
-                            case AstEnumRelationDirection.IN:
-                                e += (self.node_mapping[r.reference.reference], EnumRelationDirection.IN, val)
-                            case AstEnumRelationDirection.OUT:
-                                e += (self.node_mapping[r.reference.reference], EnumRelationDirection.OUT, val)
-                            case AstEnumRelationDirection.UNDIRECTED:
-                                e += (self.node_mapping[r.reference.reference], EnumRelationDirection.UNDEFINED, val)
-                            case AstEnumRelationDirection.UNDEFINED:
-                                e += (self.node_mapping[r.reference.reference], EnumRelationDirection.UNDEFINED, val)
+                    self.create_edges_node(n)
+        else:
+            self.create_edges_node(node)
+
 
     @classmethod
     def attempt_to_convert_to_float(cls, arg):
@@ -57,7 +70,7 @@ class AstHbcmTransformer(object):
         else:
             try:
                 return float(arg.value.value)
-            except:
+            except ValueError:
                 return str(arg.value.value)
 
     @classmethod
@@ -77,26 +90,33 @@ class AstHbcmTransformer(object):
                 case "bool":
                     return bool(n.value.value)
 
+    def create_attribute(self, n):
+        if isinstance(n, HiElementField):
+            value = None
+            typ = None
+            if n.value is not None and n.type is not None:
+                value = self.extract_value(n)
+            elif n.value is not None:
+                value = self.attempt_to_convert_to_float(n)
+            elif n.type is not None:
+                typ = str(n.type.type)
+            atr = FactoryHypergraphElements.create_attribute_default(
+                str(n.name.value),
+                value, typ, self.clock_source(), self.node_mapping[n.parent])
+            return atr
+        else:
+            if isinstance(n, HiNode):
+                self.create_attributes(n)
+
     def create_attributes(self, node: HiNode):
         if isinstance(node, Start):
             for n in node.body.root:
-                self.create_attributes(n)
+                if isinstance(n, HiNode):
+                    self.create_attributes(n)
         else:
             if isinstance(node, HiNode):
                 for n in node.children:
-                    if isinstance(n, HiElementField):
-                        value = None
-                        typ = None
-                        if n.value is not None and n.type is not None:
-                            value = self.extract_value(n)
-                        elif n.value is not None:
-                            value = self.attempt_to_convert_to_float(n)
-                        elif n.type is not None:
-                            typ = str(n.type.type)
-                        atr = FactoryHypergraphElements.create_attribute_default(str(n.name.value),
-                            value, typ, self.clock_source(), self.node_mapping[n.parent])
-                    else:
-                        self.create_attributes(n)
+                    self.create_attribute(n)
 
     def create_root_hyper_vertices(self, start: Start) -> typing.List[HyperVertex]:
         contexts = []

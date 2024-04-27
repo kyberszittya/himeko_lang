@@ -100,14 +100,14 @@ class VectorField(_Ast):
 
 
 @dataclass
-class HiElementField(_Ast):
+class HiElementField(_TreeElement):
     name: ElementName
-    type: ElementType
-    value: HiElementValue | VectorField
-
+    type: typing.Optional[ElementType]
+    value: typing.Optional[HiElementValue | VectorField]
 
     def __init__(self, name: ElementName,
                  *args):
+        super().__init__()
         self.name = name
         self.type = None
         self.value = None
@@ -121,7 +121,6 @@ class HiElementField(_Ast):
             else:
                 self.type = None
                 self.value = args[0]
-
 
 
 @dataclass
