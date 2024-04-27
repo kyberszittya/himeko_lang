@@ -21,11 +21,10 @@ element_type: (EL_ATOMIC|"ref")
 vector_field: "[" hi_element_value ("," hi_element_value)* "]"
 hi_element_value: (SIGNED_NUMBER | STRING | element_reference)
 // Edge elements
-hi_edge_element: (RELATION_DIRECTION|parameter_brackets) element_reference
+hi_edge_element: (RELATION_DIRECTION|(vector_field RELATION_DIRECTION)) element_reference
 // Element name
 element_name: CNAME
-element_reference: "@>" STRING parameter_brackets?
-parameter_brackets: "(" hi_element_value ("," hi_element_value)* ")"
+element_reference: "@>" STRING vector_field?
 // Datatype aliasi
 string: ESCAPED_STRING
 // Direction

@@ -9,7 +9,7 @@ from lang.himeko_ast.himeko_ast import transformer, collect_edges, create_ast
 
 def main(args=None):
     if args is None:
-        p = "../../examples/simple/minimal_example_fields.himeko"
+        p = "../../examples/simple/minimal_example_with_hierarchy_ref_edges_with_values.himeko"
     else:
         p = args[0]
         print("Using path: " + p)
@@ -23,7 +23,7 @@ def main(args=None):
         create_ast(root)
         for e in collect_edges(root.body.root[0]):
             for rel in e.relationships:
-                print(rel.relation_direction, rel.reference.reference.signature.name.value)
+                print(rel.raw_relation_direction, rel.reference.reference.signature.name.value)
         hbcm_mapper = AstHbcmTransformer()
         hyv = hbcm_mapper.create_root_hyper_vertices(root)
         hbcm_mapper.create_edges(root)
@@ -43,7 +43,6 @@ def main(args=None):
             attrs = context.get_children(lambda x: isinstance(x, HypergraphAttribute), None)
             for a in attrs:
                 print(a.name, a.value)
-
 
 
 if __name__ == "__main__":

@@ -49,6 +49,10 @@ class TestBasicAstParsing(unittest.TestCase):
         # Edge creation
         hbcm_mapper.create_edges(root)
         edges = list(context.get_children(lambda x: isinstance(x, HyperEdge), None))
+        for e in edges:
+            e: HyperEdge
+            for r in e.all_relations():
+                self.assertIsNotNone(r.target)
         edge_names = set(map(lambda x: x.name, edges))
         self.assertIn("e0", edge_names)
         self.assertIn("e1", edge_names)
@@ -98,6 +102,10 @@ class TestBasicAstParsing(unittest.TestCase):
         self.assertEqual(len(n_lev_0._elements) == 7, True)
         # Edge creation
         edges = list(context.get_children(lambda x: isinstance(x, HyperEdge), None))
+        for e in edges:
+            e: HyperEdge
+            for r in e.all_relations():
+                self.assertIsNotNone(r.target)
         edge_names = set(map(lambda x: x.name, edges))
         self.assertIn("e0", edge_names)
         self.assertIn("e1", edge_names)
@@ -134,6 +142,10 @@ class TestBasicAstParsing(unittest.TestCase):
             self.assertIn(f"n{i}", node_names)
         # Edge creation
         edges = list(context.get_children(lambda x: isinstance(x, HyperEdge), None))
+        for e in edges:
+            e: HyperEdge
+            for r in e.all_relations():
+                self.assertIsNotNone(r.target)
         edge_names = set(map(lambda x: x.name, edges))
         for i in range(0, 7):
             self.assertIn(f"e{i}", edge_names)
@@ -158,5 +170,23 @@ class TestBasicAstParsing(unittest.TestCase):
         self.assertEqual(context["pi"].value, 3.14156)
         self.assertEqual(context["vector"].value, [15.6, 17.8, 16.3, 12.3, 67.8, 45, 2])
 
-
+    def test_value_ref_value_edges(self):
+        p = "../examples/simple/minimal_example_with_hierarchy_ref_edges_with_values.himeko"
+        root = self.read_node(p)
+        self.assertIsNotNone(root, "Unable to transform tree to ast")
+        hbcm_mapper = AstHbcmTransformer()
+        hyv = hbcm_mapper.convert_tree(root)
+        context = hyv[0]
+        # Nodes
+        nodes = list(context.get_children(lambda x: isinstance(x, HyperVertex), None))
+        self.assertEqual(8, len(nodes))
+        # Attributes
+        edge: HyperEdge = list(context.get_children(lambda x: isinstance(x, HyperEdge) and x.name == "e0", None))[0]
+        rel = list(edge.all_relations())
+        self.assertEqual(rel[0].value, [0.85])
+        self.assertEqual(rel[1].value, [0.9])
+        self.assertEqual(rel[2].value, [-0.615])
+        self.assertEqual(rel[3].value, [0.5, 0.6])
+        for r in rel:
+            self.assertIsNotNone(r.target)
 

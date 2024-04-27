@@ -37,15 +37,18 @@ class AstHbcmTransformer(object):
                     e = FactoryHypergraphElements.create_edge_default(
                         str(n.signature.name.value), self.clock_source(), self.node_mapping[n.parent])
                     for r in n.relationships:
+                        val = 1.0
+                        if r.value is not None:
+                            val = self.attempt_to_convert_to_float(r)
                         match r.relation_direction:
                             case AstEnumRelationDirection.IN:
-                                e += (self.node_mapping[r.reference.reference], EnumRelationDirection.IN, 1.0)
+                                e += (self.node_mapping[r.reference.reference], EnumRelationDirection.IN, val)
                             case AstEnumRelationDirection.OUT:
-                                e += (self.node_mapping[r.reference.reference], EnumRelationDirection.OUT, 1.0)
+                                e += (self.node_mapping[r.reference.reference], EnumRelationDirection.OUT, val)
                             case AstEnumRelationDirection.UNDIRECTED:
-                                e += (self.node_mapping[r.reference.reference], EnumRelationDirection.UNDEFINED, 1.0)
+                                e += (self.node_mapping[r.reference.reference], EnumRelationDirection.UNDEFINED, val)
                             case AstEnumRelationDirection.UNDEFINED:
-                                e += (self.node_mapping[r.reference.reference], EnumRelationDirection.UNDEFINED, 1.0)
+                                e += (self.node_mapping[r.reference.reference], EnumRelationDirection.UNDEFINED, val)
 
     @classmethod
     def attempt_to_convert_to_float(cls, arg):
@@ -94,7 +97,6 @@ class AstHbcmTransformer(object):
                             value, typ, self.clock_source(), self.node_mapping[n.parent])
                     else:
                         self.create_attributes(n)
-
 
     def create_root_hyper_vertices(self, start: Start) -> typing.List[HyperVertex]:
         contexts = []

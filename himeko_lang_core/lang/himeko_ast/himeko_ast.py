@@ -106,7 +106,6 @@ class HiElementField(_Ast):
     value: HiElementValue | VectorField
 
 
-
     def __init__(self, name: ElementName,
                  *args):
         self.name = name
@@ -145,10 +144,16 @@ class ElementReference(_Ast):
 @dataclass
 class HiEdgeElement(_Ast):
     raw_relation_direction: Value
+    value: typing.Optional[VectorField]
     relation_direction: AstEnumRelationDirection
     reference: ElementReference
 
-    def __init__(self, relation_direction: Value, reference: ElementReference):
+    def __init__(self, *args):
+        if len(args) == 2:
+            relation_direction, reference = args
+            self.value = None
+        else:
+            self.value, relation_direction, reference = args
         self.raw_relation_direction = relation_direction
         match relation_direction:
             case '--': self.relation_direction = AstEnumRelationDirection.UNDEFINED
