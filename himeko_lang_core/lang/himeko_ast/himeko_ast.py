@@ -269,6 +269,8 @@ def unfold_references(edge: HiEdge):
                     break
             # Update context
             context = node
+            if context is None:
+                raise Exception(f"Unable to find reference {v.reference.name}")
         if node is not None:
             v.reference.reference = node
 

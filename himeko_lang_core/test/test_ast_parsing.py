@@ -170,6 +170,37 @@ class TestBasicAstParsing(unittest.TestCase):
         self.assertEqual(context["pi"].value, 3.14156)
         self.assertEqual(context["vector"].value, [15.6, 17.8, 16.3, 12.3, 67.8, 45, 2])
 
+    def test_value_hierarchy_nodes(self):
+        p = "../examples/simple/minimal_example_fields_with_reference2.himeko"
+        root = self.read_node(p)
+        self.assertIsNotNone(root, "Unable to transform tree to ast")
+        hbcm_mapper = AstHbcmTransformer()
+        hyv = hbcm_mapper.convert_tree(root)
+        context = hyv[0]
+        # Nodes
+        nodes = list(context.get_children(lambda x: isinstance(x, HyperVertex), None))
+        self.assertEqual(len(nodes), 2)
+        # Attributes
+        attrs = list(context.get_children(lambda x: isinstance(x, HypergraphAttribute), None))
+        # TODO: handle reference for attributes
+        self.assertEqual(len(attrs), 5)
+        self.assertEqual(attrs[0].value, 56)
+        self.assertEqual(attrs[2].value, 56.891)
+
+    def test_value_hierarchy_edges(self):
+        p = "../examples/simple/minimal_example_with_hierarchy_ref_edges_evaluation2.himeko"
+        root = self.read_node(p)
+        self.assertIsNotNone(root, "Unable to transform tree to ast")
+        hbcm_mapper = AstHbcmTransformer()
+        hyv = hbcm_mapper.convert_tree(root)
+        context = hyv[0]
+        # Nodes
+        nodes = list(context.get_children(lambda x: isinstance(x, HyperVertex), None))
+        self.assertEqual(len(nodes), 10)
+        # Edges
+        edges = list(context.get_children(lambda x: isinstance(x, HyperEdge), None))
+
+
     def test_value_ref_value_edges(self):
         p = "../examples/simple/minimal_example_with_hierarchy_ref_edges_with_values.himeko"
         root = self.read_node(p)
@@ -189,4 +220,6 @@ class TestBasicAstParsing(unittest.TestCase):
         self.assertEqual(rel[3].value, [0.5, 0.6])
         for r in rel:
             self.assertIsNotNone(r.target)
+
+
 

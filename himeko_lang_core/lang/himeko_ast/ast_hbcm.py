@@ -5,7 +5,7 @@ from himeko.hbcm.elements.edge import EnumRelationDirection, HyperEdge
 from himeko.hbcm.elements.vertex import HyperVertex
 from himeko.hbcm.factories.creation_elements import FactoryHypergraphElements
 from lang.himeko_ast.himeko_ast import Start, extract_root_context, HiNode, HiEdge, AstEnumRelationDirection, \
-    create_ast, HiElementField, VectorField
+    create_ast, HiElementField, VectorField, ElementReference
 
 
 class AstHbcmTransformer(object):
@@ -15,6 +15,7 @@ class AstHbcmTransformer(object):
 
     def __init__(self):
         self.node_mapping = {}
+        self.missing_reference = {}
 
     def create_hyper_vertex(self, node: HiNode, parent: HyperVertex) -> HyperVertex:
         if isinstance(node, HiNode):
@@ -62,7 +63,6 @@ class AstHbcmTransformer(object):
         else:
             self.create_edges_node(node)
 
-
     @classmethod
     def attempt_to_convert_to_float(cls, arg):
         if isinstance(arg.value, VectorField):
@@ -97,7 +97,15 @@ class AstHbcmTransformer(object):
             if n.value is not None and n.type is not None:
                 value = self.extract_value(n)
             elif n.value is not None:
-                value = self.attempt_to_convert_to_float(n)
+                if isinstance(n.value.value, ElementReference):
+                    if n.value.value.name in self.node_mapping:
+                        value = self.node_mapping[n.value.value.name]
+                    else:
+                        # TODO: Add to missing reference
+                        #self.missing_reference[n] = n.value.value.name
+                        print("Not found")
+                else:
+                    value = self.attempt_to_convert_to_float(n)
             elif n.type is not None:
                 typ = str(n.type.type)
             atr = FactoryHypergraphElements.create_attribute_default(
@@ -128,9 +136,15 @@ class AstHbcmTransformer(object):
             contexts.append(hv0)
         return contexts
 
+    def retrieve_references(self):
+        found_items = set()
+        for k, v in self.missing_reference.items():
+            print(v)
+
     def convert_tree(self, ast) -> typing.List[HyperVertex]:
         create_ast(ast)
         hyv = self.create_root_hyper_vertices(ast)
         self.create_edges(ast)
         self.create_attributes(ast)
+        self.retrieve_references()
         return hyv
