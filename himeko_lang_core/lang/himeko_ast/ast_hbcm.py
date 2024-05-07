@@ -1,11 +1,17 @@
 import time
 import typing
+from queue import Queue
 
-from himeko.hbcm.elements.edge import EnumRelationDirection, HyperEdge
+from himeko.hbcm.elements.attribute import HypergraphAttribute
+from himeko.hbcm.elements.edge import EnumRelationDirection, HyperEdge, ReferenceQuery
 from himeko.hbcm.elements.vertex import HyperVertex
 from himeko.hbcm.factories.creation_elements import FactoryHypergraphElements
 from lang.himeko_ast.himeko_ast import Start, extract_root_context, HiNode, HiEdge, AstEnumRelationDirection, \
     create_ast, HiElementField, VectorField, ElementReference
+
+
+class AstElementNotFound(Exception):
+    pass
 
 
 class AstHbcmTransformer(object):
@@ -16,6 +22,7 @@ class AstHbcmTransformer(object):
     def __init__(self):
         self.node_mapping = {}
         self.missing_reference = {}
+        self.relation_queues = Queue()
 
     def create_hyper_vertex(self, node: HiNode, parent: HyperVertex) -> HyperVertex:
         if isinstance(node, HiNode):
@@ -32,16 +39,16 @@ class AstHbcmTransformer(object):
             val = self.attempt_to_convert_to_float(r)
         match r.relation_direction:
             case AstEnumRelationDirection.IN:
-                e += (self.node_mapping[r.reference.reference], EnumRelationDirection.IN, val)
+                self.relation_queues.put((e, r.reference.reference, EnumRelationDirection.IN, val))
                 return e
             case AstEnumRelationDirection.OUT:
-                e += (self.node_mapping[r.reference.reference], EnumRelationDirection.OUT, val)
+                self.relation_queues.put((e, r.reference.reference, EnumRelationDirection.OUT, val))
                 return e
             case AstEnumRelationDirection.UNDIRECTED:
-                e += (self.node_mapping[r.reference.reference], EnumRelationDirection.UNDEFINED, val)
+                self.relation_queues.put((e, r.reference.reference, EnumRelationDirection.UNDEFINED, val))
                 return e
             case AstEnumRelationDirection.UNDEFINED:
-                e += (self.node_mapping[r.reference.reference], EnumRelationDirection.UNDEFINED, val)
+                self.relation_queues.put((e, r.reference.reference, EnumRelationDirection.UNDEFINED, val))
                 return e
         return e
 
@@ -90,28 +97,32 @@ class AstHbcmTransformer(object):
                 case "bool":
                     return bool(n.value.value)
 
+    def __create_attribute(self, n: HiElementField):
+        value = None
+        typ = None
+        if n.value is not None and n.type is not None:
+            value = self.extract_value(n)
+        elif n.value is not None:
+            if isinstance(n.value.value, ElementReference):
+                if n.value.value.name in self.node_mapping:
+                    value = self.node_mapping[n.value.value.name]
+                else:
+                    value = ReferenceQuery(n.value.value.name)
+            else:
+                value = self.attempt_to_convert_to_float(n)
+        elif n.type is not None:
+            typ = str(n.type.type)
+        atr = FactoryHypergraphElements.create_attribute_default(
+            str(n.name.value),
+            value, typ, self.clock_source(), self.node_mapping[n.parent])
+        if isinstance(value, ReferenceQuery):
+            self.relation_queues.put((atr, value))
+        return atr
+
     def create_attribute(self, n):
         if isinstance(n, HiElementField):
-            value = None
-            typ = None
-            if n.value is not None and n.type is not None:
-                value = self.extract_value(n)
-            elif n.value is not None:
-                if isinstance(n.value.value, ElementReference):
-                    if n.value.value.name in self.node_mapping:
-                        value = self.node_mapping[n.value.value.name]
-                    else:
-                        # TODO: Add to missing reference
-                        #self.missing_reference[n] = n.value.value.name
-                        print("Not found")
-                else:
-                    value = self.attempt_to_convert_to_float(n)
-            elif n.type is not None:
-                typ = str(n.type.type)
-            atr = FactoryHypergraphElements.create_attribute_default(
-                str(n.name.value),
-                value, typ, self.clock_source(), self.node_mapping[n.parent])
-            return atr
+            return self.__create_attribute(n)
+
         else:
             if isinstance(n, HiNode):
                 self.create_attributes(n)
@@ -136,15 +147,66 @@ class AstHbcmTransformer(object):
             contexts.append(hv0)
         return contexts
 
-    def retrieve_references(self):
-        found_items = set()
-        for k, v in self.missing_reference.items():
-            print(v)
+    def find_element_by_name_fragments(self, element: HyperVertex, fragments: typing.List[str]) -> HyperVertex:
+        if len(fragments) == 0:
+            return element
+        for c in element.get_children(lambda x: x.name == fragments[0], None):
+            return self.find_element_by_name_fragments(c, fragments[1:])
+        raise AstElementNotFound("Element not found")
+
+    def get_node_references(self, query_split: typing.List[str], element: HyperVertex):
+        # Get query root
+        root_name = query_split[0]
+        root = None
+        while element is not None:
+            if element.name == root_name:
+                root = element
+                break
+            els = list(element.get_children(lambda x: x.name == root_name, 1))
+            if len(els) != 0:
+                root = els[0]
+                break
+            element = element.parent
+        if root is None:
+            raise AstElementNotFound("Root not found")
+        # Get query path
+        res = self.find_element_by_name_fragments(root, query_split[1:])
+        if res is None:
+            raise AstElementNotFound("Element not found")
+        return res
+
+    def retrieve_referenced_node(self, e: HyperEdge | HypergraphAttribute, ref):
+        query_split = ref.reference_query.split('.')
+        element: HyperVertex = e.parent
+        if len(query_split) == 1:
+            return next(element.get_children(lambda x: x.name == query_split[-1], 1))
+        else:
+            return self.get_node_references(query_split, element)
+
+    def retrieve_references(self, hyv: typing.List[HyperVertex]):
+        while not self.relation_queues.empty():
+            t = self.relation_queues.get()
+            v, r = t[0], t[1]
+            v: HyperEdge | HypergraphAttribute
+            res = self.retrieve_referenced_node(v, r)
+            if res is None:
+                for hy in hyv:
+                    res = self.get_node_references(r.reference_query.split('.'), hy)
+                    if res is not None:
+                        break
+            if len(t) == 4:
+                _, _, d, val = t
+                v: HyperEdge
+                v += (res, d, val)
+            elif len(t) == 2:
+                v, r = t
+                v: HypergraphAttribute
+                v.value = res
 
     def convert_tree(self, ast) -> typing.List[HyperVertex]:
         create_ast(ast)
         hyv = self.create_root_hyper_vertices(ast)
         self.create_edges(ast)
         self.create_attributes(ast)
-        self.retrieve_references()
+        self.retrieve_references(hyv)
         return hyv

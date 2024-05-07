@@ -7,10 +7,11 @@ from dataclasses import dataclass
 from lark import Transformer, v_args, ast_utils
 from enum import Enum
 
-from himeko.hbcm.elements.edge import HyperEdge
+from himeko.hbcm.elements.edge import HyperEdge, ReferenceQuery
 from himeko.hbcm.elements.vertex import HyperVertex
 
 this_module = sys.modules[__name__]
+
 
 
 class AstEnumRelationDirection(Enum):
@@ -250,35 +251,23 @@ def unfold_references_in_context(node: HiNode):
         if isinstance(n, HiNode):
             unfold_references_in_context(n)
         elif isinstance(n, HiEdge):
-            unfold_references(n)
+            convert_references(n)
 
 
-def unfold_references(edge: HiEdge):
+
+def convert_references(edge: HiEdge):
     for v in edge.relationships:
-        context_name = v.reference.name.split('.')[::-1]
-        context = edge
-        for _ in context_name:
-            context = context.parent
-        # Backfold
-        node = None
-        for c in context_name[::-1]:
-            for n in context.children:
-                # Node found in context getting deeper
-                if n.signature.name.value == c:
-                    node = n
-                    break
-            # Update context
-            context = node
-            if context is None:
-                raise Exception(f"Unable to find reference {v.reference.name}")
-        if node is not None:
-            v.reference.reference = node
+        v.reference.reference = ReferenceQuery(v.reference.name)
+
 
 
 def create_ast(start: Start):
     for v in extract_root_context(start):
         if isinstance(v, HiNode):
             set_parents(v)
+    # Unfold references
+    for v in extract_root_context(start):
+        if isinstance(v, HiNode):
             unfold_references_in_context(v)
 
 

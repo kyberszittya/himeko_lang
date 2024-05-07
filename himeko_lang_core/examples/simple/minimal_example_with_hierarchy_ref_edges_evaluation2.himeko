@@ -5,18 +5,17 @@ context
     {
         node0{
             node0{}
-            e0: -> @>"node0", -> @>"node_lev_0.node1", -> @>"node_lev_0.node2", <- @>"node_lev_1.node0"
+            e0: -> @>"node0", -> @>"context.node_lev_0.node1", -> @>"context.node_lev_0.node2", <- @>"context.node_lev_1.node0"
         }
         node1{}
         node2{}
         node3{
             node0{
               node1{}
+              node2{}
             }
-
-
         }
-        e1: -> @>"node0", <- @>"node_lev_0.node3.node0.node1"
+        e1: -> @>"node0", <- @>"context.node_lev_0.node3.node0.node1"
     }
     node_lev_1
     {

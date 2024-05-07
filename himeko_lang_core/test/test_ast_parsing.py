@@ -8,6 +8,8 @@ from lang.himeko_ast.himeko_ast import transformer, create_ast
 from lang.himeko_meta_parser import Lark_StandAlone
 
 
+ERROR_MSG_UNABLE_TO_TRANSFORM: str = "Unable to transform tree to ast"
+
 class TestBasicAstParsing(unittest.TestCase):
 
     def read_node(self, path):
@@ -22,7 +24,7 @@ class TestBasicAstParsing(unittest.TestCase):
     def test_basic_ast_parsing(self):
         p = "../examples/simple/minimal_example_with_edges.himeko"
         root = self.read_node(p)
-        self.assertIsNotNone(root, "Unable to transform tree to ast")
+        self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
         hbcm_mapper = AstHbcmTransformer()
         create_ast(root)
         hyv = hbcm_mapper.create_root_hyper_vertices(root)
@@ -61,6 +63,7 @@ class TestBasicAstParsing(unittest.TestCase):
         e0: HyperEdge = next(context.get_children(lambda x: isinstance(x, HyperEdge) and x.name == "e0", None))
         self.assertEqual(e0.name, "e0")
         self.assertEqual(e0.parent.name, "node_lev_0")
+        hbcm_mapper.retrieve_references(hyv)
         relations = list(e0.all_relations())
         self.assertEqual(len(relations), 4)
         for rel in relations:
@@ -77,7 +80,7 @@ class TestBasicAstParsing(unittest.TestCase):
     def test_basic_ast_parsing_2(self):
         p = "../examples/simple/minimal_example_with_edges.himeko"
         root = self.read_node(p)
-        self.assertIsNotNone(root, "Unable to transform tree to ast")
+        self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
         hbcm_mapper = AstHbcmTransformer()
         hyv = hbcm_mapper.convert_tree(root)
         self.assertEqual(len(hyv), 1, "Expected one root vertex")
@@ -130,7 +133,7 @@ class TestBasicAstParsing(unittest.TestCase):
     def test_fano(self):
         p = "../examples/simple/base/fano_graph.himeko"
         root = self.read_node(p)
-        self.assertIsNotNone(root, "Unable to transform tree to ast")
+        self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
         hbcm_mapper = AstHbcmTransformer()
         hyv = hbcm_mapper.convert_tree(root)
         context = hyv[0]
@@ -154,7 +157,7 @@ class TestBasicAstParsing(unittest.TestCase):
     def test_value_fields(self):
         p = "../examples/simple/minimal_example_fields.himeko"
         root = self.read_node(p)
-        self.assertIsNotNone(root, "Unable to transform tree to ast")
+        self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
         hbcm_mapper = AstHbcmTransformer()
         hyv = hbcm_mapper.convert_tree(root)
         context = hyv[0]
@@ -173,7 +176,7 @@ class TestBasicAstParsing(unittest.TestCase):
     def test_value_hierarchy_nodes(self):
         p = "../examples/simple/minimal_example_fields_with_reference2.himeko"
         root = self.read_node(p)
-        self.assertIsNotNone(root, "Unable to transform tree to ast")
+        self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
         hbcm_mapper = AstHbcmTransformer()
         hyv = hbcm_mapper.convert_tree(root)
         context = hyv[0]
@@ -182,29 +185,57 @@ class TestBasicAstParsing(unittest.TestCase):
         self.assertEqual(len(nodes), 2)
         # Attributes
         attrs = list(context.get_children(lambda x: isinstance(x, HypergraphAttribute), None))
-        # TODO: handle reference for attributes
+        # Test for value
         self.assertEqual(len(attrs), 5)
         self.assertEqual(attrs[0].value, 56)
         self.assertEqual(attrs[2].value, 56.891)
+        self.assertIsInstance(attrs[4].value, HyperVertex)
+        self.assertEqual(attrs[4].value.name, "node0")
+        self.assertEqual(attrs[4].value.parent.name, "node")
 
     def test_value_hierarchy_edges(self):
         p = "../examples/simple/minimal_example_with_hierarchy_ref_edges_evaluation2.himeko"
         root = self.read_node(p)
-        self.assertIsNotNone(root, "Unable to transform tree to ast")
+        self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
         hbcm_mapper = AstHbcmTransformer()
         hyv = hbcm_mapper.convert_tree(root)
         context = hyv[0]
         # Nodes
         nodes = list(context.get_children(lambda x: isinstance(x, HyperVertex), None))
-        self.assertEqual(len(nodes), 10)
+        self.assertEqual(len(nodes), 11)
         # Edges
         edges = list(context.get_children(lambda x: isinstance(x, HyperEdge), None))
+        # Check edges
+        # Edge0
+        e0 = next(filter(lambda x: x.name == 'e0', edges))
+        self.assertEqual("e0", e0.name)
+        rels = list(e0.all_relations())
+        node0: HyperVertex = rels[0].target
+        self.assertEqual("node0", node0.name)
+        self.assertEqual("node0", node0.parent.name)
+        node1: HyperVertex = rels[1].target
+        self.assertEqual("node1", node1.name)
+        self.assertEqual("node_lev_0", node1.parent.name)
+        node2: HyperVertex = rels[2].target
+        self.assertEqual("node2", node2.name)
+        self.assertEqual("node_lev_0", node2.parent.name)
+        node2: HyperVertex = rels[3].target
+        self.assertEqual("node0", node2.name)
+        self.assertEqual("node_lev_1", node2.parent.name)
+        # Edge1
+        e1 = next(filter(lambda x: x.name == 'e1', edges))
+        self.assertEqual("e1", e1.name)
+        rels = list(e1.all_relations())
+        node0: HyperVertex = rels[1].target
+        self.assertEqual("node1", node0.name)
+        self.assertEqual("node0", node0.parent.name)
+        self.assertEqual("node3", node0.parent.parent.name)
 
 
     def test_value_ref_value_edges(self):
         p = "../examples/simple/minimal_example_with_hierarchy_ref_edges_with_values.himeko"
         root = self.read_node(p)
-        self.assertIsNotNone(root, "Unable to transform tree to ast")
+        self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
         hbcm_mapper = AstHbcmTransformer()
         hyv = hbcm_mapper.convert_tree(root)
         context = hyv[0]
@@ -214,12 +245,30 @@ class TestBasicAstParsing(unittest.TestCase):
         # Attributes
         edge: HyperEdge = list(context.get_children(lambda x: isinstance(x, HyperEdge) and x.name == "e0", None))[0]
         rel = list(edge.all_relations())
-        self.assertEqual(rel[0].value, [0.85])
-        self.assertEqual(rel[1].value, [0.9])
-        self.assertEqual(rel[2].value, [-0.615])
-        self.assertEqual(rel[3].value, [0.5, 0.6])
+        # Check relations
         for r in rel:
             self.assertIsNotNone(r.target)
+        # First relation
+        self.assertEqual([0.85], rel[0].value)
+        self.assertEqual("node0", rel[0].target.name)
+        self.assertEqual("node_lev_1", rel[0].target.parent.name)
+        self.assertEqual( EnumRelationDirection.OUT, rel[0].direction)
+        # Next relation
+        self.assertEqual([0.9], rel[1].value)
+        self.assertEqual("node1", rel[1].target.name)
+        self.assertEqual("node_lev_0", rel[1].target.parent.name)
+        self.assertEqual(EnumRelationDirection.IN, rel[1].direction)
+        # Negative relation
+        self.assertEqual(rel[2].value, [-0.615])
+        self.assertEqual("node2", rel[2].target.name)
+        self.assertEqual("node_lev_0", rel[2].target.parent.name)
+        self.assertEqual( EnumRelationDirection.OUT, rel[2].direction)
+        # Vector relation
+        self.assertEqual(rel[3].value, [0.5, 0.6])
+        self.assertEqual("node0", rel[3].target.name)
+        self.assertEqual("node_lev_0", rel[3].target.parent.name)
+        self.assertEqual(EnumRelationDirection.OUT, rel[3].direction)
+
 
 
 
