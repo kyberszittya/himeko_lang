@@ -27,6 +27,10 @@ class AstHbcmTransformer(object):
     def create_hyper_vertex(self, node: HiNode, parent: HyperVertex) -> HyperVertex:
         if isinstance(node, HiNode):
             v = FactoryHypergraphElements.create_vertex_default(str(node.signature.name.value), self.clock_source(), parent)
+            # Check for template
+            if node.signature.template is not None:
+                node.signature.template.reference.reference = ReferenceQuery(node.signature.template.reference.name)
+                self.relation_queues.put((v, node.signature.template.reference.reference, EnumRelationDirection.OUT))
             self.node_mapping[node] = v
             for n in node.children:
                 if isinstance(n, HiNode):
@@ -122,7 +126,6 @@ class AstHbcmTransformer(object):
     def create_attribute(self, n):
         if isinstance(n, HiElementField):
             return self.__create_attribute(n)
-
         else:
             if isinstance(n, HiNode):
                 self.create_attributes(n)
@@ -198,6 +201,8 @@ class AstHbcmTransformer(object):
                 _, _, d, val = t
                 v: HyperEdge
                 v += (res, d, val)
+            if len(t) == 3:
+                v.template = res
             elif len(t) == 2:
                 v, r = t
                 v: HypergraphAttribute

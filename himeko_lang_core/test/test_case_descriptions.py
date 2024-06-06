@@ -26,5 +26,8 @@ TEST_CASE_HIERARCHY_REF_EDGES_WITH_VALUES = (
 TEST_CASE_MULTIPLE_EDGES = (
     os.path.join(TEST_CASE_SIMPLE_FOLDER, "minimal_example_with_multiple_edges.himeko"))
 
+TEST_CASE_BASIC_INHERITANCE = (
+    os.path.join(TEST_CASE_SIMPLE_FOLDER, "inheritance_example.himeko"))
+
 TEST_CASE_BASIC_FANO = (
     os.path.join(TEST_CASE_BASE_FOLDER, "fano_graph.himeko"))

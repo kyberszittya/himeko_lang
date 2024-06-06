@@ -37,10 +37,39 @@ class Value(_Ast, ast_utils.WithMeta):
 class ElementName(_Ast):
     value: str
 
+@dataclass
+class ElementReference(_Ast):
+    name: str
+
+    def __init__(self, name):
+        self.name = name.replace('"', '')
+        self._reference = None
+
+    @property
+    def reference(self):
+        return self._reference
+
+    @reference.setter
+    def reference(self, value):
+        self._reference = value
+
+
+@dataclass
+class HiTemplating(_Ast):
+    reference = ElementReference
+
+    def __init__(self, reference: ElementReference):
+        self.reference = reference
+
 
 @dataclass
 class HiElementSignature(_Ast):
     name: ElementName
+    template: HiTemplating
+
+    def __init__(self, name: ElementName, template: HiTemplating = None):
+        self.name = name
+        self.template = template
 
 
 class _HiMetaelement(_Ast):
@@ -124,21 +153,7 @@ class HiElementField(_TreeElement):
                 self.value = args[0]
 
 
-@dataclass
-class ElementReference(_Ast):
-    name: str
 
-    def __init__(self, name):
-        self.name = name.replace('"', '')
-        self._reference = None
-
-    @property
-    def reference(self):
-        return self._reference
-
-    @reference.setter
-    def reference(self, value):
-        self._reference = value
 
 
 @dataclass
@@ -254,11 +269,9 @@ def unfold_references_in_context(node: HiNode):
             convert_references(n)
 
 
-
 def convert_references(edge: HiEdge):
     for v in edge.relationships:
         v.reference.reference = ReferenceQuery(v.reference.name)
-
 
 
 def create_ast(start: Start):
