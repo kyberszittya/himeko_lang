@@ -1,0 +1,69 @@
+[ Ip_camera ]
+ip_camera
+{
+    units {
+        length "meter";
+        angle "degree";
+    }
+    meta {
+       model "DS-2CD2143G2-IU";
+       manufacturer "Hikvision";
+       web "https://www.hikvision.com/hu/products/IP-Products/Network-Cameras/Pro-Series-EasyIP-/ds-2cd2143g2-iu/?subName=DS-2CD2143G2-IU";
+    }
+    lenses {
+        lens {
+            focal 2.4;
+            field_of_view {
+                horizontal 103;
+                vertical 55;
+                diagonal 122;
+            }
+
+        }
+        lens_zoomed {
+            focal 4.0;
+            field_of_view {
+                horizontal 84;
+                vertical 45;
+                diagonal 100;
+            }
+        }
+        mount "M12";
+        iris_type "Fixed";
+        aperture 1.6;
+    }
+    ir_sensor {
+        wavelength 850;
+        distance 30;
+        color "IR";
+    }
+    rgb_sensor {
+        color "RGB";
+    }
+    image {
+        resolution {
+            width 2688;
+            height 1520;
+        }
+    }
+    stream {
+       is_rtsp "true";
+       is_onvif "true";
+       is_h264 "true";
+       is_h265 "true";
+       fps [25, 30];
+       hz [50, 60];
+    }
+    network {
+        is_wifi "false";
+        is_ethernet "true";
+        is_poe "true";
+    }
+    resolution_images: <- @> "image.resolution", -> @> "ir_sensor", -> @> "rgb_sensor"
+    resolution_stream: <- @> "stream", -> @> "image.resolution"
+    stream_input: -> @> "stream", <- @> "ir_sensor", <- @> "rgb_sensor"
+    lens_sensor_connection: <- @> "lenses", <- @> "ir_sensor", <- @> "rgb_sensor"
+    lens_zooming: <- @> "lenses.lens_zoomed", <- @> "lenses.lens"
+    network_connection: -> @> "network", <- @> "stream"
+
+}
