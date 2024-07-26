@@ -1,0 +1,36 @@
+[ FANUC_Robot_Kinematic_Structure ]
+primitives {
+    Link { name<string>, length<real> }
+    JointParams { type<string>, axis<real>, range<real>, origin<real>, rpy<real> }
+    baseFrame { position<real>, orientation<real> }
+    endEffector { name<string> }
+    @JointEdge { type<string>, axis<real>, range<real>, origin<real>, rpy<real> }
+    @RotationalJoint: -> JointEdge { type "revolute" }
+}
+fanuc use <- primitives
+{
+    # Base frame
+    base : -> baseFrame { position [0, 0, 0], orientation [0, 0, 0] }
+
+    # Links
+    link1 : -> Link { name "link1", length 0.4 }
+    link2 : -> Link { name "link2", length 0.6 }
+    link3 : -> Link { name "link3", length 0.2 }
+    link4 : -> Link { name "link4", length 0.4 }
+    link5 : -> Link { name "link5", length 0.2 }
+    link6 : -> Link { name "link6", length 0.1 }
+
+    # End Effector
+    end_effector : -> endEffector { name "gripper" }
+
+    # Joints represented as edges with parameters
+    @joint1 : -> RotationalJoint { axis [0, 0, 1], range [-180, 180], origin [0, 0, 0], rpy [0, 0, 0], -> base, -> link1 }
+    @joint2 : -> RotationalJoint { axis [0, 1, 0], range [-90, 90], origin [0, 0, 0.4], rpy [0, 0, 0], -> link1, -> link2 }
+    @joint3 : -> RotationalJoint { axis [0, 1, 0], range [-180, 180], origin [0, 0, 0.6], rpy [0, 0, 0], -> link2, -> link3 }
+    @joint4 : -> RotationalJoint { axis [1, 0, 0], range [-180, 180], origin [0, 0, 0.2], rpy [0, 0, 0], -> link3, -> link4 }
+    @joint5 : -> RotationalJoint { axis [0, 1, 0], range [-180, 180], origin [0, 0, 0.4], rpy [0, 0, 0], -> link4, -> link5 }
+    @joint6 : -> RotationalJoint { axis [1, 0, 0], range [-360, 360], origin [0, 0, 0.2], rpy [0, 0, 0], -> link5, -> link6 }
+
+    # Connecting end effector
+    @effector_joint : -> RotationalJoint { axis [0, 0, 1], range [-360, 360], origin [0, 0, 0.1], rpy [0, 0, 0], -> link6, -> end_effector }
+}

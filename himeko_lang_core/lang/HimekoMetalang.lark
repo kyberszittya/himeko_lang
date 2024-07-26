@@ -14,19 +14,20 @@ hi_include_path: STRING
 hi_body: (hi_node)+
 
 hi_node: hi_element_signature "{" hi_node_body "}"
-hi_node_body: (hi_node_element ( hi_node_element)*)?
+hi_node_body: (hi_node_element ((",")? hi_node_element)*)?
 hi_node_element: hi_node | hi_element_field | hi_edge
 
 hi_edge: hi_edge_type hi_element_signature "{" hi_edge_body "}"
 hi_edge_type: "rel" | "seq" | "concurrent" | STRING | "@"
 hi_edge_body: (hi_edge_element ( "," hi_edge_element)*)?
-hi_edge_element: element_reference | hi_edge
+hi_edge_element: element_reference | hi_edge | hi_element_field
 
 // Element signatures and fields
-hi_element_signature: element_name hi_stereotype?
+hi_element_signature: element_name hi_stereotype? hi_use?
 hi_element_field: element_name hi_type? (hi_element_value | vector_field)?
 
 hi_stereotype: ":" element_reference ("," element_reference)*
+hi_use: "use" element_reference
 hi_type: "<" element_type ">"
 element_type: EL_ATOMIC | element_reference
 
@@ -40,6 +41,7 @@ element_reference: vector_field? RELATION_DIRECTION REF_NAME
 // Direction for relationships
 RELATION_DIRECTION: "->" | "<-" | "--" | "<>"
 
+
 // Atomic field types
 EL_ATOMIC: "int" | "string" | "real"
 REF_NAME: /[_a-zA-Z][_a-zA-Z0-9.]*/
@@ -52,3 +54,6 @@ REF_NAME: /[_a-zA-Z][_a-zA-Z0-9.]*/
 
 
 %ignore WS
+
+COMMENT: "#" /[^\n]/*
+%ignore COMMENT

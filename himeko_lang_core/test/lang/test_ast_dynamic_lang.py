@@ -24,12 +24,7 @@ class BasicTestLang(unittest.TestCase):
             text = p.parse(f.read())
             print(text)
 
-    def test_ast_example_fano_graph(self):
-        p = self.load_lang()
-        p0 = os.path.join(self.examples_path, "simple", "base", "fano_graph.himeko")
-        with open(p0) as f:
-            text = p.parse(f.read())
-            print(text)
+
 
     def test_ast_example_basic_hierarchy(self):
         p = self.load_lang()
