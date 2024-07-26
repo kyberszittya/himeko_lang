@@ -34,3 +34,17 @@ class BasicTestLang(unittest.TestCase):
         with open(p0) as f:
             text = p.parse(f.read())
             print(text)
+
+    def test_simple_very_simple_kinematics(self):
+        p = self.load_lang()
+        p0 = os.path.join(self.examples_path, "kinematics", "very_simple_kinematics.himeko")
+        with open(p0) as f:
+            text = p.parse(f.read())
+            print(text)
+
+    def test_simple_very_simple_kinematics_with_primitives(self):
+        p = self.load_lang()
+        p0 = os.path.join(self.examples_path, "kinematics", "very_simple_kinematics_with_primitives.himeko")
+        with open(p0) as f:
+            text = p.parse(f.read())
+            print(text)

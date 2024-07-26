@@ -1,0 +1,16 @@
+[ Simple_Kinematic_Description
+    import "robot_primitives.himeko"
+]
+# Using imported primitives to define the robot
+simple_robot use <- primitives
+{
+    # Base frame
+    base : -> baseFrame { position [0, 0, 0], orientation [0, 0, 0] }
+
+    # Links
+    link1 : -> Link { name "link1", length 1.0 }
+    link2 : -> Link { name "link2", length 1.0 }
+
+    # Joint
+    @joint1 : -> RotationalJoint { axis [0, 0, 1], range [-180, 180], origin [0, 0, 1.0], rpy [0, 0, 0], -> base, -> link1, -> link2 }
+}

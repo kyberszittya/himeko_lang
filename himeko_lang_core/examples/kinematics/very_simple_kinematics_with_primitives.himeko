@@ -1,0 +1,14 @@
+[ Simple_Kinematic_Description ]
+primitives {
+    Link { name<string>, length<real> }
+    @JointEdge { type<string>, axis<real>, range<real>, origin<real>, rpy<real> }
+    @RotationalJoint: -> JointEdge { type "revolute" }
+}
+simple_robot use <- primitives {
+    base : -> Link { position [0, 0, 0], orientation [0, 0, 0] }
+    link1 : -> Link { name "link1", length 1.0 }
+    link2 : -> Link { name "link2", length 1.0 }
+    @joint1: -> FixedJoint {<- base, -> link1}
+    @joint2 : -> RotationalJoint { axis [0, 0, 1], origin [0, 0, 1.0], -> link1, -> link2
+    }
+}
