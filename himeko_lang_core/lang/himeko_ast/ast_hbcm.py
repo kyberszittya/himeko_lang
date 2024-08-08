@@ -76,13 +76,13 @@ class AstHbcmTransformer(object):
 
     @classmethod
     def attempt_to_convert_to_float(cls, arg):
-        if isinstance(arg.value, VectorField):
-            return [float(x.value) for x in arg.value.value]
+        if isinstance(arg, VectorField):
+            return [float(x) for x in arg.value]
         else:
             try:
-                return float(arg.value.value)
+                return float(arg.value)
             except ValueError:
-                return str(arg.value.value)
+                return str(arg.value)
 
     @classmethod
     def extract_value(cls, n):

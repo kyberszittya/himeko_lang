@@ -13,13 +13,11 @@ hi_include_path: STRING
 // Body section
 hi_body: (hi_node)+
 
-hi_node: hi_element_signature "{" hi_node_body "}"
-hi_node_body: (hi_node_element ((",")? hi_node_element)*)?
+hi_node: hi_element_signature "{" (hi_node_element ((",")? hi_node_element)*)? "}"
 hi_node_element: hi_node | hi_element_field | hi_edge
 
-hi_edge: hi_edge_type hi_element_signature "{" hi_edge_body "}"
+hi_edge: hi_edge_type hi_element_signature "{" (hi_edge_element ( "," hi_edge_element)*)? "}"
 hi_edge_type: "rel" | "seq" | "concurrent" | STRING | "@"
-hi_edge_body: (hi_edge_element ( "," hi_edge_element)*)?
 hi_edge_element: element_reference | hi_edge | hi_element_field
 
 // Element signatures and fields
@@ -36,7 +34,7 @@ hi_element_value: SIGNED_NUMBER | STRING | element_reference
 
 // Element names and references
 element_name: CNAME
-element_reference: vector_field? RELATION_DIRECTION REF_NAME
+element_reference: vector_field? (RELATION_DIRECTION)? REF_NAME
 
 // Direction for relationships
 RELATION_DIRECTION: "->" | "<-" | "--" | "<>"

@@ -29,6 +29,7 @@ class TestBasicAstParsing(TestAncestorTestCase):
         hyv = hbcm_mapper.create_root_hyper_vertices(root)
         self.assertEqual(len(hyv), 1, "Expected one root vertex")
         context = hyv[0]
+
         nodes = list(context.get_children(lambda x: isinstance(x, HyperVertex), None))
         node_names = set(map(lambda x: x.name, nodes))
 

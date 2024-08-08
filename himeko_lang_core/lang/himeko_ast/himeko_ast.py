@@ -33,6 +33,13 @@ class Value(_Ast, ast_utils.WithMeta):
     pass
 
 
+def enumerate_direction(arg):
+    match arg:
+        case '--': return AstEnumRelationDirection.UNDEFINED
+        case '->': return AstEnumRelationDirection.OUT
+        case '<-': return AstEnumRelationDirection.IN
+        case '<>': return AstEnumRelationDirection.UNDIRECTED
+
 @dataclass
 class ElementName(_Ast):
     value: str
@@ -41,8 +48,22 @@ class ElementName(_Ast):
 class ElementReference(_Ast):
     name: str
 
-    def __init__(self, name):
-        self.name = name.replace('"', '')
+    def __init__(self, *args):
+        if len(args) == 1:
+            self.direction = None
+            self.name = args[0].replace('"', '')
+            self.direction = AstEnumRelationDirection.UNDEFINED
+            self.value = 1.0
+        elif len(args) == 2:
+            direction, name = args
+            self.direction = enumerate_direction(str(direction.value))
+            self.name = name.replace('"', '')
+            self.value = 1.0
+        elif len(args) == 3:
+            direction, name, value = args
+            self.direction = enumerate_direction(str(direction.value))
+            self.name = name.replace('"', '')
+            self.value = value
         self._reference = None
 
     @property
@@ -103,6 +124,10 @@ class _HiAbstractElement(_TreeElement):
         super().__init__()
         self.signature = signature
 
+@dataclass
+class _HiNodeElement(_Ast):
+    hi_node_element: _HiAbstractElement
+
 
 @dataclass
 class HiElementValue(_TreeElement):
@@ -154,36 +179,37 @@ class HiElementField(_TreeElement):
 
 
 
-
-
 @dataclass
 class HiEdgeElement(_Ast):
-    raw_relation_direction: Value
     value: typing.Optional[VectorField]
     relation_direction: AstEnumRelationDirection
     reference: ElementReference
 
-    def __init__(self, *args):
-        if len(args) == 2:
-            relation_direction, reference = args
-            self.value = None
-        else:
-            self.value, relation_direction, reference = args
-        self.raw_relation_direction = relation_direction
-        match relation_direction:
-            case '--': self.relation_direction = AstEnumRelationDirection.UNDEFINED
-            case '->': self.relation_direction = AstEnumRelationDirection.OUT
-            case '<-': self.relation_direction = AstEnumRelationDirection.IN
-            case '<>': self.relation_direction = AstEnumRelationDirection.UNDIRECTED
-        self.reference = reference
+    def __init__(self, arg):
+        # Check for type of arg (element reference, element field, edge)
+        if isinstance(arg, ElementReference):
+            self.value = arg.value
+            self.relation_direction = arg.direction
+            self.reference = arg
+        elif isinstance(arg, HiElementField):
+            # Todo: add value in a parent relationship
+            self.value = arg.value
+            self.relation_direction = AstEnumRelationDirection.UNDEFINED
+            self.reference = None
+        elif isinstance(arg, HiEdge):
+            # TODO: add edge in a parent relationship
+            self.value = arg
+            self.relation_direction = AstEnumRelationDirection.UNDEFINED
+            self.reference = None
 
 
 @dataclass
 class HiEdge(_HiAbstractElement):
     relationships: List[HiEdgeElement]
 
-    def __init__(self, signature: HiElementSignature, *vertices: HiEdgeElement):
+    def __init__(self, hi_edge_type, signature: HiElementSignature, *vertices: HiEdgeElement):
         super().__init__(signature)
+        self.edge_type = hi_edge_type
         self.relationships = list(vertices)
 
 
@@ -210,9 +236,9 @@ class HiNode(_HiAbstractElement):
     children: List[_HiAbstractElement]
     timestamp: int
 
-    def __init__(self, signature: HiElementSignature, *children: _HiAbstractElement):
+    def __init__(self, signature: HiElementSignature, *children):
         super().__init__(signature)
-        self.children = list(children)
+        self.children = list([x.children[0] for x in children])
         self.timestamp = time.time_ns()
 
     def __hash__(self):

@@ -8,21 +8,21 @@ primitives {
         z { axis [0, 0, 1] }
     }
 }
-robot use <- primitives
+robot use primitives
 {
     # Define stereotypes for nodes and edges
     Link { name<string> }
 
 
     @ JointEdge { origin<real>, rpy<real>, axis<real> }
-    @RevoluteJoint: -> JointEdge {type "revolute"}
+    @RevoluteJoint: JointEdge {type "revolute"}
 
     # Links
-    base_link : -> Link { name "base_link" }
-    link1 : -> Link { name "link1" }
-    link2 : -> Link { name "link2" }
+    base_link : Link { name "base_link" }
+    link1 : Link { name "link1" }
+    link2 : Link { name "link2" }
 
     # Joints represented as edges with parameters
-    @joint1 : -> RevoluteJoint {origin [0, 0, 0], rpy -> NullRpy.rpy, axis -> axis.z, -> base_link, -> link1 }
-    @joint2 : -> RevolutJoint {origin [1, 0, 0], rpy -> NullRpy.rpy, axis -> axis.x, -> link1, -> link2 }
+    @joint1 : RevoluteJoint {origin [0, 0, 0], rpy -> NullRpy.rpy, axis -> axis.z, -> base_link, -> link1 }
+    @joint2 : RevoluteJoint {origin [1, 0, 0], rpy -> NullRpy.rpy, axis -> axis.x, -> link1, -> link2 }
 }
