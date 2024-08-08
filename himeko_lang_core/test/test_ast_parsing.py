@@ -76,6 +76,23 @@ class TestBasicAstParsing(TestAncestorTestCase):
         self.assertEqual(relations[2].direction, EnumRelationDirection.OUT)
         self.assertEqual(relations[3].target.name, "node3")
         self.assertEqual(relations[3].direction, EnumRelationDirection.IN)
+        # Check if relations point to the same memory
+        sel_node0 = next(context.get_children(
+            lambda x: isinstance(x, HyperVertex) and x.name == "node0", None))
+        self.assertIsNotNone(sel_node0)
+        self.assertEqual(id(relations[0].target), id(sel_node0))
+        sel_node1 = next(context.get_children(
+            lambda x: isinstance(x, HyperVertex) and x.name == "node1", None))
+        self.assertIsNotNone(sel_node1)
+        self.assertEqual(id(relations[1].target), id(sel_node1))
+        sel_node2 = next(context.get_children(
+            lambda x: isinstance(x, HyperVertex) and x.name == "node2", None))
+        self.assertIsNotNone(sel_node2)
+        self.assertEqual(id(relations[2].target), id(sel_node2))
+        sel_node3 = next(context.get_children(
+            lambda x: isinstance(x, HyperVertex) and x.name == "node3", None))
+        self.assertIsNotNone(sel_node3)
+        self.assertEqual(id(relations[3].target), id(sel_node3))
 
     def test_basic_ast_parsing_2(self):
         p = TEST_CASE_BASIC_PARSING_2
