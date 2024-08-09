@@ -76,8 +76,9 @@ class AstHbcmTransformer(object):
 
     @classmethod
     def attempt_to_convert_to_float(cls, arg):
+
         if isinstance(arg, VectorField):
-            return [float(x) for x in arg.value]
+            return [float(x.value) for x in arg.value]
         else:
             try:
                 return float(arg.value)
@@ -89,7 +90,7 @@ class AstHbcmTransformer(object):
         if isinstance(n.value, VectorField):
             return AstHbcmTransformer.attempt_to_convert_to_float(n)
         else:
-            match str(n.type.type):
+            match str(n.type.value.name):
                 case "int":
                     return int(n.value.value)
                 case "float":
@@ -107,15 +108,18 @@ class AstHbcmTransformer(object):
         if n.value is not None and n.type is not None:
             value = self.extract_value(n)
         elif n.value is not None:
-            if isinstance(n.value.value, ElementReference):
-                if n.value.value.name in self.node_mapping:
-                    value = self.node_mapping[n.value.value.name]
+            if n.type is not None:
+                if isinstance(n.type.value, ElementReference):
+                    if n.type.value.name in self.node_mapping:
+                        value = self.node_mapping[n.type.value.name]
+                    else:
+                        value = ReferenceQuery(n.type.value.name)
                 else:
-                    value = ReferenceQuery(n.value.value.name)
+                    value = self.attempt_to_convert_to_float(n)
             else:
-                value = self.attempt_to_convert_to_float(n)
+                value = self.attempt_to_convert_to_float(n.value)
         elif n.type is not None:
-            typ = str(n.type.type)
+            typ = str(n.type.value)
         atr = FactoryHypergraphElements.create_attribute_default(
             str(n.name.value),
             value, typ, self.clock_source(), self.node_mapping[n.parent])

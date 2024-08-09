@@ -137,13 +137,29 @@ class HiElementValue(_TreeElement):
         super().__init__()
         self.value = value
 
+@dataclass
+class ValueType(_Ast):
+    value: str
+
+    def __init__(self, value: str):
+        self.value = value
+
 
 @dataclass
 class ElementType(_Ast):
-    type: Value
+    value: ElementReference
 
-    def __init__(self, value: Value):
+    def __init__(self, value: ElementReference):
+        self.value = value
+
+
+@dataclass
+class HiType(_Ast):
+    type: ElementType
+
+    def __init__(self, value: ElementType):
         self.type = value
+
 
 
 @dataclass
@@ -167,11 +183,11 @@ class HiElementField(_TreeElement):
         self.type = None
         self.value = None
         if len(args) == 2:
-            self.type = args[0]
+            self.type = args[0].type
             self.value = args[1]
         elif len(args) == 1:
-            if isinstance(args[0], ElementType):
-                self.type = args[0]
+            if isinstance(args[0], HiType):
+                self.type = args[0].type
                 self.value = None
             else:
                 self.type = None
