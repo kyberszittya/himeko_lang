@@ -56,11 +56,17 @@ class ElementReference(_Ast):
             self.value = 1.0
         elif len(args) == 2:
             direction, name = args
-            self.direction = enumerate_direction(str(direction.value))
             self.name = name.replace('"', '')
-            self.value = 1.0
+            # Check if we have a value instead of direction
+            if isinstance(direction, VectorField):
+                self.direction = AstEnumRelationDirection.UNDEFINED
+                self.value = direction
+            else:
+                # Else a simple relation is defined
+                self.direction = enumerate_direction(str(direction.value))
+                self.value = 1.0
         elif len(args) == 3:
-            direction, name, value = args
+            value, direction, name = args
             self.direction = enumerate_direction(str(direction.value))
             self.name = name.replace('"', '')
             self.value = value
@@ -76,21 +82,39 @@ class ElementReference(_Ast):
 
 
 @dataclass
-class HiTemplating(_Ast):
+class HiStereotype(_Ast):
     reference = ElementReference
 
     def __init__(self, reference: ElementReference):
+        self.reference = reference
+
+@dataclass
+class HiUseElement(_Ast):
+    reference: ElementReference
+
+    def __init__(self, name: ElementName, reference: ElementReference):
         self.reference = reference
 
 
 @dataclass
 class HiElementSignature(_Ast):
     name: ElementName
-    template: HiTemplating
+    template: typing.Optional[HiStereotype]
+    usage: typing.Optional[HiUseElement]
 
-    def __init__(self, name: ElementName, template: HiTemplating = None):
+    def __init__(self, name: ElementName, *args):
         self.name = name
-        self.template = template
+        self.template = None
+        self.usage = None
+        if len(args) == 1:
+
+            if isinstance(args[0], HiStereotype):
+                self.template = args[0]
+            else:
+                self.usage = args[0]
+        elif len(args) == 2:
+            self.template = args[0]
+            self.usage = args[1]
 
 
 class _HiMetaelement(_Ast):
@@ -204,6 +228,7 @@ class HiEdgeElement(_Ast):
     def __init__(self, arg):
         # Check for type of arg (element reference, element field, edge)
         if isinstance(arg, ElementReference):
+
             self.value = arg.value
             self.relation_direction = arg.direction
             self.reference = arg

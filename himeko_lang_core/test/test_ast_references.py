@@ -224,6 +224,7 @@ class TestAstParsingWithReferences(TestAncestorTestCase):
         self.assertEqual(8, len(nodes))
         # Attributes
         edge: HyperEdge = list(context.get_children(lambda x: isinstance(x, HyperEdge) and x.name == "e0", None))[0]
+
         rel = list(edge.all_relations())
         # Check relations
         for r in rel:

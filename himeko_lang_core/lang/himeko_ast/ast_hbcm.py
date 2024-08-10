@@ -77,8 +77,12 @@ class AstHbcmTransformer(object):
     @classmethod
     def attempt_to_convert_to_float(cls, arg):
 
-        if isinstance(arg, VectorField):
+        if isinstance(arg.value, VectorField):
+            return [float(x.value) for x in arg.value.value]
+        elif isinstance(arg.value, list):
             return [float(x.value) for x in arg.value]
+        elif isinstance(arg.value, ElementReference):
+            return ReferenceQuery(arg.value.name)
         else:
             try:
                 return float(arg.value)
@@ -108,16 +112,7 @@ class AstHbcmTransformer(object):
         if n.value is not None and n.type is not None:
             value = self.extract_value(n)
         elif n.value is not None:
-            if n.type is not None:
-                if isinstance(n.type.value, ElementReference):
-                    if n.type.value.name in self.node_mapping:
-                        value = self.node_mapping[n.type.value.name]
-                    else:
-                        value = ReferenceQuery(n.type.value.name)
-                else:
-                    value = self.attempt_to_convert_to_float(n)
-            else:
-                value = self.attempt_to_convert_to_float(n.value)
+            value = self.handle_typed_value(n)
         elif n.type is not None:
             typ = str(n.type.value)
         atr = FactoryHypergraphElements.create_attribute_default(
@@ -126,6 +121,19 @@ class AstHbcmTransformer(object):
         if isinstance(value, ReferenceQuery):
             self.relation_queues.put((atr, value))
         return atr
+
+    def handle_typed_value(self, n):
+        if n.type is not None:
+            if isinstance(n.type.value, ElementReference):
+                if n.type.value.name in self.node_mapping:
+                    value = self.node_mapping[n.type.value.name]
+                else:
+                    value = ReferenceQuery(n.type.value.name)
+            else:
+                value = self.attempt_to_convert_to_float(n)
+        else:
+            value = self.attempt_to_convert_to_float(n.value)
+        return value
 
     def create_attribute(self, n):
         if isinstance(n, HiElementField):
