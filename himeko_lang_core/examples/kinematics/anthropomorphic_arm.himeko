@@ -2,19 +2,22 @@
 robot
 {
     units {
-        length m;
-        angle degree
-        mass kg;
-        time s;
+        length "m"
+        angle "degree"
+        mass "kg"
+        time "s"
     }
     link {}
-    joint {}
+    @joint {}
+    @rev_joint {
+        ["limit"] -> joint_rev_limit
+    }
     box {}
     cylinder {}
-    joint_rev_limit [-180.0 180.0]
-    AXIS_X [1.0 0.0 0.0]
-    AXIS_Y [0.0 1.0 0.0]
-    AXIS_Z [1.0 0.0 1.0]
+    joint_rev_limit [-180.0, 180.0]
+    AXIS_X [1.0, 0.0, 0.0]
+    AXIS_Y [0.0, 1.0, 0.0]
+    AXIS_Z [1.0, 0.0, 1.0]
 
     meta {
         model "BCN3D Moveo"
@@ -26,102 +29,108 @@ robot
 
     robot_arm
     {
-        link_color [0.7 0.2 0.4];
-        base_link ^ link {
-            mass 25.0;
+        link_color [0.7, 0.2, 0.4]
+        base_link: link {
+            mass 25.0
             link_geometry {
-                geometry @> cylinder
-                dimension [0.13 0.05]
+                geometry  cylinder
+                dimension [0.13, 0.05]
             }
 
-            visual @> link_geometry;
-            collision @> link_geometry;
-            color @> robot_arm.color;
+            visual -> link_geometry
+            collision -> link_geometry
+            color -> robot_arm.color
         }
-        link_0 ^ link {
-            mass 5.0;
+        link_0: link {
+            mass 5.0
             link_geometry {
-                geometry @> cylinder
-                dimension [0.075 0.2]
+                geometry  cylinder
+                dimension [0.075, 0.2]
             }
 
-            visual @> link_geometry;
-            collision @> link_geometry;
-            color @> robot_arm.color;
+            visual -> link_geometry
+            collision -> link_geometry
+            color -> robot_arm.color
         }
-        link_1 ^ link {
-            mass 2.0;
+        link_1 : link {
+            mass 2.0
             link_geometry {
-                geometry @> cylinder
-                dimension [0.075 0.3]
+                geometry cylinder
+                dimension [0.075, 0.3]
             }
 
-            visual @> link_geometry;
-            collision @> link_geometry;
-            color @> robot_arm.color;
+            visual -> link_geometry
+            collision -> link_geometry
+            color -> robot_arm.color
         }
-        link_2 ^ link {
+        link_2: robot.link {
+            mass 2.0
             link_geometry {
-                geometry @> cylinder
-                dimension [0.075 0.25]
+                geometry cylinder
+                dimension [0.075, 0.25]
             }
-            visual @> link_geometry;
-            collision @> link_geometry;
-            color @> robot_arm.color;
+            visual -> link_geometry
+            collision -> link_geometry
+            color -> robot_arm.color
         }
-        link_3 ^ link {
+        link_3: robot.link {
+            mass 2.0
             link_geometry {
-                geometry @> cylinder
-                dimension [0.075 0.32]
+                geometry cylinder
+                dimension [0.075, 0.32]
             }
-            visual @> link_geometry;
-            collision @> link_geometry;
-            color @> robot_arm.color;
+            visual -> link_geometry
+            collision -> link_geometry
+            color -> robot_arm.color
 
         }
-        link_4 ^ link {
+        link_4: link {
+            mass 2.0
             link_geometry {
-                geometry @> cylinder
-                dimension [0.075 0.15]
+                geometry -> cylinder
+                dimension [0.075, 0.15]
             }
-            visual @> link_geometry;
-            collision @> link_geometry;
-            color @> robot_arm.color;
+            visual -> link_geometry
+            collision -> link_geometry
+            color -> robot_arm.color
 
         }
-        tool ^ link {
+        tool: link {
+            mass 0.5
             link_geometry {
-                geometry @> box
-                dimension [0.075 0.15]
+                geometry -> box
+                dimension [0.075, 0.15]
             }
-            visual @> link_geometry;
-            collision @> link_geometry;
-            color @> robot_arm.color;
+            visual -> link_geometry
+            collision -> link_geometry
+            color -> robot_arm.color
 
         }
-        j0: <- @>"base_link", -> @>"link_0" {
-            axis @> AXIS_Z;
-            limit @> joint_rev_limit;
+        @j0: rev_joint {
+            <- base_link, -> link_0,
+            ["axis"] -> AXIS_Z,
+            ["limit"] -> joint_rev_limit
         }
-        j1: <- @>"link_0", -> @>"link_1" {
-            axis @> AXIS_Y;
-            limit @> joint_rev_limit;
+        @j1: rev_joint {
+            <- link_0, -> link_1,
+            ["axis"] -> AXIS_Y
+
         }
-        j2: <- @>"link_1", -> @>"link_2" {
-            axis @> AXIS_Y;
-            limit @> joint_rev_limit;
+        @j2: rev_joint {
+            <- link_1, -> link_2,
+            ["axis"] -> AXIS_Y
         }
-        j3: <- @>"link_2", -> @>"link_3" {
-            axis @> AXIS_Z;
-            limit @> joint_rev_limit;
+        @j3: rev_joint  {
+            <- link_2, -> link_3,
+            ["axis"] -> robot.AXIS_Z
         }
-        j4: <- @>"link_3", -> @>"link_4" {
-            axis @> AXIS_Y;
-            limit @> joint_rev_limit;
+        @j4: rev_joint  {
+            <- link_3, -> link_4,
+            ["axis"] -> robot.AXIS_Y
         }
-        jtool: <- @>"link_4", -> @>"tool" {
-            axis @> AXIS_Z
-            limit @> joint_rev_limit;
+        @jtool: rev_joint  {
+            <- link_4, -> tool,
+            ["axis"] -> robot.AXIS_Z
         }
     }
 }

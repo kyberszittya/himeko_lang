@@ -10,6 +10,7 @@ from lang.himeko_ast.himeko_ast import Start, extract_root_context, HiNode, HiEd
     create_ast, HiElementField, VectorField, ElementReference
 
 
+
 class AstElementNotFound(Exception):
     pass
 
@@ -78,16 +79,20 @@ class AstHbcmTransformer(object):
     def attempt_to_convert_to_float(cls, arg):
 
         if isinstance(arg.value, VectorField):
-            return [float(x.value) for x in arg.value.value]
+            return [cls.convert_to_float_value(x) for x in arg.value.value]
         elif isinstance(arg.value, list):
             return [float(x.value) for x in arg.value]
         elif isinstance(arg.value, ElementReference):
             return ReferenceQuery(arg.value.name)
         else:
-            try:
-                return float(arg.value)
-            except ValueError:
-                return str(arg.value)
+            return cls.convert_to_float_value(arg)
+
+    @classmethod
+    def convert_to_float_value(cls, arg):
+        try:
+            return float(arg.value)
+        except ValueError:
+            return str(arg.value)
 
     @classmethod
     def extract_value(cls, n):
@@ -190,11 +195,29 @@ class AstHbcmTransformer(object):
             raise AstElementNotFound("Element not found")
         return res
 
+    def get_single_node_reference(self, element, query_split):
+        fringe = Queue()
+        p = element
+        # get parent chain
+        while p is not None:
+            fringe.put(p)
+            p = p.parent
+        # Get children from single parent relationship
+        while not fringe.empty():
+            e = fringe.get()
+            try:
+                res = next(e.get_children(lambda x: x.name == query_split[-1], 1))
+                return res
+            except StopIteration:
+                continue
+        return None
+
     def retrieve_referenced_node(self, e: HyperEdge | HypergraphAttribute, ref):
         query_split = ref.reference_query.split('.')
         element: HyperVertex = e.parent
         if len(query_split) == 1:
-            return next(element.get_children(lambda x: x.name == query_split[-1], 1))
+            # Ensure that we want to go down to the very parents of the context
+            return self.get_single_node_reference(element, query_split)
         else:
             return self.get_node_references(query_split, element)
 
