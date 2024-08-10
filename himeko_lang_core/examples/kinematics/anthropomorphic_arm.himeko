@@ -33,7 +33,7 @@ robot
         base_link: link {
             mass 25.0
             link_geometry {
-                geometry  cylinder
+                geometry -> cylinder
                 dimension [0.13, 0.05]
             }
 
@@ -44,7 +44,7 @@ robot
         link_0: link {
             mass 5.0
             link_geometry {
-                geometry  cylinder
+                geometry -> cylinder
                 dimension [0.075, 0.2]
             }
 
@@ -55,7 +55,7 @@ robot
         link_1 : link {
             mass 2.0
             link_geometry {
-                geometry cylinder
+                geometry -> cylinder
                 dimension [0.075, 0.3]
             }
 
@@ -66,7 +66,7 @@ robot
         link_2: robot.link {
             mass 2.0
             link_geometry {
-                geometry cylinder
+                geometry -> cylinder
                 dimension [0.075, 0.25]
             }
             visual -> link_geometry
@@ -76,7 +76,7 @@ robot
         link_3: robot.link {
             mass 2.0
             link_geometry {
-                geometry cylinder
+                geometry -> cylinder
                 dimension [0.075, 0.32]
             }
             visual -> link_geometry
