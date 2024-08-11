@@ -38,7 +38,7 @@ class TestAstParsingTemplating(TestAncestorTestCase):
         # Check parent
         self.assertEqual(n_0_0.parent.name, "node0")
         # Check has no template
-        self.assertIsNone(n_0_0.template)
+        self.assertIsNone(n_0_0.stereotype)
         # Check node0 has no elements
         self.assertEqual(len(n_0_0._elements), 0)
         # Check parent
@@ -46,15 +46,15 @@ class TestAstParsingTemplating(TestAncestorTestCase):
         # Get node2 of node_lev_0
         n_2 = next(n_lev_0.get_children(lambda x: isinstance(x, HyperVertex) and x.name == "node2", None))
         # Check template
-        self.assertEqual(n_2.template.name, "node0")
+        self.assertEqual(n_2.stereotype.name, "node0")
         # Check template parent
-        self.assertEqual(n_2.template.parent.name, "node_lev_0")
+        self.assertEqual(n_2.stereotype.parent.name, "node_lev_0")
         # Check node3 of node_lev_0
         n_3 = next(n_lev_0.get_children(lambda x: isinstance(x, HyperVertex) and x.name == "node3", None))
         # Check template
-        self.assertEqual(n_3.template.name, "node2")
+        self.assertEqual(n_3.stereotype.name, "node2")
         # Check template parent
-        self.assertEqual(n_3.template.parent.name, "node_lev_0")
+        self.assertEqual(n_3.stereotype.parent.name, "node_lev_0")
         # Check node0 of node_lev_1
         # Get node_lev_1
         n_lev_1 = next(context.get_children(lambda x: isinstance(x, HyperVertex) and x.name == "node_lev_1", None))
@@ -65,7 +65,7 @@ class TestAstParsingTemplating(TestAncestorTestCase):
         # Check parent
         self.assertEqual(n_0_1.parent.name, "node_lev_1")
         # Ensure that it has no template
-        self.assertIsNone(n_0_1.template)
+        self.assertIsNone(n_0_1.stereotype)
         # Ensure it has no elements
         self.assertEqual(len(n_0_1._elements), 0)
 

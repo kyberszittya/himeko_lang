@@ -10,7 +10,6 @@ from lang.himeko_ast.himeko_ast import Start, extract_root_context, HiNode, HiEd
     create_ast, HiElementField, VectorField, ElementReference
 
 
-
 class AstElementNotFound(Exception):
     pass
 
@@ -249,7 +248,7 @@ class AstHbcmTransformer(object):
                 v: HyperEdge
                 v += (res, d, val)
             if len(t) == 3:
-                v.template = res
+                v.stereotype = res
             elif len(t) == 2:
                 v, r = t
                 v: HypergraphAttribute

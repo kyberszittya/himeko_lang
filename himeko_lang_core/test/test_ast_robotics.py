@@ -44,7 +44,7 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
         link_0 = next(robot_arm.get_children(lambda x: x.name == "link_0", 1))
         self.assertIsInstance(link_0, HyperVertex)
         self.assertEqual(link_0.name, "link_0")
-        self.assertEqual(link_0.template.name, "link")
+        self.assertEqual(link_0.stereotype.name, "link")
         self.assertEqual(link_0["mass"].value, 5.0)
         cylinder_link = link_0["link_geometry"]["geometry"]
         self.assertIsInstance(cylinder_link, HypergraphAttribute)
