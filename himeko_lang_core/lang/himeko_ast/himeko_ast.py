@@ -41,6 +41,25 @@ def enumerate_direction(arg):
         case '<>': return AstEnumRelationDirection.UNDIRECTED
 
 @dataclass
+class HiIncludePath(_Ast):
+    value: str
+
+    def __init__(self, value):
+        self.value = value
+
+
+def sanitize_string(value):
+    return value.replace('"', '')
+
+@dataclass
+class HiInclude(_Ast):
+    value: str
+
+    def __init__(self, path: HiIncludePath):
+        self.value = sanitize_string(str(path.value))
+
+
+@dataclass
 class ElementName(_Ast):
     value: str
 
@@ -90,10 +109,10 @@ class HiStereotype(_Ast):
 
 
 @dataclass
-class HiUseElement(_Ast):
+class HiUse(_Ast):
     reference: ElementReference
 
-    def __init__(self, name: ElementName, reference: ElementReference):
+    def __init__(self, reference: ElementReference):
         self.reference = reference
 
 
@@ -101,32 +120,41 @@ class HiUseElement(_Ast):
 class HiElementSignature(_Ast):
     name: ElementName
     template: typing.Optional[HiStereotype]
-    usage: typing.Optional[HiUseElement]
+    usage: typing.List[typing.Optional[HiUse]]
 
     def __init__(self, name: ElementName, *args):
         self.name = name
         self.template = None
-        self.usage = None
+        self.usage = []
         if len(args) == 1:
             if isinstance(args[0], HiStereotype):
                 self.template = args[0]
             else:
-                self.usage = args[0]
+                self.usage.append(args[0])
         elif len(args) >= 2:
             for a in args:
                 if isinstance(a, HiStereotype):
                     self.template = a
-                elif isinstance(a, HiUseElement):
-                    self.usage = a
+                elif isinstance(a, HiUse):
+                    self.usage.append(a)
 
 
-
-class _HiMetaelement(_Ast):
+class HiMetaelement(_Ast):
     name: ElementName
+    includes: List[HiInclude]
+
+    def __init__(self, name: ElementName, *args):
+        self.name = name
+        self.includes = list(filter(lambda x: isinstance(x, HiInclude), args))
 
 
+@dataclass
 class HiMeta(_Ast):
-    meta: _HiMetaelement
+    meta: HiMetaelement
+
+    def __init__(self, meta: HiMetaelement, *args):
+        super().__init__()
+        self.meta = meta
 
 
 @dataclass
@@ -232,7 +260,6 @@ class HiEdgeElement(_Ast):
     def __init__(self, arg):
         # Check for type of arg (element reference, element field, edge)
         if isinstance(arg, ElementReference):
-
             self.value = arg.value
             self.relation_direction = arg.direction
             self.reference = arg
@@ -268,12 +295,15 @@ class HiBody(_Ast):
 
 @dataclass
 class Start(_Ast):
-    name: HiMeta
+    meta: HiMeta
     body: HiBody
 
 
 def extract_root_context(ast: Start):
     return ast.body.root
+
+def extract_meta_context(ast: Start):
+    return ast.meta
 
 
 @dataclass

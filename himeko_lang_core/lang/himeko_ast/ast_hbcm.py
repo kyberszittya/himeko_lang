@@ -1,3 +1,4 @@
+import os
 import time
 import typing
 from queue import Queue
@@ -8,7 +9,9 @@ from himeko.hbcm.elements.element import HypergraphElement
 from himeko.hbcm.elements.vertex import HyperVertex
 from himeko.hbcm.factories.creation_elements import FactoryHypergraphElements
 from lang.himeko_ast.himeko_ast import Start, extract_root_context, HiNode, HiEdge, AstEnumRelationDirection, \
-    create_ast, HiElementField, VectorField, ElementReference
+    create_ast, HiElementField, VectorField, ElementReference, extract_meta_context
+from lang.himeko_meta_parser import Lark_StandAlone
+from lang.himeko_ast.himeko_ast import transformer
 
 
 class AstElementNotFound(Exception):
@@ -24,6 +27,7 @@ class AstHbcmTransformer(object):
         self.node_mapping = {}
         self.missing_reference = {}
         self.relation_queues = Queue()
+        self.usage_mapping = {}
 
     def setup_stereotype(self, ast_element: HiNode | HiEdge, element: HypergraphElement):
         # Check for template
@@ -33,15 +37,25 @@ class AstHbcmTransformer(object):
             self.relation_queues.put((
                 element, ast_element.signature.template.reference.reference, EnumRelationDirection.OUT))
 
+    def __create_hyper_node(self, node: HiNode, parent: typing.Optional[HyperVertex]) -> HyperVertex:
+        if parent is None:
+            v = FactoryHypergraphElements.create_vertex_default(str(node.signature.name.value), self.clock_source())
+        else:
+            v = FactoryHypergraphElements.create_vertex_default(str(node.signature.name.value), self.clock_source(), parent)
+        # Get usages
+        if len(node.signature.usage) > 0:
+            self.usage_mapping[v] = [x.reference.name for x in node.signature.usage]
+        # Setup stereotypes
+        self.setup_stereotype(node, v)
+        self.node_mapping[node] = v
+        for n in node.children:
+            if isinstance(n, HiNode):
+                self.create_hyper_vertex(n, v)
+        return v
+
     def create_hyper_vertex(self, node: HiNode, parent: HyperVertex) -> HyperVertex:
         if isinstance(node, HiNode):
-            v = FactoryHypergraphElements.create_vertex_default(str(node.signature.name.value), self.clock_source(), parent)
-            self.setup_stereotype(node, v)
-            self.node_mapping[node] = v
-            for n in node.children:
-                if isinstance(n, HiNode):
-                    self.create_hyper_vertex(n, v)
-            return v
+            return self.__create_hyper_node(node, parent)
 
     def add_relation(self, e: HyperEdge, r):
         val = 1.0
@@ -68,6 +82,10 @@ class AstHbcmTransformer(object):
             self.clock_source(),
             self.node_mapping[edge.parent]
         )
+        # Get usages
+        if len(edge.signature.usage) > 0:
+            self.usage_mapping[e] = [x.reference.name for x in edge.signature.usage]
+        # Setup stereotypes
         self.setup_stereotype(edge, e)
         for r in edge.relationships:
             self.add_relation(e, r)
@@ -80,7 +98,6 @@ class AstHbcmTransformer(object):
             elif isinstance(n, HiEdge):
                 self.create_edge(n)
 
-
     def create_edges(self, node: HiNode):
         if isinstance(node, Start):
             for n in node.body.root:
@@ -91,7 +108,6 @@ class AstHbcmTransformer(object):
 
     @classmethod
     def attempt_to_convert_to_float(cls, arg):
-
         if isinstance(arg.value, VectorField):
             return [cls.convert_to_float_value(x) for x in arg.value.value]
         elif isinstance(arg.value, list):
@@ -186,21 +202,23 @@ class AstHbcmTransformer(object):
     def create_root_hyper_vertices(self, start: Start) -> typing.List[HyperVertex]:
         contexts = []
         for v in extract_root_context(start):
-            hv0 = FactoryHypergraphElements.create_vertex_default(v.signature.name.value, self.clock_source())
-            self.node_mapping[v] = hv0
-            for v0 in v.children:
-                self.create_hyper_vertex(v0, hv0)
+            hv0 = self.__create_hyper_node(v, None)
             contexts.append(hv0)
         return contexts
+
+    def get_importable_graphs(self, ast):
+        return [_meta.value for _meta in extract_meta_context(ast).includes]
 
     def find_element_by_name_fragments(self, element: HypergraphElement, fragments: typing.List[str]) -> HypergraphElement:
         if len(fragments) == 0:
             return element
         for c in element.get_children(lambda x: x.name == fragments[0], None):
             return self.find_element_by_name_fragments(c, fragments[1:])
-        raise AstElementNotFound("Element not found")
+        raise AstElementNotFound(f"Element not found: {fragments}")
 
-    def get_element_references(self, query_split: typing.List[str], element: HypergraphElement):
+    def get_element_references(self,
+                               query_split: typing.List[str],
+                               element: HypergraphElement):
         # Get query root
         root_name = query_split[0]
         root = None
@@ -213,12 +231,12 @@ class AstHbcmTransformer(object):
                 root = els[0]
                 break
             element = element.parent
+        # If root is not found then return None
         if root is None:
-            raise AstElementNotFound("Root not found")
+            return None
         # Get query path
         res = self.find_element_by_name_fragments(root, query_split[1:])
-        if res is None:
-            raise AstElementNotFound("Element not found")
+
         return res
 
     def get_single_node_reference(self, element, query_split):
@@ -247,17 +265,36 @@ class AstHbcmTransformer(object):
         else:
             return self.get_element_references(query_split, element)
 
+    def __init_query_elements(self, hyv):
+        # Copy the query elements from the main context
+        query_elements = [e for e in hyv]
+        # Get all usage in context graphs
+        for h in hyv:
+            if h in self.usage_mapping:
+                query_elements.extend(self.usage_mapping[h])
+        return query_elements
+
     def retrieve_references(self, hyv: typing.List[HyperVertex]):
+        query_elements = self.__init_query_elements(hyv)
+        # Process all relations
         while not self.relation_queues.empty():
             t = self.relation_queues.get()
             v, r = t[0], t[1]
             v: HyperEdge | HypergraphAttribute
             res = self.retrieve_referenced_node(v, r)
+            # Check whether node is in usage mapping
+            if v in self.usage_mapping:
+                query_elements.extend(self.usage_mapping[r])
             if res is None:
-                for hy in hyv:
+                for hy in query_elements:
                     res = self.get_element_references(r.reference_query.split('.'), hy)
                     if res is not None:
                         break
+            # Check if there is no result
+            if res is None:
+                raise AstElementNotFound(f"Element not found: {r.reference_query}")
+            # Check tuples by length
+            # Check if we are dealing with an edge
             if len(t) == 4:
                 _, _, d, val = t
                 v: HyperEdge
@@ -269,10 +306,62 @@ class AstHbcmTransformer(object):
                 v: HypergraphAttribute
                 v.value = res
 
-    def convert_tree(self, ast) -> typing.List[HyperVertex]:
+    def read_graph(self, path):
+        # Transformer
+        parser = Lark_StandAlone(transformer=transformer)
+        # Read file
+        with open(path) as f:
+            tree = parser.parse(f.read())
+        if tree is None:
+            raise Exception(f"Unable to read tree from path {path}")
+        return tree
+
+    def __import_graphs(self, hyv, ast, path: typing.Optional[str] = None):
+        import_graphs = self.get_importable_graphs(ast)
+        if len(import_graphs) > 0:
+            for import_graph in self.get_importable_graphs(ast):
+                if path is not None:
+                    import_graph = os.path.join(path, import_graph)
+                import_ast = self.read_graph(import_graph)
+                create_ast(import_ast)
+                # Extend hyper vertices
+                hyv.extend(self.create_root_hyper_vertices(import_ast))
+                # Create edge
+                self.create_edges(import_ast)
+                # Create attributes
+                self.create_attributes(import_ast)
+            hyv = hyv[::-1]
+            return hyv
+        return hyv
+
+    def __init_usage_mapping(self, hyv):
+        new_usage_mapping = {}
+        for k in self.usage_mapping:
+            used_elements = []
+            for h in hyv:
+                for u in self.usage_mapping[k]:
+                    __retr = h.query_subelements(u)
+                    if __retr is not None:
+                        used_elements.append(__retr)
+                    else:
+                        __retr = list(h.get_subelements(lambda x: x.name == u, None, True))
+                        if len(__retr) > 0:
+                            used_elements.extend(__retr)
+                new_usage_mapping[k] = used_elements
+        self.usage_mapping = new_usage_mapping
+
+    def convert_tree(self, ast, path=None) -> typing.List[HyperVertex]:
         create_ast(ast)
         hyv = self.create_root_hyper_vertices(ast)
+        # Import graphs
+        hyv = self.__import_graphs(hyv, ast, path)
+        # Create root node
+        # Create edges
         self.create_edges(ast)
+        # Create attributes
         self.create_attributes(ast)
+        # Collect all usage references for all elements
+        self.__init_usage_mapping(hyv)
+        # Retrieve references
         self.retrieve_references(hyv)
         return hyv

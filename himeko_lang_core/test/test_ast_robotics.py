@@ -17,6 +17,10 @@ TEST_CASE_ROBOT_ARM_PARSING = (
 TEST_CASE_META_KINEMATICS_PARSING = (
     os.path.join(KINEMATIC_DESC_FOLDER, "meta_kinematics.himeko"))
 
+TEST_CASE_META_KINEMATICS_IMPORT_PARSING = (
+    os.path.join(KINEMATIC_DESC_FOLDER, "anthropomorphic_arm_import.himeko")
+)
+
 
 class TestBasicKinematicsAstParsing(TestAncestorTestCase):
 
@@ -152,3 +156,19 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
         self.assertEqual(axes["AXIS_Y"].value, [0, 1, 0])
         self.assertIsInstance(axes["AXIS_Z"], HypergraphAttribute)
         self.assertEqual(axes["AXIS_Z"].value, [0, 0, 1])
+
+    def test_load_arm_import_desc(self):
+        root = self.read_node(TEST_CASE_META_KINEMATICS_IMPORT_PARSING)
+        self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
+        hbcm_mapper = AstHbcmTransformer()
+        hyv = hbcm_mapper.convert_tree(root, KINEMATIC_DESC_FOLDER)
+        root = hyv[-1]
+        self.assertEqual(root.name, "robot")
+        self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
+        robot = root
+        # Base link
+        base_link = robot["base_link"]
+        self.assertIsInstance(base_link, HyperVertex)
+        self.assertEqual(base_link.name, "base_link")
+        self.assertEqual(base_link["mass"].value, 25.0)
+        self.assertEqual(base_link.stereotype.name, "link")
