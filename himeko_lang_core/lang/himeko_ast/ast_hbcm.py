@@ -4,6 +4,7 @@ from queue import Queue
 
 from himeko.hbcm.elements.attribute import HypergraphAttribute
 from himeko.hbcm.elements.edge import EnumRelationDirection, HyperEdge, ReferenceQuery
+from himeko.hbcm.elements.element import HypergraphElement
 from himeko.hbcm.elements.vertex import HyperVertex
 from himeko.hbcm.factories.creation_elements import FactoryHypergraphElements
 from lang.himeko_ast.himeko_ast import Start, extract_root_context, HiNode, HiEdge, AstEnumRelationDirection, \
@@ -24,13 +25,18 @@ class AstHbcmTransformer(object):
         self.missing_reference = {}
         self.relation_queues = Queue()
 
+    def setup_stereotype(self, ast_element: HiNode | HiEdge, element: HypergraphElement):
+        # Check for template
+        if ast_element.signature.template is not None:
+            ast_element.signature.template.reference.reference = ReferenceQuery(
+                ast_element.signature.template.reference.name)
+            self.relation_queues.put((
+                element, ast_element.signature.template.reference.reference, EnumRelationDirection.OUT))
+
     def create_hyper_vertex(self, node: HiNode, parent: HyperVertex) -> HyperVertex:
         if isinstance(node, HiNode):
             v = FactoryHypergraphElements.create_vertex_default(str(node.signature.name.value), self.clock_source(), parent)
-            # Check for template
-            if node.signature.template is not None:
-                node.signature.template.reference.reference = ReferenceQuery(node.signature.template.reference.name)
-                self.relation_queues.put((v, node.signature.template.reference.reference, EnumRelationDirection.OUT))
+            self.setup_stereotype(node, v)
             self.node_mapping[node] = v
             for n in node.children:
                 if isinstance(n, HiNode):
@@ -56,15 +62,24 @@ class AstHbcmTransformer(object):
                 return e
         return e
 
-    def create_edges_node(self, node: HiNode):
+    def create_edge(self, edge: HiEdge):
+        e = FactoryHypergraphElements.create_edge_default(
+            str(edge.signature.name.value),
+            self.clock_source(),
+            self.node_mapping[edge.parent]
+        )
+        self.setup_stereotype(edge, e)
+        for r in edge.relationships:
+            self.add_relation(e, r)
+        # TODO: multiple edges in relationship
+
+    def create_edges_node(self, node: HiNode | HiEdge):
         for n in node.children:
             if isinstance(n, HiNode):
                 self.create_edges_node(n)
             elif isinstance(n, HiEdge):
-                e = FactoryHypergraphElements.create_edge_default(
-                    str(n.signature.name.value), self.clock_source(), self.node_mapping[n.parent])
-                for r in n.relationships:
-                    self.add_relation(e, r)
+                self.create_edge(n)
+
 
     def create_edges(self, node: HiNode):
         if isinstance(node, Start):
@@ -178,14 +193,14 @@ class AstHbcmTransformer(object):
             contexts.append(hv0)
         return contexts
 
-    def find_element_by_name_fragments(self, element: HyperVertex, fragments: typing.List[str]) -> HyperVertex:
+    def find_element_by_name_fragments(self, element: HypergraphElement, fragments: typing.List[str]) -> HypergraphElement:
         if len(fragments) == 0:
             return element
         for c in element.get_children(lambda x: x.name == fragments[0], None):
             return self.find_element_by_name_fragments(c, fragments[1:])
         raise AstElementNotFound("Element not found")
 
-    def get_node_references(self, query_split: typing.List[str], element: HyperVertex):
+    def get_element_references(self, query_split: typing.List[str], element: HypergraphElement):
         # Get query root
         root_name = query_split[0]
         root = None
@@ -225,12 +240,12 @@ class AstHbcmTransformer(object):
 
     def retrieve_referenced_node(self, e: HyperEdge | HypergraphAttribute, ref):
         query_split = ref.reference_query.split('.')
-        element: HyperVertex = e.parent
+        element: HypergraphElement = e.parent
         if len(query_split) == 1:
             # Ensure that we want to go down to the very parents of the context
             return self.get_single_node_reference(element, query_split)
         else:
-            return self.get_node_references(query_split, element)
+            return self.get_element_references(query_split, element)
 
     def retrieve_references(self, hyv: typing.List[HyperVertex]):
         while not self.relation_queues.empty():
@@ -240,7 +255,7 @@ class AstHbcmTransformer(object):
             res = self.retrieve_referenced_node(v, r)
             if res is None:
                 for hy in hyv:
-                    res = self.get_node_references(r.reference_query.split('.'), hy)
+                    res = self.get_element_references(r.reference_query.split('.'), hy)
                     if res is not None:
                         break
             if len(t) == 4:

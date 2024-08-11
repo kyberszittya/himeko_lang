@@ -17,7 +17,7 @@ robot
     joint_rev_limit [-180.0, 180.0]
     AXIS_X [1.0, 0.0, 0.0]
     AXIS_Y [0.0, 1.0, 0.0]
-    AXIS_Z [1.0, 0.0, 1.0]
+    AXIS_Z [0.0, 0.0, 1.0]
 
     meta {
         model "BCN3D Moveo"

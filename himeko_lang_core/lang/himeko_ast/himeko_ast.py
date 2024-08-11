@@ -88,6 +88,7 @@ class HiStereotype(_Ast):
     def __init__(self, reference: ElementReference):
         self.reference = reference
 
+
 @dataclass
 class HiUseElement(_Ast):
     reference: ElementReference
@@ -107,14 +108,17 @@ class HiElementSignature(_Ast):
         self.template = None
         self.usage = None
         if len(args) == 1:
-
             if isinstance(args[0], HiStereotype):
                 self.template = args[0]
             else:
                 self.usage = args[0]
-        elif len(args) == 2:
-            self.template = args[0]
-            self.usage = args[1]
+        elif len(args) >= 2:
+            for a in args:
+                if isinstance(a, HiStereotype):
+                    self.template = a
+                elif isinstance(a, HiUseElement):
+                    self.usage = a
+
 
 
 class _HiMetaelement(_Ast):
@@ -223,7 +227,7 @@ class HiElementField(_TreeElement):
 class HiEdgeElement(_Ast):
     value: typing.Optional[VectorField]
     relation_direction: AstEnumRelationDirection
-    reference: ElementReference
+    reference: typing.Optional[ElementReference]
 
     def __init__(self, arg):
         # Check for type of arg (element reference, element field, edge)

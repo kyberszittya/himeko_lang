@@ -7,12 +7,13 @@ kinematics {
         time "s"
     }
     elements {
-        link {}
+        meta_element {}
+        link: -> meta_element {}
         @joint {}
 
     }
     joint_rev_limit [-180.0, 180.0]
-    @rev_joint: elements.joint {
+    @rev_joint: -> elements.joint {
         ["limit"] -> joint_rev_limit
     }
     geometry {
@@ -21,7 +22,9 @@ kinematics {
         sphere {}
     }
 
-    AXIS_X [1.0, 0.0, 0.0]
-    AXIS_Y [0.0, 1.0, 0.0]
-    AXIS_Z [1.0, 0.0, 1.0]
+    axes {
+        AXIS_X [1.0, 0.0, 0.0]
+        AXIS_Y [0.0, 1.0, 0.0]
+        AXIS_Z [0.0, 0.0, 1.0]
+    }
 }

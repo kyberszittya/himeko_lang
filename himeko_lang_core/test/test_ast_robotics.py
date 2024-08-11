@@ -118,12 +118,18 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
         self.assertIsInstance(elements, HyperVertex)
         # Check link and joint
         self.assertIsInstance(elements["link"], HyperVertex)
+        link = elements["link"]
+        self.assertIsInstance(link, HyperVertex)
+        self.assertEqual(link.name, "link")
+        # Check meta element stereotype
+        self.assertEqual(link.stereotype.name, "meta_element")
         self.assertIsInstance(elements["joint"], HyperEdge)
         # Check rev joint
         rev_joint = root["rev_joint"]
         self.assertIsInstance(rev_joint, HyperEdge)
+
         # Check if rev joint has joint as stereotype
-        self.assertEqual(rev_joint.stereotype.value, "joint")
+        self.assertEqual(rev_joint.stereotype.name, "joint")
         # Check if rev joint is connected to limit
         rev_joint_out_relations = list(rev_joint.out_relations())
         out_vertices_names = set([x.target.name for x in rev_joint_out_relations])
@@ -136,3 +142,13 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
         self.assertIsInstance(geometry["sphere"], HyperVertex)
         self.assertIsInstance(geometry["cylinder"], HyperVertex)
         self.assertIsInstance(geometry["box"], HyperVertex)
+        # Check axes
+        axes = root["axes"]
+        self.assertIsInstance(axes, HyperVertex)
+        self.assertEqual(axes.name, "axes")
+        self.assertIsInstance(axes["AXIS_X"], HypergraphAttribute)
+        self.assertEqual(axes["AXIS_X"].value, [1, 0, 0])
+        self.assertIsInstance(axes["AXIS_Y"], HypergraphAttribute)
+        self.assertEqual(axes["AXIS_Y"].value, [0, 1, 0])
+        self.assertIsInstance(axes["AXIS_Z"], HypergraphAttribute)
+        self.assertEqual(axes["AXIS_Z"].value, [0, 0, 1])
