@@ -2,6 +2,7 @@ import os
 
 
 from himeko.hbcm.elements.attribute import HypergraphAttribute
+from himeko.hbcm.elements.edge import HyperEdge
 from himeko.hbcm.elements.vertex import HyperVertex
 from test_ancestor_testcase import ERROR_MSG_UNABLE_TO_TRANSFORM
 
@@ -68,3 +69,26 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
         self.assertIn("tool", node_names_set)
 
         print(robot_arm.name)
+        # Edges
+        edges = list(robot_arm.get_children(lambda x: isinstance(x, HyperEdge), 1))
+        edge_names = set([x.name for x in edges])
+        self.assertEqual(len(edge_names), 6)
+        self.assertIn("j0", edge_names)
+        self.assertIn("j1", edge_names)
+        self.assertIn("j2", edge_names)
+        self.assertIn("j3", edge_names)
+        self.assertIn("j4", edge_names)
+        self.assertIn("jtool", edge_names)
+        # Check edge connections
+        j0 = next(robot_arm.get_children(lambda x: x.name == "j0", 1))
+        self.assertIsInstance(j0, HyperEdge)
+        self.assertEqual(j0.cnt_in_relations, 1)
+        j0_out_relations = list(j0.out_relations())
+        out_vertices_names = set([x.target.name for x in j0_out_relations])
+        self.assertIn("link_0", out_vertices_names)
+        self.assertIn("AXIS_Z", out_vertices_names)
+        self.assertIn("joint_rev_limit", out_vertices_names)
+        # Check incoming relation (base_link mor particularly) of J0
+        j0_in_relations = list(j0.in_relations())
+        in_vertices_names = set([x.target.name for x in j0_in_relations])
+        self.assertIn("base_link", in_vertices_names)
