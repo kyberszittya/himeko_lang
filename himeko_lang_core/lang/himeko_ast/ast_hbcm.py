@@ -88,11 +88,23 @@ class AstHbcmTransformer(object):
             return cls.convert_to_float_value(arg)
 
     @classmethod
+    def convert_string(cls, s):
+        s = str(s)
+        if s.startswith('"') and s.endswith('"'):
+            s = s[1:-1]
+        if s.lower() == "true":
+            return True
+        elif s.lower() == "false":
+            return False
+        return s
+
+    @classmethod
     def convert_to_float_value(cls, arg):
         try:
             return float(arg.value)
         except ValueError:
-            return str(arg.value)
+            return cls.convert_string(arg.value)
+
 
     @classmethod
     def extract_value(cls, n):
@@ -107,7 +119,7 @@ class AstHbcmTransformer(object):
                 case "real":
                     return float(n.value.value)
                 case "string":
-                    return str(n.value.value)
+                    return cls.convert_string(n.value.value)
                 case "bool":
                     return bool(n.value.value)
 

@@ -1,0 +1,27 @@
+[meta_kinematics]
+kinematics {
+    units {
+        length "m"
+        angle "degree"
+        mass "kg"
+        time "s"
+    }
+    elements {
+        link {}
+        @joint {}
+
+    }
+    joint_rev_limit [-180.0, 180.0]
+    @rev_joint: elements.joint {
+        ["limit"] -> joint_rev_limit
+    }
+    geometry {
+        box {}
+        cylinder {}
+        sphere {}
+    }
+
+    AXIS_X [1.0, 0.0, 0.0]
+    AXIS_Y [0.0, 1.0, 0.0]
+    AXIS_Z [1.0, 0.0, 1.0]
+}

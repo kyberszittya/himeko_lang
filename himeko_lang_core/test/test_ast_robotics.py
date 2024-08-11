@@ -9,10 +9,13 @@ from test_ancestor_testcase import ERROR_MSG_UNABLE_TO_TRANSFORM
 from lang.himeko_ast.ast_hbcm import AstHbcmTransformer
 from test_ancestor_testcase import TestAncestorTestCase
 
-CAMERA_DESC_FOLDER = os.path.join("..", "examples", "kinematics")
+KINEMATIC_DESC_FOLDER = os.path.join("..", "examples", "kinematics")
 
 TEST_CASE_ROBOT_ARM_PARSING = (
-    os.path.join(CAMERA_DESC_FOLDER, "anthropomorphic_arm.himeko"))
+    os.path.join(KINEMATIC_DESC_FOLDER, "anthropomorphic_arm.himeko"))
+
+TEST_CASE_META_KINEMATICS_PARSING = (
+    os.path.join(KINEMATIC_DESC_FOLDER, "meta_kinematics.himeko"))
 
 
 class TestBasicKinematicsAstParsing(TestAncestorTestCase):
@@ -92,3 +95,44 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
         j0_in_relations = list(j0.in_relations())
         in_vertices_names = set([x.target.name for x in j0_in_relations])
         self.assertIn("base_link", in_vertices_names)
+
+    def test_load_meta_desc(self):
+        root = self.read_node(TEST_CASE_META_KINEMATICS_PARSING)
+        self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
+        hbcm_mapper = AstHbcmTransformer()
+        hyv = hbcm_mapper.convert_tree(root)
+        root = hyv[0]
+        self.assertEqual(root.name, "kinematics")
+        self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
+        # Check units
+        units = root["units"]
+        self.assertIsInstance(units, HyperVertex)
+        self.assertEqual(units.name, "units")
+        self.assertIsInstance(units["length"], HypergraphAttribute)
+        self.assertEqual(units["length"].value, "m")
+        self.assertEqual(units["angle"].value, "degree")
+        self.assertEqual(units["time"].value, "s")
+        self.assertEqual(units["mass"].value, "kg")
+        # Check elements
+        elements = root["elements"]
+        self.assertIsInstance(elements, HyperVertex)
+        # Check link and joint
+        self.assertIsInstance(elements["link"], HyperVertex)
+        self.assertIsInstance(elements["joint"], HyperEdge)
+        # Check rev joint
+        rev_joint = root["rev_joint"]
+        self.assertIsInstance(rev_joint, HyperEdge)
+        # Check if rev joint has joint as stereotype
+        self.assertEqual(rev_joint.stereotype.value, "joint")
+        # Check if rev joint is connected to limit
+        rev_joint_out_relations = list(rev_joint.out_relations())
+        out_vertices_names = set([x.target.name for x in rev_joint_out_relations])
+        self.assertIn("joint_rev_limit", out_vertices_names)
+        # Check geometry vertex contents
+        geometry = root["geometry"]
+        # Sphere, cylinder, box should be present
+        self.assertIsInstance(geometry, HyperVertex)
+        self.assertEqual(geometry.name, "geometry")
+        self.assertIsInstance(geometry["sphere"], HyperVertex)
+        self.assertIsInstance(geometry["cylinder"], HyperVertex)
+        self.assertIsInstance(geometry["box"], HyperVertex)

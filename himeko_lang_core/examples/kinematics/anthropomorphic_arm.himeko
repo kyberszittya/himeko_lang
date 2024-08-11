@@ -9,7 +9,7 @@ robot
     }
     link {}
     @joint {}
-    @rev_joint {
+    @rev_joint: joint {
         ["limit"] -> joint_rev_limit
     }
     box {}
