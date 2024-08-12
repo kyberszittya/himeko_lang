@@ -3,8 +3,8 @@ import os
 
 from himeko.hbcm.elements.attribute import HypergraphAttribute
 from himeko.hbcm.elements.edge import HyperEdge
-from himeko.hbcm.elements.element import HypergraphElement
 from himeko.hbcm.elements.vertex import HyperVertex
+from himeko.hbcm.visualization.graphviz import create_dot_graph, visualize_dot_graph
 from test_ancestor_testcase import ERROR_MSG_UNABLE_TO_TRANSFORM
 
 from lang.himeko_ast.ast_hbcm import AstHbcmTransformer
@@ -180,20 +180,5 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
         hbcm_mapper = AstHbcmTransformer()
         hyv = hbcm_mapper.convert_tree(root, KINEMATIC_DESC_FOLDER)
         root = hyv[-1]
-        import pygraphviz as pgv
-        G = pgv.AGraph(directed=True)
-        G.add_node(root.name)
-        for n in root.get_children(lambda x: isinstance(x, HyperVertex)):
-            G.add_node(n.name)
-            if n.stereotype is not None:
-                G.add_edge(n.name, n.stereotype.name, style="dashed")
-        for e in root.get_children(lambda x: isinstance(x, HyperEdge)):
-            G.add_node(e.name, shape="box")
-            for r in e.out_relations():
-                G.add_edge(e.name, r.target.name, label=str(r.value))
-            for r in e.in_relations():
-                G.add_edge(r.target.name, e.name,  label=str(r.value))
-        for n in root.get_children(lambda x: isinstance(x, HypergraphElement)):
-            if n.parent is not None:
-                G.add_edge(n.parent.name, n.name, style="dotted")
-        G.draw("test.png", prog="dot")
+        G = create_dot_graph(root, composition=True, stereotype=True)
+        visualize_dot_graph(G, "test.png")

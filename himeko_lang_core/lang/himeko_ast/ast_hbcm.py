@@ -334,19 +334,23 @@ class AstHbcmTransformer(object):
             return hyv
         return hyv
 
+    def __update_used_elements(self, k, h, used_elements: typing.List):
+        for u in self.usage_mapping[k]:
+            __retr = h.query_subelements(u)
+            if __retr is not None:
+                used_elements.append(__retr)
+            else:
+                __retr = list(h.get_subelements(lambda x: x.name == u, None, True))
+                if len(__retr) > 0:
+                    used_elements.extend(__retr)
+        return used_elements
+
     def __init_usage_mapping(self, hyv):
         new_usage_mapping = {}
         for k in self.usage_mapping:
             used_elements = []
             for h in hyv:
-                for u in self.usage_mapping[k]:
-                    __retr = h.query_subelements(u)
-                    if __retr is not None:
-                        used_elements.append(__retr)
-                    else:
-                        __retr = list(h.get_subelements(lambda x: x.name == u, None, True))
-                        if len(__retr) > 0:
-                            used_elements.extend(__retr)
+                used_elements = self.__update_used_elements(k, h, used_elements)
                 new_usage_mapping[k] = used_elements
         self.usage_mapping = new_usage_mapping
 
