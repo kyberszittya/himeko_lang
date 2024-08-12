@@ -325,7 +325,7 @@ class AstHbcmTransformer(object):
             raise AstGraphPathNotFound(f"Unable to read tree from path {path}")
         return tree
 
-    def __import_graphs(self, hyv, ast, path: typing.Optional[str] = None):
+    def __import_graphs(self, hyv: typing.List, ast, path: typing.Optional[str] = None):
         import_graphs = self.get_importable_graphs(ast)
         if len(import_graphs) > 0:
             for import_graph in self.get_importable_graphs(ast):
@@ -340,6 +340,7 @@ class AstHbcmTransformer(object):
                 # Create attributes
                 self.create_attributes(import_ast)
             hyv = hyv[::-1]
+
             return hyv
         return hyv
 

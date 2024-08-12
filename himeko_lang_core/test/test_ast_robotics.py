@@ -182,3 +182,18 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
         root = hyv[-1]
         G = create_dot_graph(root, composition=True, stereotype=True)
         visualize_dot_graph(G, "test.png")
+
+    def test_load_arm_desc_transform_to_urdf(self):
+        root = self.read_node(TEST_CASE_META_KINEMATICS_IMPORT_PARSING)
+        self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
+        hbcm_mapper = AstHbcmTransformer()
+        hyv = hbcm_mapper.convert_tree(root, KINEMATIC_DESC_FOLDER)
+        root = hyv[-1]
+        self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
+        print(root)
+        kinematics_meta = hyv[0]
+        link_element = kinematics_meta["elements"]["link"]
+        joint_element = kinematics_meta["elements"]["joint"]
+        links = list(root.get_children(lambda x: x.stereotype is not None and (x.stereotype.name == link_element.name)))
+        print([x.name for x in links])
+        print(links)
