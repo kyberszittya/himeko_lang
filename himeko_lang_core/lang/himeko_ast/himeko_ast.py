@@ -1,152 +1,40 @@
 import sys
-import time
-import typing
 from typing import List
 from dataclasses import dataclass
 
 from lark import Transformer, v_args, ast_utils
-from enum import Enum
 
-from himeko.hbcm.elements.edge import HyperEdge, ReferenceQuery
-from himeko.hbcm.elements.vertex import HyperVertex
+from himeko.hbcm.elements.edge import ReferenceQuery
+from lang.himeko_ast.elements.abstract_elements import HiElementSignature, _HiAbstractElement
+from lang.himeko_ast.elements.graph.elementfield import HiElementField
+from lang.himeko_ast.elements.graph.hiedge import HiEdgeElement, HiEdge
+from lang.himeko_ast.elements.graph.hinode import _HiNodeElement, HiNode
+from lang.himeko_ast.elements.meta_elements import _Ast, _Statement, Value, ElementName, HiIncludePath, HiInclude, \
+    HiMetaelement, _TreeElement
+from lang.himeko_ast.elements.reference import ElementReference
+from lang.himeko_ast.elements.stereotype import HiStereotype
+from lang.himeko_ast.elements.types.data_type import ValueType, HiElementValue, VectorField
+from lang.himeko_ast.elements.types.element_type import ElementType, HiType
+from lang.himeko_ast.elements.use_element import HiUse
+
+ast_types = [
+    # Main elements
+    HiElementSignature, _HiAbstractElement, # Abstract elements
+    _Ast, _Statement, Value, ElementName, HiIncludePath, HiInclude, HiMetaelement, _TreeElement, # Meta elements
+    ElementReference, # Reference
+    HiStereotype, # Stereotype
+    HiUse, # Use
+    # Graph elements
+    HiElementField, # Element field
+    HiEdgeElement, HiEdge, # Edge
+    _HiNodeElement, HiNode, # Node
+    # Typing
+    ValueType, HiElementValue, VectorField, # Data type
+    ElementType, HiType, # Element type
+]
+
 
 this_module = sys.modules[__name__]
-
-
-
-class AstEnumRelationDirection(Enum):
-    UNDEFINED = 0
-    IN = 1
-    OUT = 2
-    UNDIRECTED = 3
-
-
-class _Ast(ast_utils.Ast):
-    pass
-
-
-class _Statement(_Ast):
-    pass
-
-
-class Value(_Ast, ast_utils.WithMeta):
-    pass
-
-
-def enumerate_direction(arg):
-    match arg:
-        case '--': return AstEnumRelationDirection.UNDEFINED
-        case '->': return AstEnumRelationDirection.OUT
-        case '<-': return AstEnumRelationDirection.IN
-        case '<>': return AstEnumRelationDirection.UNDIRECTED
-
-@dataclass
-class HiIncludePath(_Ast):
-    value: str
-
-    def __init__(self, value):
-        self.value = value
-
-
-def sanitize_string(value):
-    return value.replace('"', '')
-
-@dataclass
-class HiInclude(_Ast):
-    value: str
-
-    def __init__(self, path: HiIncludePath):
-        self.value = sanitize_string(str(path.value))
-
-
-@dataclass
-class ElementName(_Ast):
-    value: str
-
-@dataclass
-class ElementReference(_Ast):
-    name: str
-
-    def __init__(self, *args):
-        if len(args) == 1:
-            self.direction = None
-            self.name = args[0].replace('"', '')
-            self.direction = AstEnumRelationDirection.UNDEFINED
-            self.value = 1.0
-        elif len(args) == 2:
-            direction, name = args
-            self.name = name.replace('"', '')
-            # Check if we have a value instead of direction
-            if isinstance(direction, VectorField):
-                self.direction = AstEnumRelationDirection.UNDEFINED
-                self.value = direction
-            else:
-                # Else a simple relation is defined
-                self.direction = enumerate_direction(str(direction.value))
-                self.value = 1.0
-        elif len(args) == 3:
-            value, direction, name = args
-            self.direction = enumerate_direction(str(direction.value))
-            self.name = name.replace('"', '')
-            self.value = value
-        self._reference = None
-
-    @property
-    def reference(self):
-        return self._reference
-
-    @reference.setter
-    def reference(self, value):
-        self._reference = value
-
-
-@dataclass
-class HiStereotype(_Ast):
-    reference = ElementReference
-
-    def __init__(self, reference: ElementReference):
-        self.reference = reference
-
-
-@dataclass
-class HiUse(_Ast):
-    reference: ElementReference
-
-    def __init__(self, reference: ElementReference):
-        self.reference = reference
-
-
-@dataclass
-class HiElementSignature(_Ast):
-    name: ElementName
-    template: typing.Optional[HiStereotype]
-    usage: typing.List[typing.Optional[HiUse]]
-
-    def __init__(self, name: ElementName, *args):
-        self.name = name
-        self.template = None
-        self.usage = []
-        if len(args) == 1:
-            if isinstance(args[0], HiStereotype):
-                self.template = args[0]
-            else:
-                self.usage.append(args[0])
-        elif len(args) >= 2:
-            for a in args:
-                if isinstance(a, HiStereotype):
-                    self.template = a
-                elif isinstance(a, HiUse):
-                    self.usage.append(a)
-
-
-class HiMetaelement(_Ast):
-    name: ElementName
-    includes: List[HiInclude]
-
-    def __init__(self, name: ElementName, *args):
-        self.name = name
-        self.includes = list(filter(lambda x: isinstance(x, HiInclude), args))
-
 
 @dataclass
 class HiMeta(_Ast):
@@ -155,134 +43,6 @@ class HiMeta(_Ast):
     def __init__(self, meta: HiMetaelement, *args):
         super().__init__()
         self.meta = meta
-
-
-@dataclass
-class _TreeElement(_Ast):
-
-    def __init__(self):
-        self._parent = None
-
-    @property
-    def parent(self):
-        return self._parent
-
-    @parent.setter
-    def parent(self, value):
-        self._parent = value
-
-
-@dataclass
-class _HiAbstractElement(_TreeElement):
-    signature: HiElementSignature
-
-    def __init__(self, signature: HiElementSignature):
-        super().__init__()
-        self.signature = signature
-
-@dataclass
-class _HiNodeElement(_Ast):
-    hi_node_element: _HiAbstractElement
-
-
-@dataclass
-class HiElementValue(_TreeElement):
-    value: Value
-
-    def __init__(self, value: Value):
-        super().__init__()
-        self.value = value
-
-@dataclass
-class ValueType(_Ast):
-    value: str
-
-    def __init__(self, value: str):
-        self.value = value
-
-
-@dataclass
-class ElementType(_Ast):
-    value: ElementReference
-
-    def __init__(self, value: ElementReference):
-        self.value = value
-
-
-@dataclass
-class HiType(_Ast):
-    type: ElementType
-
-    def __init__(self, value: ElementType):
-        self.type = value
-
-
-
-@dataclass
-class VectorField(_Ast):
-    value: typing.List[HiElementValue]
-
-    def __init__(self, *value):
-        self.value = list(value)
-
-
-@dataclass
-class HiElementField(_TreeElement):
-    name: ElementName
-    type: typing.Optional[ElementType]
-    value: typing.Optional[HiElementValue | VectorField]
-
-    def __init__(self, name: ElementName,
-                 *args):
-        super().__init__()
-        self.name = name
-        self.type = None
-        self.value = None
-        if len(args) == 2:
-            self.type = args[0].type
-            self.value = args[1]
-        elif len(args) == 1:
-            if isinstance(args[0], HiType):
-                self.type = args[0].type
-                self.value = None
-            else:
-                self.type = None
-                self.value = args[0]
-
-
-
-@dataclass
-class HiEdgeElement(_Ast):
-    value: typing.Optional[VectorField]
-    relation_direction: AstEnumRelationDirection
-    reference: typing.Optional[ElementReference]
-
-    def __init__(self, arg):
-        # Check for type of arg (element reference, element field, edge)
-        if isinstance(arg, ElementReference):
-            self.value = arg.value
-            self.relation_direction = arg.direction
-            self.reference = arg
-        elif isinstance(arg, HiElementField):
-            # Todo: add value in a parent relationship
-            self.value = arg.value
-            self.relation_direction = AstEnumRelationDirection.UNDEFINED
-            self.reference = None
-        elif isinstance(arg, HiEdge):
-            # TODO: add edge in a parent relationship
-            self.value = arg
-            self.relation_direction = AstEnumRelationDirection.UNDEFINED
-            self.reference = None
-
-
-@dataclass
-class HiEdge(_HiAbstractElement):
-    relationships: List[HiEdgeElement]
-
-    def __init__(self, hi_edge_type, signature: HiElementSignature, *vertices: HiEdgeElement):
-        super().__init__(signature)
-        self.edge_type = hi_edge_type
-        self.relationships = list(vertices)
 
 
 @dataclass
@@ -306,23 +66,7 @@ def extract_meta_context(ast: Start):
     return ast.meta
 
 
-@dataclass
-class HiNode(_HiAbstractElement):
-    children: List[_HiAbstractElement]
-    timestamp: int
 
-    def __init__(self, signature: HiElementSignature, *children):
-        super().__init__(signature)
-        self.children = list([x.children[0] for x in children])
-        self.timestamp = time.time_ns()
-
-    def __hash__(self):
-        hashed = [str(self.signature.name.value), self.timestamp]
-        hashed.extend([str(c.signature.name.value) for c in
-                       filter(lambda x: isinstance(x, HyperVertex) or isinstance(x, HyperEdge), self.children)])
-        if self.parent is not None:
-            hashed.append(str(self.parent.signature.name.value))
-        return hash(tuple(hashed))
 
 
 class ToAst(Transformer):

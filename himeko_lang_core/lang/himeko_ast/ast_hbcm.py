@@ -8,13 +8,22 @@ from himeko.hbcm.elements.edge import EnumRelationDirection, HyperEdge, Referenc
 from himeko.hbcm.elements.element import HypergraphElement
 from himeko.hbcm.elements.vertex import HyperVertex
 from himeko.hbcm.factories.creation_elements import FactoryHypergraphElements
-from lang.himeko_ast.himeko_ast import Start, extract_root_context, HiNode, HiEdge, AstEnumRelationDirection, \
-    create_ast, HiElementField, VectorField, ElementReference, extract_meta_context
+from lang.himeko_ast.elements.graph.elementfield import HiElementField
+from lang.himeko_ast.elements.graph.hiedge import HiEdge
+from lang.himeko_ast.elements.graph.hinode import HiNode
+from lang.himeko_ast.elements.meta_elements import AstEnumRelationDirection
+from lang.himeko_ast.elements.reference import ElementReference
+from lang.himeko_ast.elements.types.data_type import VectorField
+from lang.himeko_ast.himeko_ast import Start, extract_root_context, \
+    create_ast, extract_meta_context
 from lang.himeko_meta_parser import Lark_StandAlone
 from lang.himeko_ast.himeko_ast import transformer
 
 
 class AstElementNotFound(Exception):
+    pass
+
+class AstGraphPathNotFound(Exception):
     pass
 
 
@@ -313,7 +322,7 @@ class AstHbcmTransformer(object):
         with open(path) as f:
             tree = parser.parse(f.read())
         if tree is None:
-            raise Exception(f"Unable to read tree from path {path}")
+            raise AstGraphPathNotFound(f"Unable to read tree from path {path}")
         return tree
 
     def __import_graphs(self, hyv, ast, path: typing.Optional[str] = None):
