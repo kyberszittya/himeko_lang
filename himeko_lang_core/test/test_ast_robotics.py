@@ -4,7 +4,10 @@ import os
 from himeko.hbcm.elements.attribute import HypergraphAttribute
 from himeko.hbcm.elements.edge import HyperEdge
 from himeko.hbcm.elements.vertex import HyperVertex
+from himeko.hbcm.factories.creation_elements import FactoryHypergraphElements
+from himeko.hbcm.queries.composition import QueryIsStereotypeOperation
 from himeko.hbcm.visualization.graphviz import create_dot_graph, visualize_dot_graph
+from himeko.transformations.ros.urdf import TransformationUrdf
 from test_ancestor_testcase import ERROR_MSG_UNABLE_TO_TRANSFORM
 
 from lang.himeko_ast.ast_hbcm import AstHbcmTransformer
@@ -49,7 +52,7 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
         link_0 = next(robot_arm.get_children(lambda x: x.name == "link_0", 1))
         self.assertIsInstance(link_0, HyperVertex)
         self.assertEqual(link_0.name, "link_0")
-        self.assertEqual(link_0.stereotype.name, "link")
+        self.assertEqual(link_0.stereotype[0].name, "link")
         self.assertEqual(link_0["mass"].value, 5.0)
         cylinder_link = link_0["link_geometry"]["geometry"]
         self.assertIsInstance(cylinder_link, HypergraphAttribute)
@@ -127,14 +130,14 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
         self.assertIsInstance(link, HyperVertex)
         self.assertEqual(link.name, "link")
         # Check meta element stereotype
-        self.assertEqual(link.stereotype.name, "meta_element")
+        self.assertEqual(link.stereotype[0].name, "meta_element")
         self.assertIsInstance(elements["joint"], HyperEdge)
         # Check rev joint
         rev_joint = root["rev_joint"]
         self.assertIsInstance(rev_joint, HyperEdge)
 
         # Check if rev joint has joint as stereotype
-        self.assertEqual(rev_joint.stereotype.name, "joint")
+        self.assertEqual(rev_joint.stereotype[0].name, "joint")
         # Check if rev joint is connected to limit
         rev_joint_out_relations = list(rev_joint.out_relations())
         out_vertices_names = set([x.target.name for x in rev_joint_out_relations])
@@ -172,7 +175,8 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
         self.assertIsInstance(base_link, HyperVertex)
         self.assertEqual(base_link.name, "base_link")
         self.assertEqual(base_link["mass"].value, 25.0)
-        self.assertEqual(base_link.stereotype.name, "link")
+        self.assertEqual(base_link.stereotype[0].name, "link")
+        self.assertIn("link", base_link.stereotype.nameset)
 
     def test_load_arm_import_desc_dot(self):
         root = self.read_node(TEST_CASE_META_KINEMATICS_IMPORT_PARSING)
@@ -183,7 +187,48 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
         G = create_dot_graph(root, composition=True, stereotype=True)
         visualize_dot_graph(G, "test.png")
 
-    def test_load_arm_desc_transform_to_urdf(self):
+    def test_load_arm_desc_queries(self):
+        root = self.read_node(TEST_CASE_META_KINEMATICS_IMPORT_PARSING)
+        self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
+        hbcm_mapper = AstHbcmTransformer()
+        hyv = hbcm_mapper.convert_tree(root, KINEMATIC_DESC_FOLDER)
+        root = hyv[-1]
+        self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
+        kinematics_meta = hyv[0]
+        link_element = kinematics_meta["elements"]["link"]
+        joint_element = kinematics_meta["elements"]["joint"]
+        rev_joint = kinematics_meta["rev_joint"]
+        links = list(root.get_children(
+            lambda x: x.stereotype is not None and (link_element.name in x.stereotype.nameset))
+        )
+        op = FactoryHypergraphElements.create_vertex_constructor_default_kwargs(
+            QueryIsStereotypeOperation, "link_stereotype", 0
+        )
+        self.assertIsNotNone(op)
+        res = op(link_element, root, depth=None)
+        link_names = {'base_link', 'link_0', 'link_1', 'link_2', 'link_3', 'link_4', 'tool'}
+        for n in link_names:
+            self.assertIn(n, [x.name for x in res])
+        # Check if the same result is obtained by passing the root as a stereotype
+        op["stereotype"] = link_element
+        res_2 = op(root, depth=None)
+        for n in link_names:
+            self.assertIn(n, [x.name for x in res])
+        self.assertEqual(len(res), len(res_2))
+
+        # Joints
+        op_joint = FactoryHypergraphElements.create_vertex_constructor_default_kwargs(
+            QueryIsStereotypeOperation, "joint_stereotype", 0,
+            stereotype=joint_element
+        )
+        self.assertIsNotNone(op_joint)
+        res_joint = op_joint(root)
+        self.assertEqual(len(res_joint), 6)
+        joint_names = {'j0', 'j1', 'j2', 'j3', 'j4', 'jtool'}
+        for n in joint_names:
+            self.assertIn(n, [x.name for x in res_joint])
+
+    def test_load_arm_desc_stereotpyes(self):
         root = self.read_node(TEST_CASE_META_KINEMATICS_IMPORT_PARSING)
         self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
         hbcm_mapper = AstHbcmTransformer()
@@ -194,6 +239,77 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
         kinematics_meta = hyv[0]
         link_element = kinematics_meta["elements"]["link"]
         joint_element = kinematics_meta["elements"]["joint"]
-        links = list(root.get_children(lambda x: x.stereotype is not None and (x.stereotype.name == link_element.name)))
-        print([x.name for x in links])
-        print(links)
+        rev_joint = kinematics_meta["rev_joint"]
+        links = list(root.get_children(
+            lambda x: x.stereotype is not None and (link_element.name in x.stereotype.nameset))
+        )
+        link_names = {'base_link', 'link_0', 'link_1', 'link_2', 'link_3', 'link_4', 'tool'}
+        for n in link_names:
+            self.assertIn(n, [x.name for x in links])
+        # Joints
+        rev_joints = list(root.get_children(
+            lambda x: x.stereotype is not None and (rev_joint.name in x.stereotype.nameset))
+        )
+        joints = list(root.get_children(
+            lambda x: x.stereotype is not None and (joint_element.name in x.stereotype.nameset))
+        )
+        print("Joint names: ", [x.name for x in joints])
+        joint_names = {'j0', 'j1', 'j2', 'j3', 'j4', 'jtool'}
+        for n in joint_names:
+            self.assertIn(n, [x.name for x in joints])
+        for n in joint_names:
+            self.assertIn(n, [x.name for x in rev_joints])
+        self.assertEqual(len(joints), len(rev_joints))
+        print("Stereotypes: ", joints[0].stereotype.nameset)
+
+
+    def test_load_arm_desc_transform_urdf(self):
+        root = self.read_node(TEST_CASE_META_KINEMATICS_IMPORT_PARSING)
+        self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
+        hbcm_mapper = AstHbcmTransformer()
+        hyv = hbcm_mapper.convert_tree(root, KINEMATIC_DESC_FOLDER)
+        root = hyv[-1]
+        self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
+        kinematics_meta = hyv[0]
+        link_element = kinematics_meta["elements"]["link"]
+        joint_element = kinematics_meta["elements"]["joint"]
+        rev_joint = kinematics_meta["rev_joint"]
+        op = FactoryHypergraphElements.create_vertex_constructor_default_kwargs(
+            QueryIsStereotypeOperation, "link_stereotype", 0
+        )
+        self.assertIsNotNone(op)
+        res = op(link_element, root, depth=None)
+        link_names = {'base_link', 'link_0', 'link_1', 'link_2', 'link_3', 'link_4', 'tool'}
+        for n in link_names:
+            self.assertIn(n, [x.name for x in res])
+        # Check if the same result is obtained by passing the root as a stereotype
+        op["stereotype"] = link_element
+        res_2 = op(root, depth=None)
+        for n in link_names:
+            self.assertIn(n, [x.name for x in res])
+        self.assertEqual(len(res), len(res_2))
+
+        # Joints
+        op_joint = FactoryHypergraphElements.create_vertex_constructor_default_kwargs(
+            QueryIsStereotypeOperation, "joint_stereotype", 0,
+            stereotype=joint_element
+        )
+        self.assertIsNotNone(op_joint)
+        res_joint = op_joint(root)
+        self.assertEqual(len(res_joint), 6)
+        joint_names = {'j0', 'j1', 'j2', 'j3', 'j4', 'jtool'}
+        for n in joint_names:
+            self.assertIn(n, [x.name for x in res_joint])
+        # XML serialization
+        from lxml import etree
+        print(kinematics_meta)
+        print(kinematics_meta)
+        op_transform_urdf = FactoryHypergraphElements.create_vertex_constructor_default_kwargs(
+            TransformationUrdf, "urdf_transformation", 0,
+            kinematics_meta=kinematics_meta
+        )
+        res_xml = op_transform_urdf(root)
+        print(etree.tostring(res_xml, pretty_print=True).decode("utf-8"))
+
+
+
