@@ -302,14 +302,15 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
             self.assertIn(n, [x.name for x in res_joint])
         # XML serialization
         from lxml import etree
-        print(kinematics_meta)
-        print(kinematics_meta)
         op_transform_urdf = FactoryHypergraphElements.create_vertex_constructor_default_kwargs(
             TransformationUrdf, "urdf_transformation", 0,
             kinematics_meta=kinematics_meta
         )
         res_xml = op_transform_urdf(root)
         print(etree.tostring(res_xml, pretty_print=True).decode("utf-8"))
+        # Write to file
+        with open("test_urdf.xml", "w") as f:
+            f.write(etree.tostring(res_xml, pretty_print=True).decode("utf-8"))
 
 
 

@@ -7,8 +7,7 @@ robot use kinematics.elements use kinematics.geometry use kinematics.axes
     link_color [0.7, 0.2, 0.4]
     base_link: kinematics.elements.link {
         mass 25.0
-        link_geometry {
-            geometry -> cylinder
+        link_geometry: cylinder {
             dimension [0.13, 0.05]
         }
 
@@ -18,8 +17,7 @@ robot use kinematics.elements use kinematics.geometry use kinematics.axes
     }
     link_0: kinematics.elements.link {
         mass 5.0
-        link_geometry {
-            geometry -> cylinder
+        link_geometry: cylinder {
             dimension [0.075, 0.2]
         }
 
@@ -29,8 +27,7 @@ robot use kinematics.elements use kinematics.geometry use kinematics.axes
     }
     link_1 : kinematics.elements.link {
         mass 2.0
-        link_geometry {
-            geometry -> cylinder
+        link_geometry: cylinder {
             dimension [0.075, 0.3]
         }
 
@@ -40,8 +37,7 @@ robot use kinematics.elements use kinematics.geometry use kinematics.axes
     }
     link_2: kinematics.elements.link {
         mass 2.0
-        link_geometry {
-            geometry -> cylinder
+        link_geometry: cylinder {
             dimension [0.075, 0.25]
         }
         visual -> link_geometry
@@ -50,8 +46,7 @@ robot use kinematics.elements use kinematics.geometry use kinematics.axes
     }
     link_3: kinematics.elements.link {
         mass 2.0
-        link_geometry {
-            geometry -> cylinder
+        link_geometry: cylinder {
             dimension [0.075, 0.32]
         }
         visual -> link_geometry
@@ -61,8 +56,7 @@ robot use kinematics.elements use kinematics.geometry use kinematics.axes
     }
     link_4: kinematics.elements.link {
         mass 2.0
-        link_geometry {
-            geometry -> cylinder
+        link_geometry: cylinder {
             dimension [0.075, 0.15]
         }
         visual -> link_geometry
@@ -72,8 +66,7 @@ robot use kinematics.elements use kinematics.geometry use kinematics.axes
     }
     tool: kinematics.elements.link {
         mass 0.5
-        link_geometry {
-            geometry -> box
+        link_geometry: box {
             dimension [0.075, 0.15]
         }
         visual -> link_geometry
