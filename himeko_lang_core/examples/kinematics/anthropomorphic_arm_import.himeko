@@ -4,7 +4,7 @@
 robot use kinematics.elements use kinematics.geometry use kinematics.axes
 {
 
-    link_color [0.7, 0.2, 0.4]
+    link_color [0.7, 0.2, 0.4, 1.0]
     base_link: kinematics.elements.link {
         mass 25.0
         link_geometry: cylinder {

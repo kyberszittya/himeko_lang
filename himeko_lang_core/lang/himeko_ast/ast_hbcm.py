@@ -229,7 +229,6 @@ class AstHbcmTransformer(object):
             if isinstance(node, HiEdge):
                 for n in node.children:
                     if isinstance(n.element, HiElementField):
-                        print(n.element.name, n.element.parent)
                         self.create_attribute(n.element)
 
 
