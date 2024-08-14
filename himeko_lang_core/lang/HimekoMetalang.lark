@@ -22,14 +22,14 @@ hi_edge_element:  (element_reference | hi_edge | hi_element_field)
 
 // Element signatures and fields
 hi_element_signature: element_name hi_stereotype? (hi_use)*
-hi_element_field: element_name hi_type? (hi_element_value | vector_field)?
+hi_element_field: element_name hi_type? ("=")? (hi_element_value | vector_field)?
 
 hi_stereotype: ":" element_reference ("," element_reference)*
 hi_use: "use" element_reference
 hi_type: "<" element_type ">"
 element_type: EL_ATOMIC | element_reference
 
-vector_field: "[" hi_element_value ("," hi_element_value)* "]"
+vector_field: "[" ((hi_element_value ("," hi_element_value)*) | (vector_field+("," vector_field+)*)) "]"
 hi_element_value: SIGNED_NUMBER | STRING | element_reference
 
 // Element names and references

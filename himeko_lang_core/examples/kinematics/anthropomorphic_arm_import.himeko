@@ -72,31 +72,30 @@ robot use kinematics.elements use kinematics.geometry use kinematics.axes
         visual -> link_geometry
         collision -> link_geometry
         color -> robot.link_color
-
     }
     @j0: kinematics.rev_joint {
-        <- base_link, -> link_0,
-        ["axis"] -> AXIS_Z
+        <- base_link, [0.0, 0.0, 0.15] -> link_0,
+        -> AXIS_Z
     }
     @j1: kinematics.rev_joint {
-        <- link_0, -> link_1,
-        ["axis"] -> AXIS_Y
+        <- link_0, [[0.01, 0.2, 0.15], [0, 0, 90]] -> link_1,
+        -> AXIS_Y
     }
     @j2: kinematics.rev_joint {
-        <- link_1, -> link_2,
-        ["axis"] -> AXIS_Y
+        <- link_1, [0.0, 0.0, 0.15] -> link_2,
+        -> AXIS_Y
     }
     @j3: kinematics.rev_joint  {
-        <- link_2, -> link_3,
-        ["axis"] -> AXIS_Z
+        <- link_2, [0.0, 0.0, 0.15] -> link_3,
+        -> AXIS_Z
     }
     @j4: kinematics.rev_joint  {
-        <- link_3, -> link_4,
-        ["axis"] -> AXIS_Y
+        <- link_3, [0.0, 0.0, 0.15] -> link_4,
+        -> AXIS_Y
     }
     @jtool: kinematics.rev_joint  {
-        <- link_4, -> tool,
-        ["axis"] -> AXIS_Z
+        <- link_4, [0.0, 0.0, 0.15] -> tool,
+        -> AXIS_Z
     }
 
 }

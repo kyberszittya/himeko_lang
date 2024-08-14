@@ -12,8 +12,7 @@ class HiElementField(_TreeElement):
     type: typing.Optional[ElementType]
     value: typing.Optional[HiElementValue | VectorField]
 
-    def __init__(self, name: ElementName,
-                 *args):
+    def __init__(self, name: ElementName, *args):
         super().__init__()
         self.name = name
         self.type = None

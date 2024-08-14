@@ -36,6 +36,7 @@ ast_types = [
 
 this_module = sys.modules[__name__]
 
+
 @dataclass
 class HiMeta(_Ast):
     meta: HiMetaelement
@@ -62,11 +63,9 @@ class Start(_Ast):
 def extract_root_context(ast: Start):
     return ast.body.root
 
+
 def extract_meta_context(ast: Start):
     return ast.meta
-
-
-
 
 
 class ToAst(Transformer):
@@ -75,13 +74,15 @@ class ToAst(Transformer):
         return x
 
 
-def set_parents(node: HiNode):
-    for n in node.children:
-        n.parent = node
-        if isinstance(n, HiNode):
+def set_parents(element: HiNode|HiEdge|HiElementField):
+    for n in element.children:
+        n.parent = element
+        if isinstance(n, HiNode) or isinstance(n, HiEdge):
             set_parents(n)
-        elif isinstance(n, HiEdge):
-            n.parent = node
+        elif isinstance(n, HiEdgeElement):
+            if isinstance(n.element, HiElementField):
+                n.element.parent = element
+
 
 
 def collect_leafs(node: HiNode):
@@ -115,14 +116,17 @@ def unfold_references_in_context(node: HiNode):
 
 
 def convert_references(edge: HiEdge):
-    for v in edge.relationships:
+    for v in filter(lambda x: x.reference is not None, edge.children):
         v.reference.reference = ReferenceQuery(v.reference.name)
 
 
 def create_ast(start: Start):
+    # Set parents of nodes
     for v in extract_root_context(start):
         if isinstance(v, HiNode):
             set_parents(v)
+    # Set parents of edges
+
     # Unfold references
     for v in extract_root_context(start):
         if isinstance(v, HiNode):

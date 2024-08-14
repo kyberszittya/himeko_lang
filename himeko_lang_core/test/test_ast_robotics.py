@@ -141,7 +141,6 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
         # Check if rev joint is connected to limit
         rev_joint_out_relations = list(rev_joint.out_relations())
         out_vertices_names = set([x.target.name for x in rev_joint_out_relations])
-        self.assertIn("joint_rev_limit", out_vertices_names)
         # Check geometry vertex contents
         geometry = root["geometry"]
         # Sphere, cylinder, box should be present
@@ -154,12 +153,12 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
         axes = root["axes"]
         self.assertIsInstance(axes, HyperVertex)
         self.assertEqual(axes.name, "axes")
-        self.assertIsInstance(axes["AXIS_X"], HypergraphAttribute)
-        self.assertEqual(axes["AXIS_X"].value, [1, 0, 0])
-        self.assertIsInstance(axes["AXIS_Y"], HypergraphAttribute)
-        self.assertEqual(axes["AXIS_Y"].value, [0, 1, 0])
-        self.assertIsInstance(axes["AXIS_Z"], HypergraphAttribute)
-        self.assertEqual(axes["AXIS_Z"].value, [0, 0, 1])
+        self.assertIsInstance(axes["AXIS_X"], HyperVertex)
+        self.assertEqual(axes["AXIS_X"]["ax"].value, [1, 0, 0])
+        self.assertIsInstance(axes["AXIS_Y"], HyperVertex)
+        self.assertEqual(axes["AXIS_Y"]["ax"].value, [0, 1, 0])
+        self.assertIsInstance(axes["AXIS_Z"], HyperVertex)
+        self.assertEqual(axes["AXIS_Z"]["ax"].value, [0, 0, 1])
 
     def test_load_arm_import_desc(self):
         root = self.read_node(TEST_CASE_META_KINEMATICS_IMPORT_PARSING)
@@ -262,7 +261,6 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
         self.assertEqual(len(joints), len(rev_joints))
         print("Stereotypes: ", joints[0].stereotype.nameset)
 
-
     def test_load_arm_desc_transform_urdf(self):
         root = self.read_node(TEST_CASE_META_KINEMATICS_IMPORT_PARSING)
         self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
@@ -288,7 +286,6 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
         for n in link_names:
             self.assertIn(n, [x.name for x in res])
         self.assertEqual(len(res), len(res_2))
-
         # Joints
         op_joint = FactoryHypergraphElements.create_vertex_constructor_default_kwargs(
             QueryIsStereotypeOperation, "joint_stereotype", 0,

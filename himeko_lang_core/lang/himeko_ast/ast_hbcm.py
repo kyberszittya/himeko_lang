@@ -9,11 +9,11 @@ from himeko.hbcm.elements.element import HypergraphElement
 from himeko.hbcm.elements.vertex import HyperVertex
 from himeko.hbcm.factories.creation_elements import FactoryHypergraphElements
 from lang.himeko_ast.elements.graph.elementfield import HiElementField
-from lang.himeko_ast.elements.graph.hiedge import HiEdge
+from lang.himeko_ast.elements.graph.hiedge import HiEdge, EdgeElementType, HiEdgeElement
 from lang.himeko_ast.elements.graph.hinode import HiNode
 from lang.himeko_ast.elements.meta_elements import AstEnumRelationDirection
 from lang.himeko_ast.elements.reference import ElementReference
-from lang.himeko_ast.elements.types.data_type import VectorField
+from lang.himeko_ast.elements.types.data_type import VectorField, HiElementValue
 from lang.himeko_ast.himeko_ast import Start, extract_root_context, \
     create_ast, extract_meta_context
 from lang.himeko_meta_parser import Lark_StandAlone
@@ -56,6 +56,7 @@ class AstHbcmTransformer(object):
             self.usage_mapping[v] = [x.reference.name for x in node.signature.usage]
         # Setup stereotypes
         self.setup_stereotype(node, v)
+        # Add to self node mapping
         self.node_mapping[node] = v
         for n in node.children:
             if isinstance(n, HiNode):
@@ -68,7 +69,7 @@ class AstHbcmTransformer(object):
 
     def add_relation(self, e: HyperEdge, r):
         val = 1.0
-        if r.value is not None:
+        if r.element is not None:
             val = self.attempt_to_convert_to_float(r)
         match r.relation_direction:
             case AstEnumRelationDirection.IN:
@@ -96,8 +97,14 @@ class AstHbcmTransformer(object):
             self.usage_mapping[e] = [x.reference.name for x in edge.signature.usage]
         # Setup stereotypes
         self.setup_stereotype(edge, e)
-        for r in edge.relationships:
+        # Add to self node mapping
+        self.node_mapping[edge] = e
+        # Add relations
+        for r in filter(lambda x: x.element_type == EdgeElementType.RELATIONSHIP, edge.children):
             self.add_relation(e, r)
+        # Add edges
+        for r in filter(lambda x: x.element_type == EdgeElementType.EDGE, edge.children):
+            e.add_element(r)
         # TODO: multiple edges in relationship
 
     def create_edges_node(self, node: HiNode | HiEdge):
@@ -117,14 +124,21 @@ class AstHbcmTransformer(object):
 
     @classmethod
     def attempt_to_convert_to_float(cls, arg):
-        if isinstance(arg.value, VectorField):
-            return [cls.convert_to_float_value(x) for x in arg.value.value]
-        elif isinstance(arg.value, list):
-            return [float(x.value) for x in arg.value]
-        elif isinstance(arg.value, ElementReference):
-            return ReferenceQuery(arg.value.name)
+        if isinstance(arg, HiEdgeElement):
+            if (isinstance(arg.element, VectorField) or
+                    isinstance(arg.element, HiElementField)):
+                return cls.attempt_to_convert_to_float(arg.element)
+            else:
+                return cls.convert_to_float_value(arg.element)
         else:
-            return cls.convert_to_float_value(arg)
+            if isinstance(arg, VectorField):
+                return [cls.convert_to_float_value(x) for x in arg.value]
+            elif isinstance(arg, list):
+                return [float(x.value) for x in arg]
+            elif isinstance(arg.value, ElementReference):
+                return ReferenceQuery(arg.value.name)
+            else:
+                return cls.convert_to_float_value(arg)
 
     @classmethod
     def convert_string(cls, s):
@@ -140,9 +154,14 @@ class AstHbcmTransformer(object):
     @classmethod
     def convert_to_float_value(cls, arg):
         try:
-            return float(arg.value)
+            if isinstance(arg, HiElementValue):
+                return cls.convert_to_float_value(arg.value)
+            elif isinstance(arg, VectorField):
+                return [cls.convert_to_float_value(x) for x in arg.value]
+
+            return float(arg)
         except ValueError:
-            return cls.convert_string(arg.value)
+            return cls.convert_string(arg)
 
 
     @classmethod
@@ -195,10 +214,10 @@ class AstHbcmTransformer(object):
         if isinstance(n, HiElementField):
             return self.__create_attribute(n)
         else:
-            if isinstance(n, HiNode):
+            if isinstance(n, HiNode) or isinstance(n, HiEdge):
                 self.create_attributes(n)
 
-    def create_attributes(self, node: HiNode):
+    def create_attributes(self, node: HiNode | HiEdge):
         if isinstance(node, Start):
             for n in node.body.root:
                 if isinstance(n, HiNode):
@@ -207,6 +226,12 @@ class AstHbcmTransformer(object):
             if isinstance(node, HiNode):
                 for n in node.children:
                     self.create_attribute(n)
+            if isinstance(node, HiEdge):
+                for n in node.children:
+                    if isinstance(n.element, HiElementField):
+                        print(n.element.name, n.element.parent)
+                        self.create_attribute(n.element)
+
 
     def create_root_hyper_vertices(self, start: Start) -> typing.List[HyperVertex]:
         contexts = []

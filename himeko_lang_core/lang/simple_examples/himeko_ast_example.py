@@ -22,7 +22,7 @@ def main(args=None):
 
         create_ast(root)
         for e in collect_edges(root.body.root[0]):
-            for rel in e.relationships:
+            for rel in e.children:
                 print(rel.raw_relation_direction, rel.reference.reference.signature.name.value)
         hbcm_mapper = AstHbcmTransformer()
         hyv = hbcm_mapper.create_root_hyper_vertices(root)
