@@ -67,7 +67,7 @@ robot use kinematics.elements use kinematics.geometry use kinematics.axes
     tool: kinematics.elements.link {
         mass 0.5
         link_geometry: box {
-            dimension [0.075, 0.15]
+            dimension [0.075, 0.15, 1.0]
         }
         visual -> link_geometry
         collision -> link_geometry
@@ -82,15 +82,15 @@ robot use kinematics.elements use kinematics.geometry use kinematics.axes
         -> AXIS_Y
     }
     @j2: kinematics.rev_joint {
-        <- link_1, [0.0, 0.0, 0.15] -> link_2,
+        <- link_1, [0.0, 0.0, 0.35] -> link_2,
         -> AXIS_Y
     }
     @j3: kinematics.rev_joint  {
-        <- link_2, [0.0, 0.0, 0.15] -> link_3,
+        <- link_2, [0.0, 0.0, 0.35] -> link_3,
         -> AXIS_Z
     }
     @j4: kinematics.rev_joint  {
-        <- link_3, [0.0, 0.0, 0.15] -> link_4,
+        <- link_3, [0.0, 0.0, 0.25] -> link_4,
         -> AXIS_Y
     }
     @jtool: kinematics.rev_joint  {
