@@ -29,7 +29,7 @@ hi_use: "use" element_reference
 hi_type: "<" element_type ">"
 element_type: EL_ATOMIC | element_reference
 
-vector_field: "[" ((hi_element_value ("," hi_element_value)*) | (vector_field+("," vector_field+)*)) "]"
+vector_field: "[" (( (hi_element_value|vector_field) ("," (hi_element_value|vector_field))*) ) "]"
 hi_element_value: SIGNED_NUMBER | STRING | element_reference
 
 // Element names and references

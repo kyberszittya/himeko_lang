@@ -109,3 +109,10 @@ class BasicTestLang(unittest.TestCase):
         with open(p0) as f:
             text = p.parse(f.read())
             print(text)
+
+    def test_minimal_example_with_signature_edge_values(self):
+        p = self.load_lang()
+        p0 = os.path.join(self.examples_path, "simple", "multiedges", "multiedge_signature_values.himeko")
+        with open(p0) as f:
+            text = p.parse(f.read())
+            print(text)
