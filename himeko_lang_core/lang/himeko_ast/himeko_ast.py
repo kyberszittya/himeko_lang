@@ -4,10 +4,9 @@ from dataclasses import dataclass
 
 from lark import Transformer, v_args, ast_utils
 
-from himeko.hbcm.elements.edge import ReferenceQuery
 from lang.himeko_ast.elements.abstract_elements import HiElementSignature, _HiAbstractElement
 from lang.himeko_ast.elements.graph.elementfield import HiElementField
-from lang.himeko_ast.elements.graph.hiedge import HiEdgeElement, HiEdge
+from lang.himeko_ast.elements.graph.hiedge import HiEdgeElement, HiEdge, convert_references
 from lang.himeko_ast.elements.graph.hinode import _HiNodeElement, HiNode
 from lang.himeko_ast.elements.meta_elements import _Ast, _Statement, Value, ElementName, HiIncludePath, HiInclude, \
     HiMetaelement, _TreeElement
@@ -80,7 +79,7 @@ def set_parents(element: HiNode|HiEdge|HiElementField):
         if isinstance(n, HiNode) or isinstance(n, HiEdge):
             set_parents(n)
         elif isinstance(n, HiEdgeElement):
-            if isinstance(n.element, HiElementField):
+            if isinstance(n.element, HiElementField) or isinstance(n.element, HiEdge):
                 n.element.parent = element
 
 
@@ -115,9 +114,7 @@ def unfold_references_in_context(node: HiNode):
             convert_references(n)
 
 
-def convert_references(edge: HiEdge):
-    for v in filter(lambda x: x.reference is not None, edge.children):
-        v.reference.reference = ReferenceQuery(v.reference.name)
+
 
 
 def create_ast(start: Start):

@@ -104,8 +104,7 @@ class AstHbcmTransformer(object):
             self.add_relation(e, r)
         # Add edges
         for r in filter(lambda x: x.element_type == EdgeElementType.EDGE, edge.children):
-            e.add_element(r)
-        # TODO: multiple edges in relationship
+            self.create_edge(r.element)
 
     def create_edges_node(self, node: HiNode | HiEdge):
         for n in node.children:

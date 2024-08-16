@@ -3,7 +3,7 @@ import typing
 from dataclasses import dataclass
 from enum import Enum
 
-from himeko.hbcm.elements.edge import HyperEdge
+from himeko.hbcm.elements.edge import HyperEdge, ReferenceQuery
 from himeko.hbcm.elements.vertex import HyperVertex
 from lang.himeko_ast.elements.abstract_elements import _HiAbstractElement, HiElementSignature
 from lang.himeko_ast.elements.graph.elementfield import HiElementField
@@ -18,7 +18,7 @@ class EdgeElementType(Enum):
 
 @dataclass
 class HiEdgeElement(_Ast):
-    element: typing.Optional[VectorField|HiElementField]
+    element: typing.Optional[VectorField|HiElementField|_HiAbstractElement]
     relation_direction: AstEnumRelationDirection
     reference: typing.Optional[ElementReference]
     element_type: EdgeElementType
@@ -60,3 +60,12 @@ class HiEdge(_HiAbstractElement):
         if self.parent is not None:
             hashed.append(str(self.parent.signature.name.value))
         return hash(tuple(hashed))
+
+
+def convert_references(edge: HiEdge):
+    # First convert references in children (leafs)
+    for v in filter(lambda x: x.reference is not None, edge.children):
+        v.reference.reference = ReferenceQuery(v.reference.name)
+    # Then convert references in edges
+    for v in filter(lambda x: x.element_type == EdgeElementType.EDGE, edge.children):
+        convert_references(v.element)
