@@ -11,7 +11,12 @@ kinematics {
         link: -> meta_element {}
         @joint {}
     }
-    joint_rev_limit [-180.0, 180.0]
+    joint_rev_limit {
+        lower -180.0
+        upper 180.0
+        effort 5.0
+        velocity 1.0
+    }
     joint_prismatic_limit [0.0, 0.5]
     @rev_joint: -> elements.joint {
         limit -> joint_rev_limit
