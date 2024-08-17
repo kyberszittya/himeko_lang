@@ -215,3 +215,22 @@ class TestBasicAstParsing(TestAncestorTestCase):
         node0 = next(filter(lambda x: x.name == "node0", list(node_lev_1.get_children(lambda x: isinstance(x, HyperVertex), None))))
         # Children of node0 in node_lev_1 is empty
         self.assertEqual(len(list(node0.get_children(lambda x: isinstance(x, HyperVertex), None))), 0)
+
+    def test_basic_hierarchy_degrees(self):
+        p = TEST_CASE_BASIC_HIERARCHY
+        root = self.read_node(p)
+        self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
+        hbcm_mapper = AstHbcmTransformer()
+        hyv = hbcm_mapper.convert_tree(root)
+        context = hyv[0]
+        # Nodes
+        self.assertEqual(context.name, "context")
+        # Node _lev_0
+        node_lev_0 = context["node_lev_0"]
+        node_1 = context["node_lev_0"]["node1"]
+        # Node_lev_1
+        node_lev_1 = context["node_lev_1"]
+        # Check degrees (no degrees should be present)
+        self.assertEqual(node_lev_0.degree, 0)
+        self.assertEqual(node_1.degree, 0)
+        self.assertEqual(node_lev_1.degree, 0)

@@ -289,3 +289,15 @@ class TestAstParsingWithReferences(TestAncestorTestCase):
         self.assertIsInstance(attrs[4].value, HyperVertex)
         self.assertEqual(attrs[4].value.name, "node0")
         self.assertEqual(attrs[4].value.parent.name, "node")
+
+    def test_value_hierarchy_edges_degrees(self):
+        p = TEST_CASE_HIERARCHY_REF_EDGES
+        root = self.read_node(p)
+        self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
+        hbcm_mapper = AstHbcmTransformer()
+        hyv = hbcm_mapper.convert_tree(root)
+        context = hyv[0]
+        # Check degrees
+        # Nodes
+        node_lev_0_node1 = context["node_lev_0"]["node1"]
+        self.assertEqual(1, node_lev_0_node1.degree)
