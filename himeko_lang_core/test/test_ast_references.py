@@ -299,5 +299,13 @@ class TestAstParsingWithReferences(TestAncestorTestCase):
         context = hyv[0]
         # Check degrees
         # Nodes
+        # Node 0
         node_lev_0_node1 = context["node_lev_0"]["node1"]
         self.assertEqual(1, node_lev_0_node1.degree)
+        self.assertEqual(1, node_lev_0_node1.degree_in)
+        self.assertEqual(0, node_lev_0_node1.degree_out)
+        # Node 1
+        node_lev_0_node2 = context["node_lev_0"]["node2"]
+        self.assertEqual(1, node_lev_0_node2.degree)
+        self.assertEqual(1, node_lev_0_node2.degree_in)
+        self.assertEqual(0, node_lev_0_node2.degree_out)
