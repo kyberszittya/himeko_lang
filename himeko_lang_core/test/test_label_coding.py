@@ -10,6 +10,10 @@ TEST_CASE_MINIMAL_DEGREE_SEQUENCE = (
     os.path.join(TEST_CASE_SIMPLE_FOLDER, "coding", "composite_structure_simple_coding.himeko")
 )
 
+TEST_CASE_MINIMAL_DEO_SEQUENCE = (
+    os.path.join(TEST_CASE_SIMPLE_FOLDER, "coding", "composite_very_simple_1.himeko")
+)
+
 class TestBasicAstParsing(TestAncestorTestCase):
 
     def test_leaf_elements(self):
@@ -40,14 +44,13 @@ class TestBasicAstParsing(TestAncestorTestCase):
 
 
     def test_label_coding(self):
-        root = self.read_node(TEST_CASE_MINIMAL_DEGREE_SEQUENCE)
+        root = self.read_node(TEST_CASE_MINIMAL_DEO_SEQUENCE)
         self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
         hbcm_mapper = AstHbcmTransformer()
         hyv = hbcm_mapper.convert_tree(root)
         root = hyv[0]
         self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
-        self.assertEqual(root.name, "n0")
-        print(root.count_composite_elements)
+        self.assertEqual(root.name, "n2")
         # Collect leaves
         leafs = list(root.get_leaf_elements())
         print([x.name for x in leafs])
