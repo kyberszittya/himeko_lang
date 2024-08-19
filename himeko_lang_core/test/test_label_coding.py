@@ -1,6 +1,7 @@
 from collections import deque
 
-from himeko.hbcm.visualization.graphviz import visualize_dot_graph, create_dot_graph
+from himeko.hbcm.graph.prufer_sequence import micikievus_code
+from himeko.hbcm.visualization.graphviz import visualize_dot_graph, create_dot_graph, create_composition_tree
 from lang.himeko_ast.ast_hbcm import AstHbcmTransformer
 from test_case_descriptions import TEST_CASE_SIMPLE_FOLDER
 
@@ -54,34 +55,12 @@ class TestBasicAstParsing(TestAncestorTestCase):
         root = hyv[0]
         self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
         self.assertEqual(root.name, "n2")
-        # Collect leaves
-        leafs = list(root.get_leaf_elements())
-        print([x.name for x in leafs])
-        # Init queue and degree map
-        fringe = deque()
-        degree_map = {}
-        for leaf in leafs:
-            fringe.append(leaf)
-            degree_map[leaf] = 1
-        # Deo & Micikevicius sequence
-        code = []
-        nodes = []
-        while len(fringe) != 0:
-            node = fringe.pop()
-            u = node.parent
-            if u is not None:
-                nodes.append(node)
-                code.append(u)
-                if u not in degree_map:
-                    degree_map[u] = u.count_composite_elements + 1
-                degree_map[u] -= 1
-                if degree_map[u] == 1:
-                    fringe.append(u)
+        nodes, code = micikievus_code(root)
         print([x.name for x in nodes])
         print([x.name for x in code])
         self.assertEqual(len(nodes), 9)
         # Visualize graph
-        G = create_dot_graph(root, composition=True, stereotype=True)
+        G = create_composition_tree(root, depth=None)
         visualize_dot_graph(G, "test_label_coding.png")
 
 
