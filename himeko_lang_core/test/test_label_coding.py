@@ -1,8 +1,8 @@
-from collections import deque
 
 from himeko.common.clock import NullClock
-from himeko.hbcm.graph.prufer_sequence import micikievus_code, create_permutation
-from himeko.hbcm.visualization.graphviz import visualize_dot_graph, create_dot_graph, create_composition_tree
+from himeko.hbcm.graph.prufer_sequence import micikievus_code, create_permutation_map, create_permutation_sequence, \
+    reconstruct_naive_prufer
+from himeko.hbcm.visualization.graphviz import visualize_dot_graph, create_composition_tree
 from lang.himeko_ast.ast_hbcm import AstHbcmTransformer
 from test_case_descriptions import TEST_CASE_SIMPLE_FOLDER
 
@@ -13,6 +13,10 @@ import os
 
 TEST_CASE_MINIMAL_DEGREE_SEQUENCE = (
     os.path.join(TEST_CASE_SIMPLE_FOLDER, "coding", "composite_structure_simple_coding.himeko")
+)
+
+TEST_CASE_MINIMAL_NAIVE_PRUFER_SEQUENCE = (
+    os.path.join(TEST_CASE_SIMPLE_FOLDER, "coding", "composite_simple_prufer_1.himeko")
 )
 
 TEST_CASE_MINIMAL_DEO_SEQUENCE = (
@@ -51,8 +55,7 @@ class TestBasicAstParsing(TestAncestorTestCase):
         self.assertNotIn("n7", name_set)
         self.assertNotIn("n11", name_set)
 
-
-    def test_label_coding(self):
+    def test_label_coding_numerics(self):
         root = self.read_node(TEST_CASE_MINIMAL_DEO_SEQUENCE)
         self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
         hbcm_mapper = AstHbcmTransformer(NullClock())
@@ -62,6 +65,14 @@ class TestBasicAstParsing(TestAncestorTestCase):
         self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
         self.assertEqual(root.name, "n2")
         leafs = list(root.get_leaf_elements())
+        # Check leafs
+        self.assertEqual(len(leafs), 5)
+        self.assertIn(root["n1"]["n8"], leafs)
+        self.assertIn(root["n7"]["n9"], leafs)
+        self.assertIn(root["n7"]["n10"]["n4"], leafs)
+        self.assertIn(root["n7"]["n6"]["n3"], leafs)
+        self.assertIn(root["n7"]["n6"]["n5"], leafs)
+        # Check guids
         guids = set()
         # Get all nodes
         nodes = list(root.get_children(lambda x: True, depth=None))
@@ -100,41 +111,146 @@ class TestBasicAstParsing(TestAncestorTestCase):
         self.assertEqual(vals.count(root["n7"]["n10"]), 1)
         self.assertEqual(vals.count(root["n7"]["n6"]), 2)
         self.assertEqual(len(code), 9)
+
+    def test_label_coding_guids(self):
+        root = self.read_node(TEST_CASE_MINIMAL_DEO_SEQUENCE)
+        self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
+        hbcm_mapper = AstHbcmTransformer(NullClock())
+        hyv = hbcm_mapper.convert_tree(root)
+        root = hyv[0]
+        # Generate code
+        self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
+        self.assertEqual(root.name, "n2")
+        guids = set()
+        # Get all nodes
+        nodes = list(root.get_children(lambda x: True, depth=None))
+        nodes.append(root)
+        # Assert that all GUIDs are unique
+        print()
+        for x in nodes:
+            self.assertNotIn(x.guid, guids)
+            guids.add(x.guid)
+            print(int.from_bytes(x.guid, "big"), x.name)
+
+
+    def test_label_coding(self):
+        root = self.read_node(TEST_CASE_MINIMAL_DEO_SEQUENCE)
+        self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
+        hbcm_mapper = AstHbcmTransformer(NullClock())
+        hyv = hbcm_mapper.convert_tree(root)
+        root = hyv[0]
+        # Generate code
+        self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
+        self.assertEqual(root.name, "n2")
+        # Get all nodes
+        nodes = list(root.get_children(lambda x: True, depth=None))
+        nodes.append(root)
+        # Assert that all GUIDs are unique
+        print()
+        # Generate code
+        code = list(micikievus_code(root))
         # Create permutation
-        permutation, permutation_reverse = create_permutation(code, root)
+        permutation, permutation_reverse = create_permutation_map(code, root)
         for p in range(10):
             print(p, permutation_reverse[p].name)
             self.assertIn(p, permutation_reverse)
         # Check permutation
         self.assertEqual(permutation[root], 9)
+        perm_seq = list(create_permutation_sequence(code, permutation))
         #self.assertEqual(permutation[root["n1"]], 4)
         #self.assertEqual(permutation[root["n7"]], 7)
         # Reconstruct tree
-        import pygraphviz as pgv
-        unused_numbers = set(range(10))
-        used_numbers = set()
-        print(unused_numbers)
-        fringe = deque()
-        for i in range(0, 10, -1):
-            p = permutation[code[i][1]]
-            if p in unused_numbers:
-                unused_numbers.remove(p)
-                used_numbers.add(p)
-                fringe.append(i)
-        G = pgv.AGraph(directed=True)
-        fringe.extend(sorted(list(unused_numbers)))
-        for x, y in code:
-            print(x.name, y.name)
-        print(unused_numbers)
-        for i in range(9):
-            v = fringe.pop()
-            print(permutation_reverse[v].name, code[i][1].name, v)
-            G.add_edge(code[i][1].name, permutation_reverse[v].name)
-        G.layout(prog="dot")
-        G.draw("test_reconstruction.png")
         # Visualize graph
         G = create_composition_tree(root, depth=None)
         visualize_dot_graph(G, "test_label_coding.png")
+
+
+    def test_reconstruct_code_prufer(self):
+        # As in S. Caminitri et al. 2007
+        nodes = list(range(8))
+        code = [7, 3, 3, 2, 2, 2, 7]
+        # Leaves
+        n = len(code) + 2
+        degree = {}
+        for x in nodes:
+            degree[x] = 1
+        for x in code:
+            degree[x] += 1
+
+        #
+        import pygraphviz as pgv
+        G = pgv.AGraph(directed=True)
+        for i in range(len(code)):
+            for j in range(n):
+                if degree[j] == 1:
+                    degree[j] -= 1
+                    degree[code[i]] -= 1
+                    G.add_edge(j, code[i])
+                    break
+        G.layout(prog="dot")
+        G.draw("test_reconstruction_naive_simple_prufer.png")
+
+
+
+
+    def test_reconstruct_code_prufer_hypervertex(self):
+        root = self.read_node(TEST_CASE_MINIMAL_NAIVE_PRUFER_SEQUENCE)
+        self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
+        hbcm_mapper = AstHbcmTransformer(NullClock())
+        hyv = hbcm_mapper.convert_tree(root)
+        root = hyv[0]
+        self.assertEqual(root.name, "n8")
+        # As in S. Caminitri et al. 2007
+        degree_map = {}
+        node_map = {}
+        for n in root.get_all_children(lambda x: True):
+            degree_map[n.guid] = n.count_composite_elements + 1
+            node_map[n.guid] = n
+        degree_map[root.guid] = root.count_composite_elements + 1
+        node_map[root.guid] = root
+        nodes = degree_map.keys()
+        node_list = []
+        code = []
+        # Nodes
+        for n in nodes:
+            if degree_map[n] == 1:
+                u = node_map[n].parent
+                if u is None:
+                    continue
+                # Decrease degree of parent in the map
+                degree_map[u.guid] -= 1
+                # Append GUID to code
+                code.append(u)
+                node_list.append(node_map[n])
+                while degree_map[u.guid] == 1 and u.guid < n:
+                    # Add parent to fringe
+                    p = u
+                    u = u.parent
+                    if u is None:
+                        break
+                    degree_map[u.guid] -= 1
+                    if u.guid not in degree_map:
+                        break
+                    code.append(u)
+                    node_list.append(node_map[p.guid])
+        degree = {}
+        for x in node_map:
+            degree[node_map[x]] = 1
+        for x in code:
+            degree[x] += 1
+        #
+        import pygraphviz as pgv
+        G = pgv.AGraph(directed=True)
+        for i, c in enumerate(code):
+            for j, n in enumerate(node_list):
+                if degree[n] == 1:
+                    degree[n] -= 1
+                    degree[code[i]] -= 1
+                    G.add_edge(n.name, code[i].name)
+                    break
+        G.layout(prog="dot")
+        G.draw("test_reconstruction_naive_simple_prufer_vertex.png")
+
 
 
     def test_label_coding_versions(self):
