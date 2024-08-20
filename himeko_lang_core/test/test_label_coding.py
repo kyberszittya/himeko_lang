@@ -1,8 +1,9 @@
 
 from himeko.common.clock import NullClock
+from himeko.hbcm.elements.vertex import HyperVertex
 from himeko.hbcm.graph.prufer_sequence import micikievus_code, create_permutation_map, create_permutation_sequence, \
-    reconstruct_naive_prufer
-from himeko.hbcm.visualization.graphviz import visualize_dot_graph, create_composition_tree
+    reconstruct_naive_prufer, generate_naive_prufer
+from himeko.hbcm.visualization.graphviz import visualize_dot_graph, create_composition_tree, visualize_prufer_code
 from lang.himeko_ast.ast_hbcm import AstHbcmTransformer
 from test_case_descriptions import TEST_CASE_SIMPLE_FOLDER
 
@@ -164,7 +165,6 @@ class TestBasicAstParsing(TestAncestorTestCase):
         G = create_composition_tree(root, depth=None)
         visualize_dot_graph(G, "test_label_coding.png")
 
-
     def test_reconstruct_code_prufer(self):
         # As in S. Caminitri et al. 2007
         nodes = list(range(8))
@@ -190,9 +190,6 @@ class TestBasicAstParsing(TestAncestorTestCase):
         G.layout(prog="dot")
         G.draw("test_reconstruction_naive_simple_prufer.png")
 
-
-
-
     def test_reconstruct_code_prufer_hypervertex(self):
         root = self.read_node(TEST_CASE_MINIMAL_NAIVE_PRUFER_SEQUENCE)
         self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
@@ -200,58 +197,43 @@ class TestBasicAstParsing(TestAncestorTestCase):
         hyv = hbcm_mapper.convert_tree(root)
         root = hyv[0]
         self.assertEqual(root.name, "n8")
-        # As in S. Caminitri et al. 2007
-        degree_map = {}
-        node_map = {}
-        for n in root.get_all_children(lambda x: True):
-            degree_map[n.guid] = n.count_composite_elements + 1
-            node_map[n.guid] = n
-        degree_map[root.guid] = root.count_composite_elements + 1
-        node_map[root.guid] = root
-        nodes = degree_map.keys()
-        node_list = []
-        code = []
-        # Nodes
-        for n in nodes:
-            if degree_map[n] == 1:
-                u = node_map[n].parent
-                if u is None:
-                    continue
-                # Decrease degree of parent in the map
-                degree_map[u.guid] -= 1
-                # Append GUID to code
-                code.append(u)
-                node_list.append(node_map[n])
-                while degree_map[u.guid] == 1 and u.guid < n:
-                    # Add parent to fringe
-                    p = u
-                    u = u.parent
-                    if u is None:
-                        break
-                    degree_map[u.guid] -= 1
-                    if u.guid not in degree_map:
-                        break
-                    code.append(u)
-                    node_list.append(node_map[p.guid])
+        code, node_list, node_map = generate_naive_prufer(root)
+        node_list.append(root)
+
+        copy_node = []
+        for n in node_list:
+            n: HyperVertex
+            copy_node.append((n.name, n.guid, n.serial, n.timestamp, n.label, n.suid))
+
+        # Copy tree nodes
+        copy_node_map = {}
+        copy_node_list = []
+        # Reconstruct tree
+        for t in copy_node:
+            n = HyperVertex(t[0], t[3], t[2], t[1], t[5], t[4])
+            copy_node_list.append(n)
+            copy_node_map[t[1]] = n
+
         degree = {}
         for x in node_map:
             degree[node_map[x]] = 1
         for x in code:
             degree[x] += 1
+        visualize_prufer_code(code, degree, node_list, "test_reconstruction_naive_simple_prufer_vertex.png")
+        # Reconstruct tree
+        raw_code = [x.guid for x in code]
+        node_code = [x[1] for x in copy_node]
+        root: HyperVertex = reconstruct_naive_prufer(raw_code, node_code, copy_node_map)
+        print([x.name for x in root.get_leaf_elements()])
+        print(root.name)
+        G = create_composition_tree(root, depth=None)
+        visualize_dot_graph(G, "test_label_coding_reconstructed.png")
+        # Check if reiteration on new Prufer sequence is the same as previous (GUIDs)
+        # Ordering is most important
+        code_2, node_list_2, node_map_2 = generate_naive_prufer(root)
+        for i in range(len(code)):
+            self.assertEqual(code[i].guid, code_2[i].guid)
         #
-        import pygraphviz as pgv
-        G = pgv.AGraph(directed=True)
-        for i, c in enumerate(code):
-            for j, n in enumerate(node_list):
-                if degree[n] == 1:
-                    degree[n] -= 1
-                    degree[code[i]] -= 1
-                    G.add_edge(n.name, code[i].name)
-                    break
-        G.layout(prog="dot")
-        G.draw("test_reconstruction_naive_simple_prufer_vertex.png")
-
-
 
     def test_label_coding_versions(self):
         root = self.read_node(TEST_CASE_MINIMAL_DEO_SEQUENCE)
