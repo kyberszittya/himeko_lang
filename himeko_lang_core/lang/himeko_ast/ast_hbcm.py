@@ -1,6 +1,4 @@
-import abc
 import os
-import time
 import typing
 from queue import Queue
 
@@ -99,7 +97,7 @@ class AstHbcmTransformer(object):
     def create_edge(self, edge: HiEdge):
         e = FactoryHypergraphElements.create_edge_default(
             str(edge.signature.name.value),
-            self.clock_source(),
+            self.clock_source.tick(),
             self.node_mapping[edge.parent]
         )
         # Get usages
@@ -201,7 +199,7 @@ class AstHbcmTransformer(object):
             typ = str(n.type.value)
         atr = FactoryHypergraphElements.create_attribute_default(
             str(n.name.value),
-            value, typ, self.clock_source(), self.node_mapping[n.parent])
+            value, typ, self.clock_source.tick(), self.node_mapping[n.parent])
         if isinstance(value, ReferenceQuery):
             self.relation_queues.put((atr, value))
         return atr

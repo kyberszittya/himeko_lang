@@ -3,6 +3,7 @@ from himeko.common.clock import NullClock
 from himeko.hbcm.elements.vertex import HyperVertex
 from himeko.hbcm.graph.prufer_sequence import micikievus_code, create_permutation_map, create_permutation_sequence, \
     reconstruct_naive_prufer, generate_naive_prufer
+from himeko.hbcm.transformations.transmission import copy_tree, transform_raw_code
 from himeko.hbcm.visualization.graphviz import visualize_dot_graph, create_composition_tree, visualize_prufer_code
 from lang.himeko_ast.ast_hbcm import AstHbcmTransformer
 from test_case_descriptions import TEST_CASE_SIMPLE_FOLDER
@@ -27,6 +28,7 @@ TEST_CASE_MINIMAL_DEO_SEQUENCE = (
 TEST_CASE_MINIMAL_DEO_SEQUENCE_V2 = (
     os.path.join(TEST_CASE_SIMPLE_FOLDER, "coding", "composite_very_simple_1_v2.himeko")
 )
+
 
 class TestBasicAstParsing(TestAncestorTestCase):
 
@@ -197,22 +199,19 @@ class TestBasicAstParsing(TestAncestorTestCase):
         hyv = hbcm_mapper.convert_tree(root)
         root = hyv[0]
         self.assertEqual(root.name, "n8")
+        copy_node, list_copy_node, copy_node_map, _ = copy_tree(root)
+        # Generate a code to check
         code, node_list, node_map = generate_naive_prufer(root)
         node_list.append(root)
-
-        copy_node = []
-        for n in node_list:
-            n: HyperVertex
-            copy_node.append((n.name, n.guid, n.serial, n.timestamp, n.label, n.suid))
-
-        # Copy tree nodes
-        copy_node_map = {}
-        copy_node_list = []
-        # Reconstruct tree
-        for t in copy_node:
-            n = HyperVertex(t[0], t[3], t[2], t[1], t[5], t[4])
-            copy_node_list.append(n)
-            copy_node_map[t[1]] = n
+        # Assert copied and original list of nodes are the same
+        self.assertEqual(len(node_list), len(list_copy_node))
+        for i in range(len(node_list)):
+            self.assertEqual(node_list[i].name, list_copy_node[i].name)
+            self.assertEqual(node_list[i].guid, list_copy_node[i].guid)
+            self.assertEqual(node_list[i].serial, list_copy_node[i].serial)
+            self.assertEqual(node_list[i].timestamp, list_copy_node[i].timestamp)
+            self.assertEqual(node_list[i].label, list_copy_node[i].label)
+            self.assertEqual(node_list[i].suid, list_copy_node[i].suid)
 
         degree = {}
         for x in node_map:
@@ -223,17 +222,25 @@ class TestBasicAstParsing(TestAncestorTestCase):
         # Reconstruct tree
         raw_code = [x.guid for x in code]
         node_code = [x[1] for x in copy_node]
+        raw_code_, node_code_ = transform_raw_code(root)
+        self.assertEqual(raw_code, raw_code_)
+        self.assertEqual(node_code, node_code_)
+        # Reconstruct tree
         root: HyperVertex = reconstruct_naive_prufer(raw_code, node_code, copy_node_map)
-        print([x.name for x in root.get_leaf_elements()])
-        print(root.name)
         G = create_composition_tree(root, depth=None)
         visualize_dot_graph(G, "test_label_coding_reconstructed.png")
         # Check if reiteration on new Prufer sequence is the same as previous (GUIDs)
         # Ordering is most important
-        code_2, node_list_2, node_map_2 = generate_naive_prufer(root)
+        code_2, node_list_2, _ = generate_naive_prufer(root)
+        node_list_2.append(root)
         for i in range(len(code)):
             self.assertEqual(code[i].guid, code_2[i].guid)
-        #
+        # Permutation element
+        # Check if equals with node list
+        for i in range(len(node_list)):
+            self.assertEqual(node_list[i].guid, root.permutation_sequence[i].guid)
+            self.assertEqual(root.permutation_sequence[i].guid, node_list_2[i].guid)
+
 
     def test_label_coding_versions(self):
         root = self.read_node(TEST_CASE_MINIMAL_DEO_SEQUENCE)
