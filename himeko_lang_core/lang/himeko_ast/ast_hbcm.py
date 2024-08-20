@@ -1,8 +1,10 @@
+import abc
 import os
 import time
 import typing
 from queue import Queue
 
+from himeko.common.clock import AbstractClock, SystemTimeClock
 from himeko.hbcm.elements.attribute import HypergraphAttribute
 from himeko.hbcm.elements.edge import EnumRelationDirection, HyperEdge, ReferenceQuery
 from himeko.hbcm.elements.element import HypergraphElement
@@ -27,16 +29,24 @@ class AstGraphPathNotFound(Exception):
     pass
 
 
+
+
+
 class AstHbcmTransformer(object):
 
     def clock_source(self) -> int:
-        return time.time_ns()
+        return self.clock_source.tick()
 
-    def __init__(self):
+    def __init__(self, clock_source: typing.Optional[AbstractClock] = None):
         self.node_mapping = {}
         self.missing_reference = {}
         self.relation_queues = Queue()
         self.usage_mapping = {}
+        # Define clock source
+        if clock_source is not None:
+            self.clock_source = clock_source
+        else:
+            self.clock_source = SystemTimeClock()
 
     def setup_stereotype(self, ast_element: HiNode | HiEdge, element: HypergraphElement):
         # Check for template
@@ -48,9 +58,9 @@ class AstHbcmTransformer(object):
 
     def __create_hyper_node(self, node: HiNode, parent: typing.Optional[HyperVertex]) -> HyperVertex:
         if parent is None:
-            v = FactoryHypergraphElements.create_vertex_default(str(node.signature.name.value), self.clock_source())
+            v = FactoryHypergraphElements.create_vertex_default(str(node.signature.name.value), self.clock_source.tick())
         else:
-            v = FactoryHypergraphElements.create_vertex_default(str(node.signature.name.value), self.clock_source(), parent)
+            v = FactoryHypergraphElements.create_vertex_default(str(node.signature.name.value), self.clock_source.tick(), parent)
         # Get usages
         if len(node.signature.usage) > 0:
             self.usage_mapping[v] = [x.reference.name for x in node.signature.usage]
