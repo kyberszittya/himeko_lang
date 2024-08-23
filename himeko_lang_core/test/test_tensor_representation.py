@@ -46,14 +46,34 @@ class TestBasicTransformation(TestAncestorTestCase):
         tensor, n, e = tr.encode(root_el)
         self.assertEqual(n, 6)
         self.assertEqual(e, 3)
-        print(tensor)
-        """
-        x_e1 = np.array([[0, 0, 0], [1, 0, 0], [0, 0, 0]])
-        x_e2 = np.array([[0, 0, 0], [0, 0, 0], [1, 0, 0]])
-        x_e3 = np.array([[0, 0, 0], [0, 0, 1], [0, 0, 0]])
+        # Star expansion tensor
+        x_e1 = np.array(
+            [[0, 0, 0, 0, 0, 0],
+             [0, 0, 0, 1, 0, 0],
+             [0, 0, 0, 0, 0, 0],
+             [1, 0, 0, 0, 0, 0],
+             [0, 0, 0, 0, 0, 0],
+             [0, 0, 0, 0, 0, 0]]
+        )
+        x_e2 = np.array(
+            [[0, 0, 0, 0, 0, 0],
+             [0, 0, 0, 0, 0, 0],
+             [0, 0, 0, 0, 1, 0],
+             [0, 0, 0, 0, 0, 0],
+             [1, 0, 0, 0, 0, 0],
+             [0, 0, 0, 0, 0, 0]]
+        )
+        x_e3 = np.array(
+            [[0, 0, 0, 0, 0, 0],
+             [0, 0, 0, 0, 0, 1],
+             [0, 0, 0, 0, 0, 0],
+             [0, 0, 0, 0, 0, 0],
+             [0, 0, 0, 0, 0, 0],
+             [0, 0, 1, 0, 0, 0]]
+        )
         tx = np.array([x_e1,x_e2,x_e3])
         self.assertTrue(np.all(tx == tensor[:, :n, :n]))
-        """
+
 
     def test_directed3_nodes_2(self):
         p = "../examples/simple/tensor/directed_3_nodes_2.himeko"
