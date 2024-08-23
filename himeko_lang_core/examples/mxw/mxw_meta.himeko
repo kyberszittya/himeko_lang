@@ -1,0 +1,12 @@
+[mxw_meta]
+maxwhere {
+    units {
+        length "cm"
+    }
+    elements {
+        meta_element {}
+        link: -> meta_element {}
+        mxw_node: -> meta_element {}
+        @joint {}
+    }
+}

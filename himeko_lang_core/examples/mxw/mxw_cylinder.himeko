@@ -1,0 +1,20 @@
+[mxw_cylinder
+    import "mxw_meta.himeko"
+]
+munkahenger_scene use maxwhere.elements {
+    munkahenger: -> mxw_node {
+        position [600, 0, 600]
+        orientation [0, 90, 0]
+        munkahenger_base: -> mxw_node {
+            mesh {
+                url "munkahenger_base.mesh"
+            }
+        }
+        munkahenger_moving: -> mxw_node {
+            position [0, 0, 20]
+            mesh {
+                url "munkahenger_moving.mesh"
+            }
+        }
+    }
+}
