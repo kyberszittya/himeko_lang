@@ -15,7 +15,15 @@ class TestMaxwhereTransformation(TestAncestorTestCase):
         hyv = hbcm_mapper.convert_tree(root, "../examples/mxw/")
         root = hyv[-1]
         self.assertEqual(root.name, "munkahenger_scene")
-        self.assertEqual(root["munkahenger"], "munkahenger")
+        self.assertIsNotNone(root["munkahenger"])
+        self.assertEqual(root["munkahenger"].name, "munkahenger")
+        self.assertIsNotNone(root["munkahenger"]["munkahenger_base"])
+        self.assertEqual(root["munkahenger"]["munkahenger_base"].name, "munkahenger_base")
+        self.assertIsNotNone(root["munkahenger"]["munkahenger_moving"])
+        self.assertEqual(root["munkahenger"]["munkahenger_moving"].name, "munkahenger_moving")
+        # Assert correct position
+        self.assertEqual(root["munkahenger"]["position"].value, [600, 0, 600])
+        self.assertEqual(root["munkahenger"]["orientation"].value, [0, 90, 0])
         mxw_meta = hyv[0]
         op_transformation_mxw_scene = FactoryHypergraphElements.create_vertex_constructor_default_kwargs(
             TransformationMxw, "transformation_mxw", 0,
