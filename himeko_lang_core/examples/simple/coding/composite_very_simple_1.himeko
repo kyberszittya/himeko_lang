@@ -1,0 +1,19 @@
+# According. On coding labeled trees,   Saverio Caminitia, Irene Finocchib, Rossella Petreschia
+# Deo and Micikevicius code on pg. 99
+
+[Simple_deo]
+n2 {
+    n7 {
+        n6{
+            n5 {}
+            n3 {}
+        }
+        n9 {}
+        n10 {
+            n4 {}
+        }
+    }
+    n1 {
+        n8 {}
+    }
+}

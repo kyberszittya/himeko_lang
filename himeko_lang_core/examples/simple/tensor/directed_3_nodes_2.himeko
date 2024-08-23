@@ -5,8 +5,8 @@ graph
     node2{}
     node3{}
 
-    e1: <- @>"node1", -> @>"node2"
-    e2: -> @>"node1", <- @>"node3"
-    e3: -> @>"node3", <- @>"node2"
+    @e1 { <- node1, -> node2 }
+    @e2 { -> node1, <- node3 }
+    @e3 { -> node3, <- node2 }
 
 }

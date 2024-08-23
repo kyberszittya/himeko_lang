@@ -1,0 +1,39 @@
+[meta_kinematics]
+kinematics {
+    units {
+        length "m"
+        angle "degree"
+        mass "kg"
+        time "s"
+    }
+    elements {
+        meta_element {}
+        link: -> meta_element {}
+        @joint {}
+    }
+    joint_rev_limit {
+        lower -180.0
+        upper 180.0
+        effort 5.0
+        velocity 1.0
+    }
+    joint_prismatic_limit [0.0, 0.5]
+    @rev_joint: -> elements.joint {
+        limit -> joint_rev_limit
+    }
+    @prismatic_joint: -> elements.joint {
+        limit -> joint_prismatic_limit
+    }
+    geometry {
+        box {}
+        cylinder {}
+        sphere {}
+    }
+
+    axes {
+        axis_definition {}
+        AXIS_X: -> axis_definition {ax [1.0, 0.0, 0.0]}
+        AXIS_Y: -> axis_definition {ax [0.0, 1.0, 0.0]}
+        AXIS_Z: -> axis_definition {ax [0.0, 0.0, 1.0]}
+    }
+}

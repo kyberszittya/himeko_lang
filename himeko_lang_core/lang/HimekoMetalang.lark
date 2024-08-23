@@ -1,43 +1,57 @@
 // hi_*: abbreviation for Himeko mandatory language elements
-start: "[" hi_meta "]"  hi_body
+start: "[" hi_meta "]" hi_body
 
+// Metadata section
 ?hi_meta: hi_metaelement
 
 hi_metaelement: element_name [(hi_include)+]
-// Metadata elements
-hi_include: "import" ":" string
 
-hi_body: (hi_node | hi_element_field)+
+// Metadata inclusion
+hi_include: "import" hi_include_path
+hi_include_path: STRING
 
-hi_element:  (hi_node | hi_edge | hi_element_field)
-hi_node: hi_element_signature (hi_fields)? "{" (hi_element)* "}"
-hi_edge: hi_element_signature (hi_fields)? ":" (hi_edge_element) ("," hi_edge_element)*
-hi_fields: (hi_element_field)+
-// Hypergraph elements
-hi_element_signature: element_name hi_templating?
-hi_templating: "^" element_reference
-hi_element_field: element_name ("[" (element_type) "]")? (hi_element_value)?";"
-element_type: (EL_ATOMIC|"ref")
+// Body section
+hi_body: (hi_node)+
 
-hi_element_value: (SIGNED_NUMBER | string | element_reference)
-// Edge elements
-hi_edge_element: (RELATION_DIRECTION|parameter_brackets) element_reference
-// Element name
+hi_node: hi_element_signature "{" (hi_node_element ((",")? hi_node_element)*)? "}"
+hi_node_element: hi_node | hi_element_field | hi_edge
+
+hi_edge: hi_edge_type hi_element_signature "{" (hi_edge_element ( "," hi_edge_element)*)? "}"
+hi_edge_type: "rel" | "seq" | "concurrent" | STRING | "@"
+hi_edge_element:  (element_reference | hi_edge | hi_element_field)
+
+// Element signatures and fields
+hi_element_signature: element_name hi_stereotype? (hi_use)*
+hi_element_field: element_name hi_type? ("=")? (hi_element_value | vector_field)?
+
+hi_stereotype: ":" element_reference ("," element_reference)*
+hi_use: "use" element_reference
+hi_type: "<" element_type ">"
+element_type: EL_ATOMIC | element_reference
+
+vector_field: "[" (( (hi_element_value|vector_field) ("," (hi_element_value|vector_field))*) ) "]"
+hi_element_value: SIGNED_NUMBER | STRING | element_reference
+
+// Element names and references
 element_name: CNAME
-element_reference: "@>" string parameter_brackets?
-parameter_brackets: "(" hi_element_value ("," hi_element_value)* ")"
-// Datatype aliasi
-string: ESCAPED_STRING
-// Direction
-RELATION_DIRECTION: "->"|"<-"|"--"|"<>"
+element_reference: vector_field? (RELATION_DIRECTION)? REF_NAME
+
+// Direction for relationships
+RELATION_DIRECTION: "->" | "<-" | "--" | "<>"
+
+
 // Atomic field types
-EL_ATOMIC: "int"|"string"|"real"
-
-
+EL_ATOMIC: "int" | "string" | "real"
+REF_NAME: /[_a-zA-Z][_a-zA-Z0-9.]*/
+// Importing common Lark elements
 %import common.SIGNED_NUMBER
-%import common.NUMBER
 %import common.CNAME
-%import common.ESCAPED_STRING
+%import common.STRING
 %import common.WS
+%import python (NAME, STRING, DEC_NUMBER)
+
 
 %ignore WS
+
+COMMENT: "#" /[^\n]/*
+%ignore COMMENT

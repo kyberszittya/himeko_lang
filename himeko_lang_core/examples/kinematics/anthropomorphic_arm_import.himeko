@@ -1,0 +1,101 @@
+[anthropomorphic_arm
+  import "meta_kinematics.himeko"
+]
+robot use kinematics.elements use kinematics.geometry use kinematics.axes
+{
+
+    link_color [0.7, 0.2, 0.4, 1.0]
+    base_link: kinematics.elements.link {
+        mass 25.0
+        link_geometry: cylinder {
+            dimension [0.13, 0.05]
+        }
+
+        visual -> link_geometry
+        collision -> link_geometry
+        color -> robot.link_color
+    }
+    link_0: kinematics.elements.link {
+        mass 5.0
+        link_geometry: cylinder {
+            dimension [0.075, 0.2]
+        }
+
+        visual -> link_geometry
+        collision -> link_geometry
+        color -> robot.link_color
+    }
+    link_1 : kinematics.elements.link {
+        mass 2.0
+        link_geometry: cylinder {
+            dimension [0.075, 0.3]
+        }
+
+        visual -> link_geometry
+        collision -> link_geometry
+        color -> robot.link_color
+    }
+    link_2: kinematics.elements.link {
+        mass 2.0
+        link_geometry: cylinder {
+            dimension [0.075, 0.25]
+        }
+        visual -> link_geometry
+        collision -> link_geometry
+        color -> robot.link_color
+    }
+    link_3: kinematics.elements.link {
+        mass 2.0
+        link_geometry: cylinder {
+            dimension [0.075, 0.32]
+        }
+        visual -> link_geometry
+        collision -> link_geometry
+        color -> robot.link_color
+
+    }
+    link_4: kinematics.elements.link {
+        mass 2.0
+        link_geometry: cylinder {
+            dimension [0.075, 0.15]
+        }
+        visual -> link_geometry
+        collision -> link_geometry
+        color -> robot.link_color
+
+    }
+    tool: kinematics.elements.link {
+        mass 0.5
+        link_geometry: box {
+            dimension [0.075, 0.15, 1.0]
+        }
+        visual -> link_geometry
+        collision -> link_geometry
+        color -> robot.link_color
+    }
+    @j0: kinematics.rev_joint {
+        <- base_link, [0.0, 0.0, 0.15] -> link_0,
+        -> AXIS_Z
+    }
+    @j1: kinematics.rev_joint {
+        <- link_0, [[0.01, 0.2, 0.15], [0, 0, 90]] -> link_1,
+        -> AXIS_Y
+    }
+    @j2: kinematics.rev_joint {
+        <- link_1, [0.0, 0.0, 0.35] -> link_2,
+        -> AXIS_Y
+    }
+    @j3: kinematics.rev_joint  {
+        <- link_2, [0.0, 0.0, 0.35] -> link_3,
+        -> AXIS_Z
+    }
+    @j4: kinematics.rev_joint  {
+        <- link_3, [0.0, 0.0, 0.25] -> link_4,
+        -> AXIS_Y
+    }
+    @jtool: kinematics.rev_joint  {
+        <- link_4, [0.0, 0.0, 0.15] -> tool,
+        -> AXIS_Z
+    }
+
+}
