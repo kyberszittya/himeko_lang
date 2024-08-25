@@ -23,10 +23,10 @@ class TestMaxwhereTransformation(TestAncestorTestCase):
         self.assertEqual(root["munkahenger"]["munkahenger_moving"].name, "munkahenger_moving")
         # Assert correct position
         self.assertEqual(root["munkahenger"]["position"].value, [600, 0, 600])
-        self.assertEqual(root["munkahenger"]["orientation"].value, [0, 90, 0])
+        self.assertEqual(root["munkahenger"]["orientation"].value, [90, 0, 0])
         mxw_meta = hyv[0]
         op_transformation_mxw_scene = FactoryHypergraphElements.create_vertex_constructor_default_kwargs(
             TransformationMxw, "transformation_mxw", 0,
-            mxw_meta=mxw_meta
+            mxw_meta=mxw_meta, units=root["units"]
         )
         res_jsx = op_transformation_mxw_scene(root)

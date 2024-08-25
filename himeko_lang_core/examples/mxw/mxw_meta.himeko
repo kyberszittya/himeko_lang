@@ -1,7 +1,12 @@
 [mxw_meta]
 maxwhere {
     units {
-        length "cm"
+        design {
+            length "cm"
+            angle "degree"
+            mass "kg"
+            axis "XYZ"
+        }
     }
     elements {
         meta_element {}
