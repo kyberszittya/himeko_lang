@@ -6,7 +6,7 @@ from test_ancestor_testcase import TestAncestorTestCase
 import numpy as np
 
 
-class TestBasicTransformation(TestAncestorTestCase):
+class TestBasicTransformationEncoding(TestAncestorTestCase):
 
     def test_node_hierarchy_edge_generation_hierarchy_evaluation_2(self):
         p = "../examples/simple/minimal_example_with_hierarchy_ref_edges_evaluation2.himeko"

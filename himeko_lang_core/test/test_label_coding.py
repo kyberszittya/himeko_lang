@@ -160,8 +160,6 @@ class TestBasicAstParsing(TestAncestorTestCase):
         # Check permutation
         self.assertEqual(permutation[root], 9)
         perm_seq = list(create_permutation_sequence(code, permutation))
-        #self.assertEqual(permutation[root["n1"]], 4)
-        #self.assertEqual(permutation[root["n7"]], 7)
         # Reconstruct tree
         # Visualize graph
         G = create_composition_tree(root, depth=None)
