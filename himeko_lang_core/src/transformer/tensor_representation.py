@@ -37,7 +37,6 @@ class HypergraphTensorTransformation(HypergraphTransformer):
             self._node_to_index[n.uuid] = d
             self._index_to_node[d] = n
             for e_out in n.get_children_edge():
-
                 self._edge_to_index[e_out.uuid] = cnt_edges
                 self._index_to_edge[cnt_edges] = e_out
                 # Add edge to fringe

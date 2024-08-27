@@ -30,3 +30,6 @@ class TestMaxwhereTransformation(TestAncestorTestCase):
             mxw_meta=mxw_meta, units=root["units"]
         )
         res_jsx = op_transformation_mxw_scene(root)
+        print(res_jsx)
+        with open(f"{root.name}.jsx", "w") as f:
+            f.write(res_jsx)
