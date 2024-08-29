@@ -7,6 +7,7 @@ from lang.himeko_ast.himeko_ast import transformer
 
 ERROR_MSG_UNABLE_TO_TRANSFORM: str = "Unable to transform tree to ast"
 
+
 class TestAncestorTestCase(unittest.TestCase):
 
     def transform_to_hypergraph(self, root):

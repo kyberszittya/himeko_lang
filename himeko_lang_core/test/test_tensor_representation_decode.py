@@ -1,7 +1,7 @@
 import numpy as np
 
 from himeko.common.clock import NullClock
-from himeko.hbcm.elements.edge import HyperEdge, EnumRelationDirection
+from himeko.hbcm.elements.edge import HyperEdge
 from himeko.hbcm.elements.vertex import HyperVertex
 from himeko.hbcm.graph.prufer_sequence import reconstruct_naive_prufer
 from himeko.hbcm.mapping.meta.tensor_mapping import HypergraphTensor
@@ -92,15 +92,30 @@ class TestBasicTransformationEncoding(TestAncestorTestCase):
         tensor, n, n_e, pr_code, perm_seq = channel.transmit(root_el)
         self.assertEqual(n, 6)
         self.assertEqual(n_e, 3)
-        x_e1 = np.array([[0, 0, 0],
-                         [1, 0, 0],
-                         [0, 0, 0]])
-        x_e2 = np.array([[0, 0, 0],
-                         [0, 0, 0],
-                         [1, 0, 0]])
-        x_e3 = np.array([[0, 0, 0],
-                         [0, 0, 1],
-                         [0, 0, 0]])
+        x_e1 = np.array(
+            [[0., 0., 0., 0., 0., 0.],
+             [0., 0., 0., 1., 0., 0.],
+             [0., 0., 0., 0., 0., 0.],
+             [1., 0., 0., 0., 0., 0.],
+             [0., 0., 0., 0., 0., 0.],
+             [0., 0., 0., 0., 0., 0.]]
+        )
+        x_e2 = np.array(
+            [[0., 0., 0., 0., 0., 0.],
+             [0., 0., 0., 0., 0., 0.],
+             [0., 0., 0., 0., 1., 0.],
+             [0., 0., 0., 0., 0., 0.],
+             [1., 0., 0., 0., 0., 0.],
+             [0., 0., 0., 0., 0., 0.]]
+        )
+        x_e3 = np.array(
+            [[0., 0., 0., 0., 0., 0.],
+             [0., 0., 0., 0., 0., 1.],
+             [0., 0., 0., 0., 0., 0.],
+             [0., 0., 0., 0., 0., 0.],
+             [0., 0., 0., 0., 0., 0.],
+             [0., 0., 1., 0., 0., 0.]]
+        )
         tx = np.array([x_e1,x_e2,x_e3])
         self.assertTrue(np.all(tx == tensor[:, :n, :n]))
         # Copy node map
@@ -142,7 +157,6 @@ class TestBasicTransformationEncoding(TestAncestorTestCase):
         self.assertEqual(n_e, new_e)
         self.assertEqual([x.guid for x in pr_code], [x.guid for x in new_pr_code])
         self.assertEqual([x.guid for x in perm_seq], [x.guid for x in new_perm_seq])
-
         # Check if the tensor is the same
         self.assertTrue(np.all(tensor == new_tensor))
 
