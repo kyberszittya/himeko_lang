@@ -1,3 +1,4 @@
+from himeko.hbcm.elements.vertex import HyperVertex
 from processing.parse_description import ParseDescriptionEdge
 from test_ancestor_testcase import TestAncestorTestCase
 
@@ -46,5 +47,8 @@ class TestAstParsingWithReferences(TestAncestorTestCase):
         self.assertEqual(list(root["left_leg"]["left_leg_tarsometatarsus"].in_relations())[0].target.name, "left_leg_metatarsus")
         self.assertIn("metatarsus",
                       list(root["right_leg"]["right_leg_tarsometatarsus"].in_relations())[0].target.stereotype.nameset)
+        # Get numbers
+        self.assertIsInstance(root["right_leg"], HyperVertex)
+        right_leg: HyperVertex = root["right_leg"]
         # Check for the right wing
         self.assertEqual(root["right_wing"]["right_wing_coracoid"].name, "right_wing_coracoid")
