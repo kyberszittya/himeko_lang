@@ -6,8 +6,8 @@ import unittest
 class BasicTestLang(unittest.TestCase):
 
     def setUp(self):
-        self.lang_path = os.path.join("..", "..", "lang", "HimekoMetalang.lark")
-        self.examples_path = os.path.join("..", "..", "examples")
+        self.lang_path = os.path.join("..",  "src", "lang", "HimekoMetalang.lark")
+        self.examples_path = os.path.join("..", "examples")
 
     def load_lang(self):
         with open(self.lang_path) as f:

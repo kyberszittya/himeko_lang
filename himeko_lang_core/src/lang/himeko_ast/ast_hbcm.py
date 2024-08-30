@@ -11,7 +11,7 @@ from himeko.hbcm.factories.creation_elements import FactoryHypergraphElements
 from lang.himeko_ast.elements.graph.elementfield import HiElementField
 from lang.himeko_ast.elements.graph.hiedge import HiEdge, EdgeElementType, HiEdgeElement
 from lang.himeko_ast.elements.graph.hinode import HiNode
-from lang.himeko_ast.elements.meta_elements import AstEnumRelationDirection
+from lang.himeko_ast.elements.meta_elements import AstEnumRelationDirection, AstEnumRefereneModifier
 from lang.himeko_ast.elements.reference import ElementReference
 from lang.himeko_ast.elements.types.data_type import VectorField, HiElementValue
 from lang.himeko_ast.himeko_ast import Start, extract_root_context, \
@@ -23,11 +23,9 @@ from lang.himeko_ast.himeko_ast import transformer
 class AstElementNotFound(Exception):
     pass
 
+
 class AstGraphPathNotFound(Exception):
     pass
-
-
-
 
 
 class AstHbcmTransformer(object):
@@ -47,12 +45,14 @@ class AstHbcmTransformer(object):
             self.clock_source = SystemTimeClock()
 
     def setup_stereotype(self, ast_element: HiNode | HiEdge, element: HypergraphElement):
-        # Check for template
+        # Check for stereotype
         if ast_element.signature.template is not None:
             ast_element.signature.template.reference.reference = ReferenceQuery(
                 ast_element.signature.template.reference.name)
             self.relation_queues.put((
-                element, ast_element.signature.template.reference.reference, EnumRelationDirection.OUT))
+                element, ast_element.signature.template.reference.reference,
+                EnumRelationDirection.OUT, 1.0, ast_element.signature.template.reference.modif)
+            )
 
     def __create_hyper_node(self, node: HiNode, parent: typing.Optional[HyperVertex]) -> HyperVertex:
         if parent is None:
@@ -81,16 +81,20 @@ class AstHbcmTransformer(object):
             val = self.attempt_to_convert_to_float(r)
         match r.relation_direction:
             case AstEnumRelationDirection.IN:
-                self.relation_queues.put((e, r.reference.reference, EnumRelationDirection.IN, val))
+                self.relation_queues.put(
+                    (e, r.reference.reference, EnumRelationDirection.IN, val))
                 return e
             case AstEnumRelationDirection.OUT:
-                self.relation_queues.put((e, r.reference.reference, EnumRelationDirection.OUT, val))
+                self.relation_queues.put(
+                    (e, r.reference.reference, EnumRelationDirection.OUT, val))
                 return e
             case AstEnumRelationDirection.UNDIRECTED:
-                self.relation_queues.put((e, r.reference.reference, EnumRelationDirection.UNDEFINED, val))
+                self.relation_queues.put(
+                    (e, r.reference.reference, EnumRelationDirection.UNDEFINED, val))
                 return e
             case AstEnumRelationDirection.UNDEFINED:
-                self.relation_queues.put((e, r.reference.reference, EnumRelationDirection.UNDEFINED, val))
+                self.relation_queues.put(
+                    (e, r.reference.reference, EnumRelationDirection.UNDEFINED, val))
                 return e
         return e
 
@@ -339,8 +343,14 @@ class AstHbcmTransformer(object):
                 _, _, d, val = t
                 v: HyperEdge
                 v += (res, d, val)
-            if len(t) == 3:
+            elif len(t) == 3:
                 v.stereotype = res
+            elif len(t) == 5:
+                v.stereotype = res
+                match t[4]:
+                    case AstEnumRefereneModifier.COPY:
+                        # TODO: copy elements
+                        res
             elif len(t) == 2:
                 v, r = t
                 v: HypergraphAttribute

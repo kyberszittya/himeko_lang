@@ -10,6 +10,11 @@ class AstEnumRelationDirection(Enum):
     OUT = 2
     UNDIRECTED = 3
 
+class AstEnumRefereneModifier(Enum):
+    COPY = 0
+    USE = 1
+    EXTEND = 2
+
 
 class _Ast(ast_utils.Ast):
     pass
@@ -29,6 +34,13 @@ def enumerate_direction(arg):
         case '->': return AstEnumRelationDirection.OUT
         case '<-': return AstEnumRelationDirection.IN
         case '<>': return AstEnumRelationDirection.UNDIRECTED
+
+
+def enumerate_modifier(arg):
+    match arg:
+        case '<<copy>>': return AstEnumRefereneModifier.COPY
+        case '<<use>>': return AstEnumRefereneModifier.USE
+        case '<<extend>>': return AstEnumRefereneModifier.EXTEND
 
 @dataclass
 class ElementName(_Ast):

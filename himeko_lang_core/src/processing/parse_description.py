@@ -17,5 +17,9 @@ class ParseDescriptionEdge(ExecutableHyperEdge):
         with open(path) as f:
             root = parser.parse(f.read())
         hbcm_mapper = AstHbcmTransformer()
-        hyv = hbcm_mapper.convert_tree(root)
+        if "library_path" in kwargs:
+            library_path = kwargs["library_path"]
+            hyv = hbcm_mapper.convert_tree(root, library_path)
+        else:
+            hyv = hbcm_mapper.convert_tree(root)
         return hyv
