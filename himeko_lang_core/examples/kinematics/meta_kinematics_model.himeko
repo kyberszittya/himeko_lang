@@ -1,0 +1,7 @@
+[meta_kinematics_model]
+meta {
+    elements {
+        bone {}
+        joint {}
+    }
+}

@@ -1,0 +1,56 @@
+[chicken_skeleton_kinematics
+   import "meta_kinematics_model.himeko"
+]
+root use meta.elements {
+    leg_skeleton {
+      femur: bone {}
+      tibia: bone {}
+      metatarsus: bone {}
+      tarsus: bone {}
+      @tarsometatarsus: joint { <- metatarsus, -> tarsus }
+      @tibiotarsus: joint { <- tibia, -> metatarsus }
+      @femorotibial: joint { <- femur, -> tibia }
+    }
+    wing_skeleton {
+      coracoid: bone {}
+      humerus: bone {}
+      ulna: bone {}
+      radius: bone {}
+      carpometacarpus: bone {}
+      phalanges: bone {}
+      clavicle: bone {}
+      @carpophalanges: joint { <- carpometacarpus, -> phalanges }
+      @carpus: joint { <- humerus, -> radius, -> ulna }
+      @coracoid_humerus: joint { <- coracoid, -> humerus, <- clavicle }
+    }
+    ilium: bone {}
+    left_leg: <<copy>> -> leg_skeleton {
+    }
+    @left_ilium: joint { <- ilium, -> left_leg }
+    right_leg: <<copy>> -> leg_skeleton {
+    }
+    @right_ilium: joint { <- ilium, -> right_leg }
+    pygostyle {
+    }
+    @pygostyle_ilium { <- pygostyle, -> ilium }
+    scapula {}
+    @ilium_scapula { <- ilium, -> scapula }
+
+    sternum {}
+    @scapula_sternum { <- scapula, -> sternum }
+
+    left_wing: <<copy>> -> wing_skeleton {}
+    @scapula_left_wing { <- sternum, -> left_wing }
+    right_wing: <<copy>> -> wing_skeleton {}
+    @scapula_right_wing { <- sternum, -> right_wing }
+    epistropheus {}
+    @scapula_epistropheus { <- scapula, -> epistropheus }
+    atlas {}
+    @epistropheus_atlas { <- epistropheus, -> atlas }
+    mandible {}
+    @atlas_mandible { <- atlas, -> mandible }
+    quadrate {}
+    @atlas_quadrate { <- atlas, -> quadrate }
+    incisive {}
+    @quadrate_incisive { <- quadrate, -> incisive }
+}

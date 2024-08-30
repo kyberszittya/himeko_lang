@@ -37,6 +37,9 @@ class AstHbcmTransformer(object):
         self.node_mapping = {}
         self.missing_reference = {}
         self.relation_queues = Queue()
+        # Copy and other operations
+        self.operation_queues = Queue()
+        # Usage mapping
         self.usage_mapping = {}
         # Define clock source
         if clock_source is not None:
@@ -56,9 +59,11 @@ class AstHbcmTransformer(object):
 
     def __create_hyper_node(self, node: HiNode, parent: typing.Optional[HyperVertex]) -> HyperVertex:
         if parent is None:
-            v = FactoryHypergraphElements.create_vertex_default(str(node.signature.name.value), self.clock_source.tick())
+            v = FactoryHypergraphElements.create_vertex_default(
+                str(node.signature.name.value), self.clock_source.tick())
         else:
-            v = FactoryHypergraphElements.create_vertex_default(str(node.signature.name.value), self.clock_source.tick(), parent)
+            v = FactoryHypergraphElements.create_vertex_default(
+                str(node.signature.name.value), self.clock_source.tick(), parent)
         # Get usages
         if len(node.signature.usage) > 0:
             self.usage_mapping[v] = [x.reference.name for x in node.signature.usage]
@@ -320,33 +325,37 @@ class AstHbcmTransformer(object):
 
     def __copy_vertices(self, root: HypergraphElement, template: HypergraphElement):
         root_name = root.name
-        __mapping_guid = {}
-        __mapping_guid[template] = root
-        for c in template.get_all_children(lambda x: True):
+        __mapping_guid = {template.guid: root}
+        for c in template.get_all_children(lambda x: not isinstance(x, HyperEdge)):
             element_name = '_'.join([root_name, c.name])
             if isinstance(c, HyperVertex):
-                e = FactoryHypergraphElements.create_vertex_default(
+                el = FactoryHypergraphElements.create_vertex_default(
                     element_name,
-                    self.clock_source.tick(), __mapping_guid[c.parent])
-            elif isinstance(c, HyperEdge):
-                e = FactoryHypergraphElements.create_edge_default(
-                    element_name,
-                    self.clock_source.tick(), __mapping_guid[c.parent])
-                for r in c.all_relations():
-                    if r.target in __mapping_guid:
-                        t = (__mapping_guid[r.target], r.direction, r.value)
-                    else:
-                        t = (r.target, r.direction, r.value)
-                    r += t
+                    self.clock_source.tick(), __mapping_guid[c.parent.guid])
+                el.add_stereotype(c)
             elif isinstance(c, HypergraphAttribute):
-                e = FactoryHypergraphElements.create_attribute_default(
+                el = FactoryHypergraphElements.create_attribute_default(
                     c.name,
                     c.value, c.type, self.clock_source.tick(),
-                    __mapping_guid[c.parent])
-                e.value = c.value
+                    __mapping_guid[c.parent.guid])
+                el.value = c.value
             else:
                 raise ValueError(f"Unable to copy element of type {type(c)}")
-            __mapping_guid[c.guid] = e
+            __mapping_guid[c.guid] = el
+        # Edge copy
+        for c in template.get_all_children(lambda x: isinstance(x, HyperEdge)):
+            element_name = '_'.join([root_name, c.name])
+            e = FactoryHypergraphElements.create_edge_default(
+                element_name,
+                self.clock_source.tick(), __mapping_guid[c.parent.guid])
+            for r in c.all_relations():
+                if r.target.guid in __mapping_guid:
+                    t = (__mapping_guid[r.target.guid], r.direction, r.value)
+                else:
+                    t = (r.target, r.direction, r.value)
+                e += t
+            e.add_stereotype(c)
+
 
     def retrieve_references(self, hyv: typing.List[HyperVertex]):
         query_elements = self.__init_query_elements(hyv)
@@ -379,7 +388,7 @@ class AstHbcmTransformer(object):
                 v.stereotype = res
                 match t[4]:
                     case AstEnumRefereneModifier.COPY:
-                        self.__copy_vertices(v, res)
+                        self.operation_queues.put((v, res, "copy"))
             elif len(t) == 2:
                 v, r = t
                 v: HypergraphAttribute
@@ -434,6 +443,13 @@ class AstHbcmTransformer(object):
                 new_usage_mapping[k] = used_elements
         self.usage_mapping = new_usage_mapping
 
+    def __execute_operations(self):
+        while not self.operation_queues.empty():
+            t = self.operation_queues.get()
+            v, res, op = t
+            if op == "copy":
+                self.__copy_vertices(v, res)
+
     def convert_tree(self, ast, path=None) -> typing.List[HyperVertex]:
         create_ast(ast)
         hyv = self.create_root_hyper_vertices(ast)
@@ -448,5 +464,7 @@ class AstHbcmTransformer(object):
         self.__init_usage_mapping(hyv)
         # Retrieve references
         self.retrieve_references(hyv)
+        # Execute operations
+        self.__execute_operations()
         return hyv
 
