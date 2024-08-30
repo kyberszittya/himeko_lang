@@ -318,6 +318,36 @@ class AstHbcmTransformer(object):
                 query_elements.extend(self.usage_mapping[h])
         return query_elements
 
+    def __copy_vertices(self, root: HypergraphElement, template: HypergraphElement):
+        root_name = root.name
+        __mapping_guid = {}
+        __mapping_guid[template] = root
+        for c in template.get_all_children(lambda x: True):
+            element_name = '_'.join([root_name, c.name])
+            if isinstance(c, HyperVertex):
+                e = FactoryHypergraphElements.create_vertex_default(
+                    element_name,
+                    self.clock_source.tick(), __mapping_guid[c.parent])
+            elif isinstance(c, HyperEdge):
+                e = FactoryHypergraphElements.create_edge_default(
+                    element_name,
+                    self.clock_source.tick(), __mapping_guid[c.parent])
+                for r in c.all_relations():
+                    if r.target in __mapping_guid:
+                        t = (__mapping_guid[r.target], r.direction, r.value)
+                    else:
+                        t = (r.target, r.direction, r.value)
+                    r += t
+            elif isinstance(c, HypergraphAttribute):
+                e = FactoryHypergraphElements.create_attribute_default(
+                    c.name,
+                    c.value, c.type, self.clock_source.tick(),
+                    __mapping_guid[c.parent])
+                e.value = c.value
+            else:
+                raise ValueError(f"Unable to copy element of type {type(c)}")
+            __mapping_guid[c.guid] = e
+
     def retrieve_references(self, hyv: typing.List[HyperVertex]):
         query_elements = self.__init_query_elements(hyv)
         # Process all relations
@@ -349,8 +379,7 @@ class AstHbcmTransformer(object):
                 v.stereotype = res
                 match t[4]:
                     case AstEnumRefereneModifier.COPY:
-                        # TODO: copy elements
-                        res
+                        self.__copy_vertices(v, res)
             elif len(t) == 2:
                 v, r = t
                 v: HypergraphAttribute
