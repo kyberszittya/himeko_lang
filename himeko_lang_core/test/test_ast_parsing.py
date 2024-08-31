@@ -1,4 +1,6 @@
+
 from himeko.hbcm.elements.edge import HyperEdge, EnumRelationDirection
+from himeko.hbcm.elements.element import common_ancestor
 from himeko.hbcm.elements.vertex import HyperVertex
 from lang.himeko_ast.ast_hbcm import AstHbcmTransformer
 from lang.himeko_ast.himeko_ast import create_ast
@@ -234,3 +236,25 @@ class TestBasicAstParsing(TestAncestorTestCase):
         self.assertEqual(node_lev_0.degree, 0)
         self.assertEqual(node_1.degree, 0)
         self.assertEqual(node_lev_1.degree, 0)
+
+    def test_common_ancestor(self):
+        p = TEST_CASE_BASIC_HIERARCHY
+        root = self.read_node(p)
+        self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
+        hbcm_mapper = AstHbcmTransformer()
+        hyv = hbcm_mapper.convert_tree(root)
+        context = hyv[0]
+        # Nodes
+        self.assertEqual(context.name, "context")
+        # Node _lev_0
+        node_lev_0 = context["node_lev_0"]
+        node_lev_1 = context["node_lev_1"]
+        node_0 = context["node_lev_0"]["node0"]["node0"]
+        node_1 = context["node_lev_0"]["node1"]
+        # Node_lev_1
+        node_lev_1 = context["node_lev_1"]
+        # Check common ancestor
+        self.assertEqual(common_ancestor(node_1, node_0), node_lev_0)
+        self.assertEqual(common_ancestor(node_1, node_lev_1), context)
+
+
