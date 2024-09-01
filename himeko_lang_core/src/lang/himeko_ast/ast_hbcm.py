@@ -6,7 +6,7 @@ from himeko.common.clock import AbstractClock, SystemTimeClock
 from himeko.hbcm.elements.attribute import HypergraphAttribute
 from himeko.hbcm.elements.edge import EnumRelationDirection, HyperEdge, ReferenceQuery
 from himeko.hbcm.elements.element import HypergraphElement
-from himeko.hbcm.elements.vertex import HyperVertex
+from himeko.hbcm.elements.vertex import HyperVertex, Metadata
 from himeko.hbcm.factories.creation_elements import FactoryHypergraphElements
 from lang.himeko_ast.elements.graph.elementfield import HiElementField
 from lang.himeko_ast.elements.graph.hiedge import HiEdge, EdgeElementType, HiEdgeElement
@@ -455,6 +455,11 @@ class AstHbcmTransformer(object):
         hyv = self.create_root_hyper_vertices(ast)
         # Import graphs
         hyv = self.__import_graphs(hyv, ast, path)
+        # Create meta for root element
+        meta = Metadata(str(ast.meta.name.value))
+        for m in ast.meta.includes:
+            meta.add_import(m.value)
+        hyv[-1].add_meta(meta)
         # Create root node
         # Create edges
         self.create_edges(ast)

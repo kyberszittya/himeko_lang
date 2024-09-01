@@ -30,27 +30,27 @@ root use meta.elements {
     right_leg: <<copy>> -> leg_skeleton {
     }
     @right_ilium: joint { <- ilium, -> right_leg }
-    pygostyle {
+    pygostyle: bone {
     }
     @pygostyle_ilium { <- pygostyle, -> ilium }
-    scapula {}
+    scapula: bone {}
     @ilium_scapula { <- ilium, -> scapula }
 
-    sternum {}
+    sternum: bone {}
     @scapula_sternum { <- scapula, -> sternum }
 
     left_wing: <<copy>> -> wing_skeleton {}
-    @scapula_left_wing { <- sternum, -> left_wing }
+    @scapula_left_wing: joint { <- sternum, -> left_wing }
     right_wing: <<copy>> -> wing_skeleton {}
-    @scapula_right_wing { <- sternum, -> right_wing }
+    @scapula_right_wing: joint { <- sternum, -> right_wing }
     epistropheus {}
-    @scapula_epistropheus { <- scapula, -> epistropheus }
-    atlas {}
-    @epistropheus_atlas { <- epistropheus, -> atlas }
+    @scapula_epistropheus: joint { <- scapula, -> epistropheus }
+    atlas: bone {}
+    @epistropheus_atlas: joint { <- epistropheus, -> atlas }
     mandible {}
-    @atlas_mandible { <- atlas, -> mandible }
+    @atlas_mandible: joint { <- atlas, -> mandible }
     quadrate {}
-    @atlas_quadrate { <- atlas, -> quadrate }
+    @atlas_quadrate: joint { <- atlas, -> quadrate }
     incisive {}
-    @quadrate_incisive { <- quadrate, -> incisive }
+    @quadrate_incisive: joint { <- quadrate, -> incisive }
 }
