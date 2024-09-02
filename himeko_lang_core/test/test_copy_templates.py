@@ -1,3 +1,4 @@
+from himeko.hbcm.elements.edge import HyperEdge
 from himeko.hbcm.elements.vertex import HyperVertex
 from himeko.transformations.text.generate_text import generate_text
 from processing.parse_description import ParseDescriptionEdgeFromFile, ParseDescriptionEdge
@@ -53,6 +54,26 @@ class TestAstParsingWithReferences(TestAncestorTestCase):
         right_leg: HyperVertex = root["right_leg"]
         # Check for the right wing
         self.assertEqual(root["right_wing"]["right_wing_coracoid"].name, "right_wing_coracoid")
+        # Check a joint stereotype
+        self.assertIn("joint", root["right_wing"]["right_wing_coracoid_humerus"].stereotype.nameset)
+        # Check that the joint stereotype is a hyperedge
+        self.assertIsInstance(root["right_wing"]["right_wing_coracoid_humerus"], HyperEdge)
+        self.assertIsInstance(list(root["right_wing"]["right_wing_coracoid_humerus"].stereotype)[-1], HyperEdge)
+        # Changing values (copies)
+        root["epistropheus"]["position"].value[0] = 5.0
+        self.assertNotEqual( h[0]["state"]["position"], h[0]["elements"]["bone"]["position"])
+        self.assertNotEqual(root["epistropheus"]["position"], root["sternum"]["position"])
+        self.assertNotEqual(root["epistropheus"]["position"].value, root["sternum"]["position"].value)
+        self.assertEqual(root["epistropheus"]["position"].value[0], 5.0)
+        self.assertEqual(root["sternum"]["position"].value[0], 0.0)
+        self.assertEqual(root["epistropheus"]["position"].value, [5.0, 0.0, 0.0])
+        self.assertEqual(root["sternum"]["position"].value, [0.0, 0.0, 0.0])
+        root["left_wing"]["left_wing_coracoid"]["position"].value[0] = 5.0
+
+        self.assertEqual(root["left_wing"]["left_wing_coracoid"]["position"].value, [5.0, 0.0, 0.0])
+        self.assertEqual(root["right_wing"]["right_wing_coracoid"]["position"].value, [0.0, 0.0, 0.0])
+
+        self.assertNotEqual(root["left_wing"]["left_wing_coracoid"], root["right_wing"]["right_wing_coracoid"])
 
     def test_reparse_text(self):
         e = ParseDescriptionEdgeFromFile("parse_edge", 0, 0, b'0', b'0', "label", None)
@@ -66,3 +87,22 @@ class TestAstParsingWithReferences(TestAncestorTestCase):
         h_reparsed = h_text.execute(text=generate_text(root), library_path=library_path)
         root_reparsed = h_reparsed[-1]
         self.assertEqual(root_reparsed.name, "root")
+        # Check
+        self.assertIsNotNone(root["right_leg"])
+        self.assertIsNotNone(root["left_leg"])
+        self.assertIsNotNone(root["right_wing"])
+        self.assertIsNotNone(root["left_wing"])
+        # Assert new instances are different
+        self.assertNotEqual(root["right_leg"], root["left_leg"])
+        self.assertNotEqual(root["right_leg"]["right_leg_femur"], root["left_leg"]["left_leg_femur"])
+        self.assertEqual(root["right_leg"]["right_leg_femur"].name, "right_leg_femur")
+        self.assertEqual(root["left_leg"]["left_leg_femur"].name, "left_leg_femur")
+        # Assert new instance has the template as stereotype
+        self.assertIn("femur", root["left_leg"]["left_leg_femur"].stereotype.nameset)
+        self.assertIn("bone", root["left_leg"]["left_leg_femur"].stereotype.nameset)
+        # Check for the right leg
+        self.assertEqual(root["right_leg"]["right_leg_femur"].name, "right_leg_femur")
+        self.assertEqual(root["right_leg"]["right_leg_tibia"].name, "right_leg_tibia")
+        self.assertEqual(root["right_leg"]["right_leg_tarsus"].name, "right_leg_tarsus")
+        # Check stereotype
+        self.assertIn("tarsus", root["right_leg"]["right_leg_tarsus"].stereotype.nameset)

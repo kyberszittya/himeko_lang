@@ -1,10 +1,13 @@
 import os
 import typing
-from queue import Queue
+from copy import copy
+from dataclasses import dataclass
+from queue import Queue, PriorityQueue
+
 
 from himeko.common.clock import AbstractClock, SystemTimeClock
 from himeko.hbcm.elements.attribute import HypergraphAttribute
-from himeko.hbcm.elements.edge import EnumRelationDirection, HyperEdge, ReferenceQuery
+from himeko.hbcm.elements.edge import EnumRelationDirection, HyperEdge, ReferenceQuery, EnumRelationModifier
 from himeko.hbcm.elements.element import HypergraphElement
 from himeko.hbcm.elements.vertex import HyperVertex, Metadata
 from himeko.hbcm.factories.creation_elements import FactoryHypergraphElements
@@ -27,6 +30,11 @@ class AstElementNotFound(Exception):
 class AstGraphPathNotFound(Exception):
     pass
 
+@dataclass(order=True)
+class PrioritizedTask:
+    priority: int
+    task: typing.Any
+
 
 class AstHbcmTransformer(object):
 
@@ -38,7 +46,7 @@ class AstHbcmTransformer(object):
         self.missing_reference = {}
         self.relation_queues = Queue()
         # Copy and other operations
-        self.operation_queues = Queue()
+        self.operation_queues = PriorityQueue()
         # Usage mapping
         self.usage_mapping = {}
         # Define clock source
@@ -174,6 +182,10 @@ class AstHbcmTransformer(object):
                 return cls.convert_to_float_value(arg.value)
             elif isinstance(arg, VectorField):
                 return [cls.convert_to_float_value(x) for x in arg.value]
+            elif isinstance(arg, ElementReference):
+                match arg.modif:
+                    case AstEnumRefereneModifier.COPY:
+                        return ReferenceQuery(arg.name, EnumRelationModifier.COPY)
 
             return float(arg)
         except ValueError:
@@ -305,7 +317,7 @@ class AstHbcmTransformer(object):
                 continue
         return None
 
-    def retrieve_referenced_node(self, e: HyperEdge | HypergraphAttribute, ref):
+    def retrieve_referenced_element(self, e: HyperEdge | HypergraphAttribute, ref):
         query_split = ref.reference_query.split('.')
         element: HypergraphElement = e.parent
         if len(query_split) == 1:
@@ -338,7 +350,7 @@ class AstHbcmTransformer(object):
                     c.name,
                     c.value, c.type, self.clock_source.tick(),
                     __mapping_guid[c.parent.guid])
-                el.value = c.value
+                el.value = copy(c.value)
             else:
                 raise ValueError(f"Unable to copy element of type {type(c)}")
             __mapping_guid[c.guid] = el
@@ -350,12 +362,11 @@ class AstHbcmTransformer(object):
                 self.clock_source.tick(), __mapping_guid[c.parent.guid])
             for r in c.all_relations():
                 if r.target.guid in __mapping_guid:
-                    t = (__mapping_guid[r.target.guid], r.direction, r.value)
+                    t = (__mapping_guid[r.target.guid], r.direction, copy(r.value))
                 else:
-                    t = (r.target, r.direction, r.value)
+                    t = (r.target, r.direction, copy(r.value))
                 e += t
             e.add_stereotype(c)
-
 
     def retrieve_references(self, hyv: typing.List[HyperVertex]):
         query_elements = self.__init_query_elements(hyv)
@@ -364,7 +375,7 @@ class AstHbcmTransformer(object):
             t = self.relation_queues.get()
             v, r = t[0], t[1]
             v: HyperEdge | HypergraphAttribute
-            res = self.retrieve_referenced_node(v, r)
+            res = self.retrieve_referenced_element(v, r)
             # Check whether node is in usage mapping
             if v in self.usage_mapping:
                 query_elements.extend(self.usage_mapping[r])
@@ -380,6 +391,19 @@ class AstHbcmTransformer(object):
             # Check if we are dealing with an edge
             if len(t) == 4:
                 _, _, d, val = t
+                if isinstance(val, list):
+                    new_val = []
+                    for ref_val in val:
+                        if isinstance(ref_val, ReferenceQuery):
+                            folded = self.retrieve_referenced_element(v, ref_val)
+                            match ref_val.modifier:
+                                case EnumRelationModifier.COPY:
+                                    new_val.append(copy(folded.value))
+                                case EnumRelationModifier.USE:
+                                    new_val.append(folded)
+                    if len(new_val) == 1:
+                        new_val = new_val[0]
+                    val = new_val
                 v: HyperEdge
                 v += (res, d, val)
             elif len(t) == 3:
@@ -388,11 +412,19 @@ class AstHbcmTransformer(object):
                 v.stereotype = res
                 match t[4]:
                     case AstEnumRefereneModifier.COPY:
-                        self.operation_queues.put((v, res, "copy"))
+                        prio = len(v.stereotype.nameset)
+                        task = PrioritizedTask(prio, (v, res, "copy"))
+                        self.operation_queues.put(task)
             elif len(t) == 2:
                 v, r = t
                 v: HypergraphAttribute
                 v.value = res
+
+    def max_stereotype(self, v: HypergraphElement):
+        prio = len(v.stereotype.nameset)
+        for el in  v.get_all_children(lambda x: True):
+            prio = max(prio, self.max_stereotype(el))
+        return prio
 
     def read_graph(self, path):
         # Transformer
@@ -444,8 +476,16 @@ class AstHbcmTransformer(object):
         self.usage_mapping = new_usage_mapping
 
     def __execute_operations(self):
+        # Reprioritize operations
+        operations = PriorityQueue()
         while not self.operation_queues.empty():
-            t = self.operation_queues.get()
+            t = self.operation_queues.get().task
+            prio = len(t[0].stereotype.nameset)
+            prio = prio + self.max_stereotype(t[1])
+            operations.put(PrioritizedTask(prio, t))
+        # Execute operations
+        while not operations.empty():
+            t = operations.get().task
             v, res, op = t
             if op == "copy":
                 self.__copy_vertices(v, res)

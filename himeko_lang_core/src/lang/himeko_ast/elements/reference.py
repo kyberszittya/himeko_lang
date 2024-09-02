@@ -6,7 +6,6 @@ from lang.himeko_ast.elements.meta_elements import AstEnumRelationDirection, _As
 from lang.himeko_ast.elements.types.data_type import VectorField
 
 
-
 @dataclass
 class ElementReference(_Ast):
     name: str

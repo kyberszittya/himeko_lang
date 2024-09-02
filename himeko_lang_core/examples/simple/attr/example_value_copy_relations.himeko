@@ -1,0 +1,27 @@
+[ Minimal_Example ]
+context
+{
+
+node_lev_0
+{
+    node0{}
+    node1{}
+    node2{}
+    node3{}
+
+    val1 [0.0, 0.0, 0.0]
+    val2 [0.0, 0.0, 1.0]
+    val3 [0.0, 0.0, 0.0, 1.0]
+
+    @e0 {
+        [|> -> val1]-> node0,
+        [|> -> val1]-> node1,
+        [|> -> val2, |> -> val3]-> node2,
+        <- node3
+    }
+
+    @e1 { -> node1, -> node2, <- node3 }
+
+    @e2 { -> node0, <- node0 }
+}
+}

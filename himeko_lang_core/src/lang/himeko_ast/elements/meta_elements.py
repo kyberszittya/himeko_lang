@@ -39,8 +39,11 @@ def enumerate_direction(arg):
 def enumerate_modifier(arg):
     match arg:
         case '<<copy>>': return AstEnumRefereneModifier.COPY
+        case '|>': return AstEnumRefereneModifier.COPY
         case '<<use>>': return AstEnumRefereneModifier.USE
+        case '*|>': return AstEnumRefereneModifier.USE
         case '<<extend>>': return AstEnumRefereneModifier.EXTEND
+        case '-|>': return AstEnumRefereneModifier.EXTEND
 
 @dataclass
 class ElementName(_Ast):

@@ -35,7 +35,7 @@ hi_element_value: SIGNED_NUMBER | STRING | element_reference
 // Element names and references
 element_name: CNAME
 element_reference: vector_field? ((REFERENCE_MODIFIER RELATION_DIRECTION)|RELATION_DIRECTION)? REF_NAME
-REFERENCE_MODIFIER: "<<copy>>" | "<<use>>" | "<<extend>>"
+REFERENCE_MODIFIER: ("<<copy>>"| "|>") | ("<<use>>"|"*|>) | ("<<extend>>"|"-|>")
 
 // Direction for relationships
 RELATION_DIRECTION: "->" | "<-" | "--" | "<>"
