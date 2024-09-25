@@ -16,6 +16,7 @@
       <geometry>
         <cylinder length="0.05" radius="0.13"/>
       </geometry>
+      <origin xyz="0.0 0.0 0.025"/>
     </collision>
   </link>
   <link name="link_0">
@@ -35,6 +36,7 @@
       <geometry>
         <cylinder length="0.2" radius="0.075"/>
       </geometry>
+      <origin xyz="0.0 0.0 0.1"/>
     </collision>
   </link>
   <link name="link_1">
@@ -54,6 +56,7 @@
       <geometry>
         <cylinder length="0.3" radius="0.075"/>
       </geometry>
+      <origin xyz="0.0 0.0 0.15"/>
     </collision>
   </link>
   <link name="link_2">
@@ -73,6 +76,7 @@
       <geometry>
         <cylinder length="0.25" radius="0.075"/>
       </geometry>
+      <origin xyz="0.0 0.0 0.125"/>
     </collision>
   </link>
   <link name="link_3">
@@ -92,6 +96,7 @@
       <geometry>
         <cylinder length="0.32" radius="0.075"/>
       </geometry>
+      <origin xyz="0.0 0.0 0.16"/>
     </collision>
   </link>
   <link name="link_4">
@@ -111,6 +116,7 @@
       <geometry>
         <cylinder length="0.15" radius="0.075"/>
       </geometry>
+      <origin xyz="0.0 0.0 0.075"/>
     </collision>
   </link>
   <link name="tool">
@@ -130,6 +136,7 @@
       <geometry>
         <box size="0.075 0.15 0.1"/>
       </geometry>
+      <origin xyz="0.0 0.0 0.05"/>
     </collision>
   </link>
   <joint type="revolute" name="j0">

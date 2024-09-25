@@ -10,31 +10,30 @@ robot use kinematics.elements use kinematics.geometry use kinematics.axes
         link_geometry: cylinder {
             dimension [0.13, 0.05]
         }
-
         visual -> link_geometry
         collision -> link_geometry
         color -> robot.link_color
+        origin [0.0, 0.0, 0.025]
     }
     link_0: kinematics.elements.link {
         mass 5.0
         link_geometry: cylinder {
             dimension [0.075, 0.2]
         }
-
         visual -> link_geometry
         collision -> link_geometry
         color -> robot.link_color
+        origin [0.0, 0.0, 0.1]
     }
     link_1 : kinematics.elements.link {
         mass 2.0
         link_geometry: cylinder {
             dimension [0.075, 0.3]
         }
-
-
         visual -> link_geometry
         collision -> link_geometry
         color -> robot.link_color
+        origin [0.0, 0.0, 0.15]
     }
     link_2: kinematics.elements.link {
         mass 2.0
@@ -45,6 +44,7 @@ robot use kinematics.elements use kinematics.geometry use kinematics.axes
         visual -> link_geometry
         collision -> link_geometry
         color -> robot.link_color
+        origin [0.0, 0.0, 0.125]
     }
     link_3: kinematics.elements.link {
         mass 2.0
@@ -55,7 +55,7 @@ robot use kinematics.elements use kinematics.geometry use kinematics.axes
         visual -> link_geometry
         collision -> link_geometry
         color -> robot.link_color
-
+        origin [0.0, 0.0, 0.16]
     }
     link_4: kinematics.elements.link {
         mass 2.0
@@ -65,7 +65,7 @@ robot use kinematics.elements use kinematics.geometry use kinematics.axes
         visual -> link_geometry
         collision -> link_geometry
         color -> robot.link_color
-
+        origin [0.0, 0.0, 0.075]
     }
     tool: kinematics.elements.link {
         mass 0.5
@@ -75,6 +75,7 @@ robot use kinematics.elements use kinematics.geometry use kinematics.axes
         visual -> link_geometry
         collision -> link_geometry
         color -> robot.link_color
+        origin [0.0, 0.0, 0.05]
     }
     @j0: kinematics.rev_joint {
         <- base_link, [0.0, 0.0, 0.15] -> link_0,
