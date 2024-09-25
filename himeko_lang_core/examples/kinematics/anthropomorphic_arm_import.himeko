@@ -31,6 +31,7 @@ robot use kinematics.elements use kinematics.geometry use kinematics.axes
             dimension [0.075, 0.3]
         }
 
+
         visual -> link_geometry
         collision -> link_geometry
         color -> robot.link_color
@@ -40,6 +41,7 @@ robot use kinematics.elements use kinematics.geometry use kinematics.axes
         link_geometry: cylinder {
             dimension [0.075, 0.25]
         }
+
         visual -> link_geometry
         collision -> link_geometry
         color -> robot.link_color
@@ -49,6 +51,7 @@ robot use kinematics.elements use kinematics.geometry use kinematics.axes
         link_geometry: cylinder {
             dimension [0.075, 0.32]
         }
+
         visual -> link_geometry
         collision -> link_geometry
         color -> robot.link_color
@@ -67,7 +70,7 @@ robot use kinematics.elements use kinematics.geometry use kinematics.axes
     tool: kinematics.elements.link {
         mass 0.5
         link_geometry: box {
-            dimension [0.075, 0.15, 1.0]
+            dimension [0.075, 0.15, 0.1]
         }
         visual -> link_geometry
         collision -> link_geometry
@@ -79,19 +82,19 @@ robot use kinematics.elements use kinematics.geometry use kinematics.axes
     }
     @j1: kinematics.rev_joint {
         <- link_0, [[0.01, 0.2, 0.15], [0, 0, 90]] -> link_1,
-        -> AXIS_Y
+        -> AXIS_X
     }
     @j2: kinematics.rev_joint {
-        <- link_1, [0.0, 0.0, 0.35] -> link_2,
-        -> AXIS_Y
+        <- link_1, [0.0, 0.0, 0.2] -> link_2,
+        -> AXIS_X
     }
     @j3: kinematics.rev_joint  {
         <- link_2, [0.0, 0.0, 0.35] -> link_3,
         -> AXIS_Z
     }
     @j4: kinematics.rev_joint  {
-        <- link_3, [0.0, 0.0, 0.25] -> link_4,
-        -> AXIS_Y
+        <- link_3, [0.15, 0.0, 0.25] -> link_4,
+        -> AXIS_X
     }
     @jtool: kinematics.rev_joint  {
         <- link_4, [0.0, 0.0, 0.15] -> tool,

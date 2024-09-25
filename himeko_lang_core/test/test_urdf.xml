@@ -6,7 +6,7 @@
     </inertial>
     <visual>
       <geometry>
-        <cylinder length="0.13" radius="0.05"/>
+        <cylinder length="0.05" radius="0.13"/>
       </geometry>
       <material name="link_color">
         <color rgba="0.7 0.2 0.4 1.0"/>
@@ -14,7 +14,7 @@
     </visual>
     <collision>
       <geometry>
-        <cylinder length="0.13" radius="0.05"/>
+        <cylinder length="0.05" radius="0.13"/>
       </geometry>
     </collision>
   </link>
@@ -25,7 +25,7 @@
     </inertial>
     <visual>
       <geometry>
-        <cylinder length="0.075" radius="0.2"/>
+        <cylinder length="0.2" radius="0.075"/>
       </geometry>
       <material name="link_color">
         <color rgba="0.7 0.2 0.4 1.0"/>
@@ -33,7 +33,7 @@
     </visual>
     <collision>
       <geometry>
-        <cylinder length="0.075" radius="0.2"/>
+        <cylinder length="0.2" radius="0.075"/>
       </geometry>
     </collision>
   </link>
@@ -44,7 +44,7 @@
     </inertial>
     <visual>
       <geometry>
-        <cylinder length="0.075" radius="0.3"/>
+        <cylinder length="0.3" radius="0.075"/>
       </geometry>
       <material name="link_color">
         <color rgba="0.7 0.2 0.4 1.0"/>
@@ -52,7 +52,7 @@
     </visual>
     <collision>
       <geometry>
-        <cylinder length="0.075" radius="0.3"/>
+        <cylinder length="0.3" radius="0.075"/>
       </geometry>
     </collision>
   </link>
@@ -63,7 +63,7 @@
     </inertial>
     <visual>
       <geometry>
-        <cylinder length="0.075" radius="0.25"/>
+        <cylinder length="0.25" radius="0.075"/>
       </geometry>
       <material name="link_color">
         <color rgba="0.7 0.2 0.4 1.0"/>
@@ -71,7 +71,7 @@
     </visual>
     <collision>
       <geometry>
-        <cylinder length="0.075" radius="0.25"/>
+        <cylinder length="0.25" radius="0.075"/>
       </geometry>
     </collision>
   </link>
@@ -82,7 +82,7 @@
     </inertial>
     <visual>
       <geometry>
-        <cylinder length="0.075" radius="0.32"/>
+        <cylinder length="0.32" radius="0.075"/>
       </geometry>
       <material name="link_color">
         <color rgba="0.7 0.2 0.4 1.0"/>
@@ -90,7 +90,7 @@
     </visual>
     <collision>
       <geometry>
-        <cylinder length="0.075" radius="0.32"/>
+        <cylinder length="0.32" radius="0.075"/>
       </geometry>
     </collision>
   </link>
@@ -101,7 +101,7 @@
     </inertial>
     <visual>
       <geometry>
-        <cylinder length="0.075" radius="0.15"/>
+        <cylinder length="0.15" radius="0.075"/>
       </geometry>
       <material name="link_color">
         <color rgba="0.7 0.2 0.4 1.0"/>
@@ -109,18 +109,18 @@
     </visual>
     <collision>
       <geometry>
-        <cylinder length="0.075" radius="0.15"/>
+        <cylinder length="0.15" radius="0.075"/>
       </geometry>
     </collision>
   </link>
   <link name="tool">
     <inertial>
       <mass value="0.5"/>
-      <inertia ixx="0.042604166666666665" iyy="0.041901041666666666" izz="0.0011718749999999997" ixz="0" ixy="0" iyz="0"/>
+      <inertia ixx="0.0013541666666666667" iyy="0.0006510416666666666" izz="0.0011718749999999997" ixz="0" ixy="0" iyz="0"/>
     </inertial>
     <visual>
       <geometry>
-        <box size="0.075 0.15 1.0"/>
+        <box size="0.075 0.15 0.1"/>
       </geometry>
       <material name="link_color">
         <color rgba="0.7 0.2 0.4 1.0"/>
@@ -128,7 +128,7 @@
     </visual>
     <collision>
       <geometry>
-        <box size="0.075 0.15 1.0"/>
+        <box size="0.075 0.15 0.1"/>
       </geometry>
     </collision>
   </link>
@@ -143,14 +143,14 @@
     <parent link="link_0"/>
     <child link="link_1"/>
     <origin xyz="0.01 0.2 0.15" rpy="0.0 0.0 1.5707963267948966"/>
-    <axis xyz="0.0 1.0 0.0"/>
+    <axis xyz="1.0 0.0 0.0"/>
     <limit lower="-180.0" upper="180.0" effort="5.0" velocity="1.0"/>
   </joint>
   <joint type="revolute" name="j2">
     <parent link="link_1"/>
     <child link="link_2"/>
-    <origin xyz="0.0 0.0 0.35"/>
-    <axis xyz="0.0 1.0 0.0"/>
+    <origin xyz="0.0 0.0 0.2"/>
+    <axis xyz="1.0 0.0 0.0"/>
     <limit lower="-180.0" upper="180.0" effort="5.0" velocity="1.0"/>
   </joint>
   <joint type="revolute" name="j3">
@@ -163,8 +163,8 @@
   <joint type="revolute" name="j4">
     <parent link="link_3"/>
     <child link="link_4"/>
-    <origin xyz="0.0 0.0 0.25"/>
-    <axis xyz="0.0 1.0 0.0"/>
+    <origin xyz="0.15 0.0 0.25"/>
+    <axis xyz="1.0 0.0 0.0"/>
     <limit lower="-180.0" upper="180.0" effort="5.0" velocity="1.0"/>
   </joint>
   <joint type="revolute" name="jtool">

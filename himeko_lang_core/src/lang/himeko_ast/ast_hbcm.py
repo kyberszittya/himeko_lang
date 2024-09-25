@@ -401,6 +401,8 @@ class AstHbcmTransformer(object):
                                     new_val.append(copy(folded.value))
                                 case EnumRelationModifier.USE:
                                     new_val.append(folded)
+                        else:
+                            new_val.append(ref_val)
                     if len(new_val) == 1:
                         new_val = new_val[0]
                     val = new_val

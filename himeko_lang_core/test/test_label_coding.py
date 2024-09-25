@@ -176,7 +176,6 @@ class TestBasicAstParsing(TestAncestorTestCase):
             degree[x] = 1
         for x in code:
             degree[x] += 1
-
         #
         import pygraphviz as pgv
         G = pgv.AGraph(directed=True)
@@ -216,6 +215,7 @@ class TestBasicAstParsing(TestAncestorTestCase):
             degree[node_map[x]] = 1
         for x in code:
             degree[x] += 1
+        print([ x.name for x in code])
         visualize_prufer_code(code, degree, node_list, "test_reconstruction_naive_simple_prufer_vertex.png")
         # Reconstruct tree
         raw_code = [x.guid for x in code]
@@ -278,5 +278,3 @@ class TestBasicAstParsing(TestAncestorTestCase):
         self.assertEqual(root["n7"]["n6"]["n5"].guid, rootv2["n7"]["n6"]["n5"].guid)
         for e in nodes:
             print(e.name, " \t", int.from_bytes(e.guid, 'big'))
-
-
