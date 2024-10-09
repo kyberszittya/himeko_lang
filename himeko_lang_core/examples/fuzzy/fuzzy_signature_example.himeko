@@ -15,8 +15,9 @@ fuzzy_1 use fuzzy_signature.snorm use fuzzy_signature.tnorm
         }
     }
     @e: min {
-        @e1: max {-- x.x1}
-        @e2: max {-- x.x2}
-        @e3: max {-- x.x3}
+        -- x.x1, -- x.x2, -- x.x3,
+        @e1: max {-- x.x1},
+        @e2: max {-- x.x2},
+        @e3: max {-- x.x3},
     }
 }
