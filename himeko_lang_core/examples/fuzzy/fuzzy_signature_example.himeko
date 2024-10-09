@@ -1,0 +1,22 @@
+[fuzzy_signature_example import "fuzzy_signature_meta.himeko"]
+fuzzy_1 use fuzzy_signature.snorm use fuzzy_signature.tnorm
+{
+    x {
+        name "x"
+        description "Input variable x"
+        x1 {
+            value [0.9]
+        }
+        x2 {
+            value [0.23, 0.92, 1.5]
+        }
+        x3 {
+            value [0.3, 0.6]
+        }
+    }
+    @e: min {
+        @e1: max {-- x.x1}
+        @e2: max {-- x.x2}
+        @e3: max {-- x.x3}
+    }
+}
