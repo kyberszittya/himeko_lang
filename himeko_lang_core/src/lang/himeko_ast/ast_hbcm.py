@@ -42,13 +42,13 @@ class AstHbcmTransformer(object):
         return self.clock_source.tick()
 
     def __init__(self, clock_source: typing.Optional[AbstractClock] = None):
-        self.node_mapping = {}
+        self.element_mapping = {}
         self.missing_reference = {}
         self.relation_queues = Queue()
         # Copy and other operations
         self.operation_queues = PriorityQueue()
         # Usage mapping
-        self.usage_mapping = {}
+        self.reference_mapping = {}
         # Define clock source
         if clock_source is not None:
             self.clock_source = clock_source
@@ -74,11 +74,11 @@ class AstHbcmTransformer(object):
                 str(node.signature.name.value), self.clock_source.tick(), parent)
         # Get usages
         if len(node.signature.usage) > 0:
-            self.usage_mapping[v] = [x.reference.name for x in node.signature.usage]
+            self.reference_mapping[v] = [x.reference.name for x in node.signature.usage]
         # Setup stereotypes
         self.setup_stereotype(node, v)
         # Add to self node mapping
-        self.node_mapping[node] = v
+        self.element_mapping[node] = v
         for n in node.children:
             if isinstance(n, HiNode):
                 self.create_hyper_vertex(n, v)
@@ -115,15 +115,15 @@ class AstHbcmTransformer(object):
         e = FactoryHypergraphElements.create_edge_default(
             str(edge.signature.name.value),
             self.clock_source.tick(),
-            self.node_mapping[edge.parent]
+            self.element_mapping[edge.parent]
         )
         # Get usages
         if len(edge.signature.usage) > 0:
-            self.usage_mapping[e] = [x.reference.name for x in edge.signature.usage]
+            self.reference_mapping[e] = [x.reference.name for x in edge.signature.usage]
         # Setup stereotypes
         self.setup_stereotype(edge, e)
         # Add to self node mapping
-        self.node_mapping[edge] = e
+        self.element_mapping[edge] = e
         # Add relations
         for r in filter(lambda x: x.element_type == EdgeElementType.RELATIONSHIP, edge.children):
             self.add_relation(e, r)
@@ -220,7 +220,7 @@ class AstHbcmTransformer(object):
             typ = str(n.type.value)
         atr = FactoryHypergraphElements.create_attribute_default(
             str(n.name.value),
-            value, typ, self.clock_source.tick(), self.node_mapping[n.parent])
+            value, typ, self.clock_source.tick(), self.element_mapping[n.parent])
         if isinstance(value, ReferenceQuery):
             self.relation_queues.put((atr, value))
         return atr
@@ -228,8 +228,8 @@ class AstHbcmTransformer(object):
     def handle_typed_value(self, n):
         if n.type is not None:
             if isinstance(n.type.value, ElementReference):
-                if n.type.value.name in self.node_mapping:
-                    value = self.node_mapping[n.type.value.name]
+                if n.type.value.name in self.element_mapping:
+                    value = self.element_mapping[n.type.value.name]
                 else:
                     value = ReferenceQuery(n.type.value.name)
             else:
@@ -277,7 +277,8 @@ class AstHbcmTransformer(object):
             return self.find_element_by_name_fragments(c, fragments[1:])
         raise AstElementNotFound(f"Element not found: {fragments}")
 
-    def get_element_references(self,
+    def \
+            get_element_references(self,
                                query_split: typing.List[str],
                                element: HypergraphElement):
         # Get query root
@@ -331,8 +332,8 @@ class AstHbcmTransformer(object):
         query_elements = [e for e in hyv]
         # Get all usage in context graphs
         for h in hyv:
-            if h in self.usage_mapping:
-                query_elements.extend(self.usage_mapping[h])
+            if h in self.reference_mapping:
+                query_elements.extend(self.reference_mapping[h])
         return query_elements
 
     def __copy_vertices(self, root: HypergraphElement, template: HypergraphElement):
@@ -377,8 +378,9 @@ class AstHbcmTransformer(object):
             v: HyperEdge | HypergraphAttribute
             res = self.retrieve_referenced_element(v, r)
             # Check whether node is in usage mapping
-            if v in self.usage_mapping:
-                query_elements.extend(self.usage_mapping[r])
+            if v in self.reference_mapping:
+                query_elements.extend(self.reference_mapping[r])
+            # Retry query
             if res is None:
                 for hy in query_elements:
                     res = self.get_element_references(r.reference_query.split('.'), hy)
@@ -389,7 +391,13 @@ class AstHbcmTransformer(object):
                 raise AstElementNotFound(f"Element not found: {r.reference_query}")
             # Check tuples by length
             # Check if we are dealing with an edge
-            if len(t) == 4:
+            if len(t) == 2:
+                v, r = t
+                v: HypergraphAttribute
+                v.value = res
+            elif len(t) == 3:
+                v.stereotype = res
+            elif len(t) == 4:
                 _, _, d, val = t
                 if isinstance(val, list):
                     new_val = []
@@ -408,8 +416,6 @@ class AstHbcmTransformer(object):
                     val = new_val
                 v: HyperEdge
                 v += (res, d, val)
-            elif len(t) == 3:
-                v.stereotype = res
             elif len(t) == 5:
                 v.stereotype = res
                 match t[4]:
@@ -417,10 +423,6 @@ class AstHbcmTransformer(object):
                         prio = len(v.stereotype.nameset)
                         task = PrioritizedTask(prio, (v, res, "copy"))
                         self.operation_queues.put(task)
-            elif len(t) == 2:
-                v, r = t
-                v: HypergraphAttribute
-                v.value = res
 
     def max_stereotype(self, v: HypergraphElement):
         prio = len(v.stereotype.nameset)
@@ -458,7 +460,7 @@ class AstHbcmTransformer(object):
         return hyv
 
     def __update_used_elements(self, k, h, used_elements: typing.List):
-        for u in self.usage_mapping[k]:
+        for u in self.reference_mapping[k]:
             __retr = h.query_subelements(u)
             if __retr is not None:
                 used_elements.append(__retr)
@@ -468,14 +470,14 @@ class AstHbcmTransformer(object):
                     used_elements.extend(__retr)
         return used_elements
 
-    def __init_usage_mapping(self, hyv):
-        new_usage_mapping = {}
-        for k in self.usage_mapping:
+    def __init_reference_mapping(self, hyv):
+        new_reference_mapping = {}
+        for k in self.reference_mapping:
             used_elements = []
             for h in hyv:
                 used_elements = self.__update_used_elements(k, h, used_elements)
-                new_usage_mapping[k] = used_elements
-        self.usage_mapping = new_usage_mapping
+                new_reference_mapping[k] = used_elements
+        self.reference_mapping = new_reference_mapping
 
     def __execute_operations(self):
         # Reprioritize operations
@@ -508,7 +510,7 @@ class AstHbcmTransformer(object):
         # Create attributes
         self.create_attributes(ast)
         # Collect all usage references for all elements
-        self.__init_usage_mapping(hyv)
+        self.__init_reference_mapping(hyv)
         # Retrieve references
         self.retrieve_references(hyv)
         # Execute operations

@@ -59,8 +59,8 @@ class Start(_Ast):
     body: HiBody
 
 
-def extract_root_context(ast: Start):
-    return ast.body.root
+def extract_root_context(start: Start):
+    return start.body.root
 
 
 def extract_meta_context(ast: Start):
