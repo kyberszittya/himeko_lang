@@ -341,20 +341,24 @@ class AstHbcmTransformer(object):
         __mapping_guid = {template.guid: root}
         for c in template.get_all_children(lambda x: not isinstance(x, HyperEdge)):
             element_name = '_'.join([root_name, c.name])
+            el = None
             if isinstance(c, HyperVertex):
                 el = FactoryHypergraphElements.create_vertex_default(
                     element_name,
                     self.clock_source.tick(), __mapping_guid[c.parent.guid])
                 el.add_stereotype(c)
             elif isinstance(c, HypergraphAttribute):
-                el = FactoryHypergraphElements.create_attribute_default(
-                    c.name,
-                    c.value, c.type, self.clock_source.tick(),
-                    __mapping_guid[c.parent.guid])
-                el.value = copy(c.value)
+                if c.name not in root:
+                    el = FactoryHypergraphElements.create_attribute_default(
+                        c.name,
+                        c.value, c.type, self.clock_source.tick(),
+                        __mapping_guid[c.parent.guid])
+                    el.value = copy(c.value)
             else:
                 raise ValueError(f"Unable to copy element of type {type(c)}")
-            __mapping_guid[c.guid] = el
+            # If the element is anyhow not initialized, don't add to the mapping dictionary
+            if el is not None:
+                __mapping_guid[c.guid] = el
         # Edge copy
         for c in template.get_all_children(lambda x: isinstance(x, HyperEdge)):
             element_name = '_'.join([root_name, c.name])
