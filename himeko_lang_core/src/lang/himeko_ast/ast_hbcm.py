@@ -7,7 +7,7 @@ from queue import Queue, PriorityQueue
 
 from himeko.common.clock import AbstractClock, SystemTimeClock
 from himeko.hbcm.elements.attribute import HypergraphAttribute
-from himeko.hbcm.elements.edge import EnumRelationDirection, HyperEdge, ReferenceQuery, EnumRelationModifier
+from himeko.hbcm.elements.edge import EnumHyperarcDirection, HyperEdge, ReferenceQuery, EnumHyperarcModifier
 from himeko.hbcm.elements.element import HypergraphElement
 from himeko.hbcm.elements.vertex import HyperVertex, Metadata
 from himeko.hbcm.factories.creation_elements import FactoryHypergraphElements
@@ -62,7 +62,7 @@ class AstHbcmTransformer(object):
                 ast_element.signature.template.reference.name)
             self.relation_queues.put((
                 element, ast_element.signature.template.reference.reference,
-                EnumRelationDirection.OUT, 1.0, ast_element.signature.template.reference.modif)
+                EnumHyperarcDirection.OUT, 1.0, ast_element.signature.template.reference.modif)
             )
 
     def __create_hyper_node(self, node: HiNode, parent: typing.Optional[HyperVertex]) -> HyperVertex:
@@ -95,19 +95,19 @@ class AstHbcmTransformer(object):
         match r.relation_direction:
             case AstEnumRelationDirection.IN:
                 self.relation_queues.put(
-                    (e, r.reference.reference, EnumRelationDirection.IN, val))
+                    (e, r.reference.reference, EnumHyperarcDirection.IN, val))
                 return e
             case AstEnumRelationDirection.OUT:
                 self.relation_queues.put(
-                    (e, r.reference.reference, EnumRelationDirection.OUT, val))
+                    (e, r.reference.reference, EnumHyperarcDirection.OUT, val))
                 return e
             case AstEnumRelationDirection.UNDIRECTED:
                 self.relation_queues.put(
-                    (e, r.reference.reference, EnumRelationDirection.UNDEFINED, val))
+                    (e, r.reference.reference, EnumHyperarcDirection.UNDEFINED, val))
                 return e
             case AstEnumRelationDirection.UNDEFINED:
                 self.relation_queues.put(
-                    (e, r.reference.reference, EnumRelationDirection.UNDEFINED, val))
+                    (e, r.reference.reference, EnumHyperarcDirection.UNDEFINED, val))
                 return e
         return e
 
@@ -185,7 +185,7 @@ class AstHbcmTransformer(object):
             elif isinstance(arg, ElementReference):
                 match arg.modif:
                     case AstEnumRefereneModifier.COPY:
-                        return ReferenceQuery(arg.name, EnumRelationModifier.COPY)
+                        return ReferenceQuery(arg.name, EnumHyperarcModifier.COPY)
 
             return float(arg)
         except ValueError:
@@ -409,9 +409,9 @@ class AstHbcmTransformer(object):
                         if isinstance(ref_val, ReferenceQuery):
                             folded = self.retrieve_referenced_element(v, ref_val)
                             match ref_val.modifier:
-                                case EnumRelationModifier.COPY:
+                                case EnumHyperarcModifier.COPY:
                                     new_val.append(copy(folded.value))
-                                case EnumRelationModifier.USE:
+                                case EnumHyperarcModifier.USE:
                                     new_val.append(folded)
                         else:
                             new_val.append(ref_val)

@@ -1,6 +1,6 @@
 import os
 
-from himeko.hbcm.elements.edge import HyperEdge, EnumRelationDirection
+from himeko.hbcm.elements.edge import HyperEdge, EnumHyperarcDirection
 from test_ancestor_testcase import ERROR_MSG_UNABLE_TO_TRANSFORM
 
 from lang.himeko_ast.ast_hbcm import AstHbcmTransformer
@@ -47,7 +47,7 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
         self.assertEqual(out_rel[0].value[2], [78.1, 7.3, 2.19])
         self.assertEqual(out_rel[0].target.name, "node0")
         self.assertEqual(out_rel[0].target, node0)
-        self.assertEqual(out_rel[0].direction, EnumRelationDirection.OUT)
+        self.assertEqual(out_rel[0].direction, EnumHyperarcDirection.OUT)
         # Incoming relation 1
         in_rel = list(e.in_relations())
         self.assertEqual(len(in_rel), 1)
@@ -56,7 +56,7 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
         self.assertEqual(in_rel[0].value[2], [1.0, 6.7])
         self.assertEqual(in_rel[0].target.name, "node1")
         self.assertEqual(in_rel[0].target, node1)
-        self.assertEqual(in_rel[0].direction, EnumRelationDirection.IN)
+        self.assertEqual(in_rel[0].direction, EnumHyperarcDirection.IN)
         # Out relation 2
         self.assertEqual(len(out_rel[1].value), 3)
         self.assertEqual(out_rel[1].value, [0.5, 0.7, 0.9])
@@ -92,7 +92,7 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
         self.assertEqual(out_rel[0].value[2], [78.1, 7.3, 2.19])
         self.assertEqual(out_rel[0].target.name, "node0")
         self.assertEqual(out_rel[0].target, node0)
-        self.assertEqual(out_rel[0].direction, EnumRelationDirection.OUT)
+        self.assertEqual(out_rel[0].direction, EnumHyperarcDirection.OUT)
         # Incoming relation 1
         self.assertEqual(len(in_rel[0].value), 3)
         self.assertEqual(in_rel[0].value[0], [1.2, 1.5])
@@ -100,7 +100,7 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
         self.assertEqual(in_rel[0].value[2], [1.0, 6.7])
         self.assertEqual(in_rel[0].target.name, "node1")
         self.assertEqual(in_rel[0].target, node1)
-        self.assertEqual(in_rel[0].direction, EnumRelationDirection.IN)
+        self.assertEqual(in_rel[0].direction, EnumHyperarcDirection.IN)
         # Check embedded edges (sub edges)
         sub_edges = list(e.sub_edges())
         self.assertEqual(len(sub_edges), 2)
@@ -173,18 +173,18 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
         self.assertEqual(out_rel[0].value, [[1.0, 19.3, 1.2], [2.1, 3.2, [45.7, 23.4]], [[56.7, 67.8], 56.8, 24.2]])
         self.assertEqual(out_rel[0].target.name, "node0")
         self.assertEqual(out_rel[0].target, node0)
-        self.assertEqual(out_rel[0].direction, EnumRelationDirection.OUT)
+        self.assertEqual(out_rel[0].direction, EnumHyperarcDirection.OUT)
         # Incoming relation 1
         self.assertEqual(len(in_rel[0].value), 4)
         print("Signature value rel1: ", in_rel[0].value)
         self.assertEqual(in_rel[0].value, [[1.2, [3.2, 4.8], 1.5], [5.6, 3.4, [7.2, 12.54]], [1.0, 6.7], [1.3, 7.8, 1.2]])
         self.assertEqual(in_rel[0].target.name, "node1")
         self.assertEqual(in_rel[0].target, node1)
-        self.assertEqual(in_rel[0].direction, EnumRelationDirection.IN)
+        self.assertEqual(in_rel[0].direction, EnumHyperarcDirection.IN)
         # Out relation 2
         self.assertEqual(len(out_rel[1].value), 3)
         self.assertEqual(out_rel[1].value, [0.5, 0.7, 0.9])
         self.assertEqual(out_rel[1].target.name, "node2")
         self.assertEqual(out_rel[1].target, node2)
         print("Signature value rel2: ", out_rel[1].value)
-        self.assertEqual(out_rel[1].direction, EnumRelationDirection.OUT)
+        self.assertEqual(out_rel[1].direction, EnumHyperarcDirection.OUT)

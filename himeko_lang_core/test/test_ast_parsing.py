@@ -1,5 +1,5 @@
 
-from himeko.hbcm.elements.edge import HyperEdge, EnumRelationDirection
+from himeko.hbcm.elements.edge import HyperEdge, EnumHyperarcDirection
 from himeko.hbcm.elements.element import common_ancestor
 from himeko.hbcm.elements.vertex import HyperVertex
 from lang.himeko_ast.ast_hbcm import AstHbcmTransformer
@@ -71,13 +71,13 @@ class TestBasicAstParsing(TestAncestorTestCase):
         for rel in relations:
             self.assertEqual(rel.value, 1.0)
         self.assertEqual(relations[0].target.name, "node0")
-        self.assertEqual(relations[0].direction, EnumRelationDirection.OUT)
+        self.assertEqual(relations[0].direction, EnumHyperarcDirection.OUT)
         self.assertEqual(relations[1].target.name, "node1")
-        self.assertEqual(relations[1].direction, EnumRelationDirection.OUT)
+        self.assertEqual(relations[1].direction, EnumHyperarcDirection.OUT)
         self.assertEqual(relations[2].target.name, "node2")
-        self.assertEqual(relations[2].direction, EnumRelationDirection.OUT)
+        self.assertEqual(relations[2].direction, EnumHyperarcDirection.OUT)
         self.assertEqual(relations[3].target.name, "node3")
-        self.assertEqual(relations[3].direction, EnumRelationDirection.IN)
+        self.assertEqual(relations[3].direction, EnumHyperarcDirection.IN)
         # Check if relations point to the same memory
         sel_node0 = next(context.get_children(
             lambda x: isinstance(x, HyperVertex) and x.name == "node0", None))
@@ -141,13 +141,13 @@ class TestBasicAstParsing(TestAncestorTestCase):
         for rel in relations:
             self.assertEqual(rel.value, 1.0)
         self.assertEqual(relations[0].target.name, "node0")
-        self.assertEqual(relations[0].direction, EnumRelationDirection.OUT)
+        self.assertEqual(relations[0].direction, EnumHyperarcDirection.OUT)
         self.assertEqual(relations[1].target.name, "node1")
-        self.assertEqual(relations[1].direction, EnumRelationDirection.OUT)
+        self.assertEqual(relations[1].direction, EnumHyperarcDirection.OUT)
         self.assertEqual(relations[2].target.name, "node2")
-        self.assertEqual(relations[2].direction, EnumRelationDirection.OUT)
+        self.assertEqual(relations[2].direction, EnumHyperarcDirection.OUT)
         self.assertEqual(relations[3].target.name, "node3")
-        self.assertEqual(relations[3].direction, EnumRelationDirection.IN)
+        self.assertEqual(relations[3].direction, EnumHyperarcDirection.IN)
 
     def test_fano(self):
         p = TEST_CASE_BASIC_FANO

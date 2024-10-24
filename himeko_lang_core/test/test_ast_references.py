@@ -1,5 +1,5 @@
 from himeko.hbcm.elements.attribute import HypergraphAttribute
-from himeko.hbcm.elements.edge import EnumRelationDirection, HyperEdge
+from himeko.hbcm.elements.edge import EnumHyperarcDirection, HyperEdge
 from lang.himeko_ast.ast_hbcm import AstHbcmTransformer
 from himeko.hbcm.elements.vertex import HyperVertex
 from test_case_descriptions import TEST_CASE_FIELDS_WITH_REFERENCE, TEST_CASE_HIERARCHY_REF_EDGES, \
@@ -186,10 +186,10 @@ class TestAstParsingWithReferences(TestAncestorTestCase):
         self.assertEqual(rels[2].target.name, "node2")
         self.assertEqual(rels[3].target.name, "node3")
         # Check directions
-        self.assertEqual(rels[0].direction, EnumRelationDirection.OUT)
-        self.assertEqual(rels[1].direction, EnumRelationDirection.OUT)
-        self.assertEqual(rels[2].direction, EnumRelationDirection.OUT)
-        self.assertEqual(rels[3].direction, EnumRelationDirection.IN)
+        self.assertEqual(rels[0].direction, EnumHyperarcDirection.OUT)
+        self.assertEqual(rels[1].direction, EnumHyperarcDirection.OUT)
+        self.assertEqual(rels[2].direction, EnumHyperarcDirection.OUT)
+        self.assertEqual(rels[3].direction, EnumHyperarcDirection.IN)
         # Edge 1
         e1 = next(filter(lambda x: x.name == "e1", edges))
         # Check relations
@@ -198,8 +198,8 @@ class TestAstParsingWithReferences(TestAncestorTestCase):
         self.assertEqual(rels[0].target.name, "node3")
         self.assertEqual(rels[1].target.name, "node4")
         # Check directions
-        self.assertEqual(rels[0].direction, EnumRelationDirection.OUT)
-        self.assertEqual(rels[1].direction, EnumRelationDirection.IN)
+        self.assertEqual(rels[0].direction, EnumHyperarcDirection.OUT)
+        self.assertEqual(rels[1].direction, EnumHyperarcDirection.IN)
         # Edge 2
         e2 = next(filter(lambda x: x.name == "e2", edges))
         # Check relations
@@ -208,8 +208,8 @@ class TestAstParsingWithReferences(TestAncestorTestCase):
         self.assertEqual(rels[0].target.name, "node5")
         self.assertEqual(rels[1].target.name, "node0")
         # Check directions
-        self.assertEqual(rels[0].direction, EnumRelationDirection.IN)
-        self.assertEqual(rels[1].direction, EnumRelationDirection.OUT)
+        self.assertEqual(rels[0].direction, EnumHyperarcDirection.IN)
+        self.assertEqual(rels[1].direction, EnumHyperarcDirection.OUT)
 
 
     def test_value_ref_value_edges(self):
@@ -233,22 +233,22 @@ class TestAstParsingWithReferences(TestAncestorTestCase):
         self.assertEqual([0.85], rel[0].value)
         self.assertEqual("node0", rel[0].target.name)
         self.assertEqual("node_lev_1", rel[0].target.parent.name)
-        self.assertEqual( EnumRelationDirection.OUT, rel[0].direction)
+        self.assertEqual(EnumHyperarcDirection.OUT, rel[0].direction)
         # Next relation
         self.assertEqual([0.9], rel[1].value)
         self.assertEqual("node1", rel[1].target.name)
         self.assertEqual("node_lev_0", rel[1].target.parent.name)
-        self.assertEqual(EnumRelationDirection.IN, rel[1].direction)
+        self.assertEqual(EnumHyperarcDirection.IN, rel[1].direction)
         # Negative relation
         self.assertEqual(rel[2].value, [-0.615])
         self.assertEqual("node2", rel[2].target.name)
         self.assertEqual("node_lev_0", rel[2].target.parent.name)
-        self.assertEqual( EnumRelationDirection.OUT, rel[2].direction)
+        self.assertEqual(EnumHyperarcDirection.OUT, rel[2].direction)
         # Vector relation
         self.assertEqual(rel[3].value, [0.5, 0.6])
         self.assertEqual("node0", rel[3].target.name)
         self.assertEqual("node_lev_0", rel[3].target.parent.name)
-        self.assertEqual(EnumRelationDirection.OUT, rel[3].direction)
+        self.assertEqual(EnumHyperarcDirection.OUT, rel[3].direction)
 
     def test_value_hierarchy_nodes(self):
         p = TEST_CASE_FIELDS_WITH_REFERENCE
