@@ -1,0 +1,73 @@
+[chicken_camera]
+cabin
+{
+    area 20
+    ip_camera {
+        ingress_protection ip65
+        resolution 1080p
+        frame_rate 30
+        protocols ["http", "rtsp"]
+        encoding ["h264", "h265"]
+    }
+    camera: ip_camera {
+    }
+    camera2: ip_camera {
+    }
+    camera3: ip_camera {
+    }
+
+    chicken {
+        count 20
+        type "hungarian_yellow"
+    }
+
+    @observes {
+        -> camera,
+        -> camera2,
+        -> camera3,
+        <- chicken
+    }
+}
+
+
+
+buy_camera: query {
+   camera_product: match {
+        ip_camera, country, price
+   }
+
+   result: tabular {
+       link
+       price
+       product
+       description
+   }
+
+   limits {
+       result{
+           count {
+                  min 10
+                  max 20
+           }
+       }
+
+   }
+
+   }
+   @search {
+       <- ip_camera
+       <- internet
+       <- webshops
+       <- camera_product
+       <- limits.result
+
+       -> result.link
+       -> result.price
+       -> result.product
+       -> result.description
+
+       @format {
+         <- result
+       }
+   }
+}
