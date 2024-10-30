@@ -1,6 +1,6 @@
 from himeko.hbcm.elements.edge import HyperEdge
 from himeko.hbcm.elements.vertex import HyperVertex
-from himeko.transformations.text.generate_text import generate_text
+from himeko.transformations.text.generate_text import TextGenerator
 from processing.parse_description import ParseDescriptionEdgeFromFile, ParseDescriptionEdge
 from test_ancestor_testcase import TestAncestorTestCase
 
@@ -84,7 +84,9 @@ class TestAstParsingWithReferences(TestAncestorTestCase):
         self.assertEqual(root.name, "root")
         h_text = ParseDescriptionEdge(
             "parse_edge", 0, 0, b'0', b'0', "label", None)
-        h_reparsed = h_text.execute(text=generate_text(root), library_path=library_path)
+        h_text_generator = TextGenerator(
+            "text_generator", 0, 0, b'0', b'0', "label", None)
+        h_reparsed = h_text.execute(text=h_text_generator(root), library_path=library_path)
         root_reparsed = h_reparsed[-1]
         self.assertEqual(root_reparsed.name, "root")
         # Check
