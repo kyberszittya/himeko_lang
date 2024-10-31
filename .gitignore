@@ -9,3 +9,5 @@
 /hypergraph_parser/himeko_parser/gen/hypergraphlang/HimekoHypergraphLangVisitor.py
 */*.iml
 /.idea/
+/himeko_lang_core/src/standalone/openai_api.key
+/himeko_lang_core/src/standalone/bing.key

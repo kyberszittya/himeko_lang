@@ -39,6 +39,7 @@ buy_camera: query {
    result: tabular {
        link
        price
+       manufacturer
        product
        description
    }
@@ -51,6 +52,10 @@ buy_camera: query {
            }
        }
 
+   }
+
+   webshops {
+         urls ["https://www.amazon.com", "https://www.ebay.com", "https://www.aliexpress.com", "alza.hu"]
    }
 
    }
