@@ -17,7 +17,7 @@ def main():
     fontsize_legend = 20
     n = 1
     r = np.arange(1, 1000+1)
-    xlabel_text = 'Number of relations'
+    xlabel_text = 'Number of hyperarcs'
     xml_text, xml_attr, hymeko, yaml_tags, yaml_value, json_tags, json_values = func(r, n, 1)
 
     plt.figure(figsize=(10, 15))
@@ -65,7 +65,6 @@ def main():
     plt.legend(fontsize=fontsize)
     plt.grid()
     plt.show()
-
 
 
 if __name__ == "__main__":
