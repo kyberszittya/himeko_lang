@@ -10,4 +10,4 @@ Tutorial used: http://blog.erezsh.com/create-a-stand-alone-lalr1-parser-in-pytho
 
 Instead of listener/visitor architecture, the PyLARK framework uses transformer paradigm, and uses a CLR parser instead of LL*.
 
-For the meta language, a new file have been created: [HimekoMetalang.lark](himeko_lang_core/src/lang/HimekoMetalang.lark)
+For the meta language, a new file have been created: [HimekoMetalang.lark](himeko_lang_core/src/himeko/lang/HimekoMetalang.lark)

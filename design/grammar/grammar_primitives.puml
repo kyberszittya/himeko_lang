@@ -1,0 +1,8 @@
+@startebnf
+
+ElementType = EL_ATOMIC | ElementReference;
+
+HiIncludePath = STRING;
+ElementName = CNAME;
+EL_ATOMIC = "int" | "float" | "string" | "bool";
+@endyaml

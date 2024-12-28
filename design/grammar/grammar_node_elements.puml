@@ -1,0 +1,7 @@
+@startebnf
+HiNode = HiElementSignature, "{", HiNodeElement, {",", HiNodeElement },  "}";
+HiNodeElement = HiNode | HiElementField | HiEdge;
+
+HiStereotype = ":", ElementReference, {",", ElementReference};
+HiType = "<", ElementType, ">";
+@endyaml

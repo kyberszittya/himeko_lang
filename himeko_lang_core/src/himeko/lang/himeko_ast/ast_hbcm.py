@@ -11,9 +11,9 @@ from himeko.hbcm.elements.edge import EnumHyperarcDirection, HyperEdge, Referenc
 from himeko.hbcm.elements.element import HypergraphElement
 from himeko.hbcm.elements.vertex import HyperVertex, Metadata
 from himeko.hbcm.factories.creation_elements import FactoryHypergraphElements
-from lang.himeko_ast.elements.graph.elementfield import HiElementField
-from lang.himeko_ast.elements.graph.hiedge import HiEdge, EdgeElementType, HiEdgeElement
-from lang.himeko_ast.elements.graph.hinode import HiNode
+from himeko.lang.himeko_ast.elements.graph.elementfield import HiElementField
+from himeko.lang.himeko_ast.elements.graph.hiedge import HiEdge, EdgeElementType, HiEdgeElement
+from himeko.lang.himeko_ast.elements.graph.hinode import HiNode
 from lang.himeko_ast.elements.meta_elements import AstEnumRelationDirection, AstEnumRefereneModifier
 from lang.himeko_ast.elements.reference import ElementReference
 from lang.himeko_ast.elements.types.data_type import VectorField, HiElementValue

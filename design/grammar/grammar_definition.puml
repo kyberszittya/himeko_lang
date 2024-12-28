@@ -1,0 +1,10 @@
+@startebnf
+Start = "[", HiMeta, "]",  HiBody;
+HiMeta = HiMetaElement;
+HiMetaElement = ElementName,  { HiInclude }-;
+HiInclude = "import",  HiIncludePath;
+
+HiBody = {HiNode | HiEdge}-;
+
+
+@endebnf

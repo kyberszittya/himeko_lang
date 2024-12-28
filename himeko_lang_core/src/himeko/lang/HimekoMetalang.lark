@@ -11,7 +11,7 @@ hi_include: "import" hi_include_path
 hi_include_path: STRING
 
 // Body section
-hi_body: (hi_node)+
+hi_body: (hi_node | hi_edge)+
 
 hi_node: hi_element_signature "{" (hi_node_element ((",")? hi_node_element)*)? "}"
 hi_node_element: hi_node | hi_element_field | hi_edge
@@ -42,7 +42,7 @@ RELATION_DIRECTION: "->" | "<-" | "--" | "<>"
 
 
 // Atomic field types
-EL_ATOMIC: "int" | "string" | "real"
+EL_ATOMIC: "int" | "string" | "real" | "bool"
 REF_NAME: /[_a-zA-Z][_a-zA-Z0-9.]*/
 // Importing common Lark elements
 %import common.SIGNED_NUMBER

@@ -1,0 +1,10 @@
+@startebnf
+HiEdge = HiEdgeType, HiElementSignature, "{", HiEdgeElement, {",", HiEdgeElement },  "}";
+HiEdgeType = "rel" | "seq" | "concurrent" | STRING | "@";
+HiEdgeElement =  ElementReference | HiEdge | HiElementField;
+
+HiElementSignature = ElementName, [HiStereotype], { HiUse } ;
+
+HiUse = "use", ElementReference;
+
+@endyaml

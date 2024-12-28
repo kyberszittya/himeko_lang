@@ -1,0 +1,7 @@
+@startebnf
+ElementReference = [ VectorField ], [ (REFERENCE_MODIFIER, RELATION_DIRECTION) | RELATION_DIRECTION ], REF_NAME;
+REFERENCE_MODIFIER = ("<<copy>>"| "|>") | ("<<use>>"|"*|>") | ("<<extend>>"|"-|>");
+RELATION_DIRECTION = "->" | "<-" | "--" | "<>";
+
+
+@endyaml

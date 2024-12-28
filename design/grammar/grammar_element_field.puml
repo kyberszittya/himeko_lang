@@ -1,0 +1,6 @@
+@startebnf
+HiElementField = ElementName, [ HiType ], [ "=" ], [ HiElementValue | VectorField ];
+HiElementValue = SIGNED_NUMBER | STRING | ElementReference;
+VectorField = "[", { (HiElementValue | VectorField), {",", (HiElementValue | VectorField) } }, "]";
+
+@endyaml
