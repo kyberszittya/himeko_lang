@@ -47,6 +47,7 @@ class TestBasicTransformationEncoding(TestAncestorTestCase):
         self.assertEqual(n, 6)
         self.assertEqual(e, 3)
         # Star expansion tensor
+        print(tensor)
         x_e1 = np.array(
             [[0, 0, 0, 0, 0, 0],
              [0, 0, 0, 1, 0, 0],
@@ -162,3 +163,8 @@ class TestBasicTransformationEncoding(TestAncestorTestCase):
         self.assertEqual(n, 7)
         self.assertEqual(e, 7)
         self.assertTrue(np.all(np.sum(tensor[:, :n, :n], axis=0) - np.eye(7)))
+        # Ensure aggregated tensor is symmetric
+        aggregate_tensor = np.sum(tensor, axis=0)
+        self.assertTrue(np.all(aggregate_tensor == aggregate_tensor.T))
+        # Ensure aggregated tensor is equal to a full matrix with ones besides the diagonal
+        self.assertTrue(np.all(aggregate_tensor == np.ones((7, 7)) - np.eye(7)))
