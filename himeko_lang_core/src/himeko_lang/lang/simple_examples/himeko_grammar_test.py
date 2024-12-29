@@ -1,7 +1,7 @@
 from lark import Lark
 import sys
 
-from transformer.himeko_transformer import HypergraphTransformer, HypergraphVisitor
+from himeko_lang.transformer.himeko_transformer import HypergraphVisitor
 
 
 """

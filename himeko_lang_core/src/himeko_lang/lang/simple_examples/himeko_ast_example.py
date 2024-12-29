@@ -3,8 +3,8 @@ from lark import Lark
 from himeko.hbcm.elements.attribute import HypergraphAttribute
 from himeko.hbcm.elements.edge import HyperEdge
 from himeko.hbcm.elements.vertex import HyperVertex
-from lang.himeko_ast.ast_hbcm import AstHbcmTransformer
-from lang.himeko_ast.himeko_ast import transformer, collect_edges, create_ast
+from himeko_lang.lang.himeko_ast.ast_hbcm import AstHbcmTransformer
+from himeko_lang.lang.himeko_ast.himeko_ast import transformer, collect_edges, create_ast
 
 
 def main(args=None):

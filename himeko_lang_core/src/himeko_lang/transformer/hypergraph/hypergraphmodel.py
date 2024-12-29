@@ -3,8 +3,8 @@ import time
 from himeko.hbcm.elements.vertex import HyperVertex
 from himeko.hbcm.factories.creation_elements import FactoryHypergraphElements
 
-from lang.himeko_meta_parser import Visitor_Recursive, Tree
-from transformer.common.lark_tree_extractor import LarkElementMetaHimekoExtractor
+from himeko_lang.lang.himeko_meta_parser import Visitor_Recursive, Tree
+from himeko_lang.transformer.common.lark_tree_extractor import LarkElementMetaHimekoExtractor
 
 
 
