@@ -1,8 +1,8 @@
 import unittest
 
-from lang.himeko_ast.ast_hbcm import AstHbcmTransformer
-from lang.himeko_meta_parser import Lark_StandAlone
-from lang.himeko_ast.himeko_ast import transformer
+from himeko_lang.lang.himeko_ast.ast_hbcm import AstHbcmTransformer
+from himeko_lang.lang.himeko_meta_parser import Lark_StandAlone
+from himeko_lang.lang.himeko_ast.himeko_ast import transformer
 
 
 ERROR_MSG_UNABLE_TO_TRANSFORM: str = "Unable to transform tree to ast"

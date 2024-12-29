@@ -3,7 +3,7 @@ import os
 from himeko.hbcm.elements.edge import HyperEdge
 from test_ancestor_testcase import ERROR_MSG_UNABLE_TO_TRANSFORM
 
-from lang.himeko_ast.ast_hbcm import AstHbcmTransformer
+from himeko_lang.lang.himeko_ast.ast_hbcm import AstHbcmTransformer
 from test_ancestor_testcase import TestAncestorTestCase
 
 CAMERA_DESC_FOLDER = os.path.join("..", "robotics", "sensors")
@@ -27,7 +27,6 @@ class TestBasicAstParsing(TestAncestorTestCase):
         self.assertEqual(meta["manufacturer"].value, "Hikvision")
         lenses = hyv["lenses"]
         # Check lens parameters
-        lenses["lens"]
         self.assertEqual(lenses["lens"]["focal"].value, 2.4)
         self.assertEqual(lenses["lens_zoomed"]["focal"].value, 4.0)
         # FoV

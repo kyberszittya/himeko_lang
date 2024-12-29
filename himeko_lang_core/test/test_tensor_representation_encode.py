@@ -1,6 +1,6 @@
 from himeko.common.clock import NullClock
 from himeko.hbcm.mapping.tensor_mapping import BijectiveCliqueExpansionTransformation, StarExpansionTransformation
-from lang.himeko_ast.ast_hbcm import AstHbcmTransformer
+from himeko_lang.lang.himeko_ast.ast_hbcm import AstHbcmTransformer
 from test_ancestor_testcase import TestAncestorTestCase
 
 import numpy as np

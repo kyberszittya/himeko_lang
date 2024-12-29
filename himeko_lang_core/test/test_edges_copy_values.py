@@ -1,7 +1,7 @@
 import os
 
 from himeko.hbcm.elements.edge import HyperEdge
-from lang.himeko_ast.ast_hbcm import AstHbcmTransformer
+from himeko_lang.lang.himeko_ast.ast_hbcm import AstHbcmTransformer
 from test_ancestor_testcase import TestAncestorTestCase, ERROR_MSG_UNABLE_TO_TRANSFORM
 from test_case_descriptions import TEST_CASE_SIMPLE_FOLDER
 

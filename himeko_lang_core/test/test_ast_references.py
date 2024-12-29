@@ -1,6 +1,6 @@
 from himeko.hbcm.elements.attribute import HypergraphAttribute
 from himeko.hbcm.elements.edge import EnumHyperarcDirection, HyperEdge
-from lang.himeko_ast.ast_hbcm import AstHbcmTransformer
+from himeko_lang.lang.himeko_ast.ast_hbcm import AstHbcmTransformer
 from himeko.hbcm.elements.vertex import HyperVertex
 from test_case_descriptions import TEST_CASE_FIELDS_WITH_REFERENCE, TEST_CASE_HIERARCHY_REF_EDGES, \
     TEST_CASE_HIERARCHY_REF_EDGES_WITH_VALUES, TEST_CASE_BASIC_FIELDS, TEST_CASE_FIELDS_WITH_REFERENCE_2, \

@@ -1,7 +1,7 @@
 import unittest
 
-from lang.himeko_meta_parser import Lark_StandAlone
-from transformer.hypergraph.hypergraphmodel import HimekoHbcmTransformer
+from himeko_lang.lang.himeko_meta_parser import Lark_StandAlone
+from himeko_lang.transformer.hypergraph.hypergraphmodel import HimekoHbcmTransformer
 
 
 class TestBasicTransformation(unittest.TestCase):

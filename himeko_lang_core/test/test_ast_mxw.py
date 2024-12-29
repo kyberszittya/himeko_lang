@@ -3,7 +3,7 @@ from himeko.transformations.mxw.mxw_scene import TransformationMxw
 from test_ancestor_testcase import TestAncestorTestCase
 
 from himeko.common.clock import NullClock
-from lang.himeko_ast.ast_hbcm import AstHbcmTransformer
+from himeko_lang.lang.himeko_ast.ast_hbcm import AstHbcmTransformer
 
 
 class TestMaxwhereTransformation(TestAncestorTestCase):

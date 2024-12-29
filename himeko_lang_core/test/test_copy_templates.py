@@ -1,7 +1,7 @@
 from himeko.hbcm.elements.edge import HyperEdge
 from himeko.hbcm.elements.vertex import HyperVertex
 from himeko.transformations.text.generate_text import TextGenerator
-from processing.parse_description import ParseDescriptionEdgeFromFile, ParseDescriptionEdge
+from himeko_lang.processing.parse_description import ParseDescriptionEdgeFromFile, ParseDescriptionEdge
 from test_ancestor_testcase import TestAncestorTestCase
 
 class TestAstParsingWithReferences(TestAncestorTestCase):

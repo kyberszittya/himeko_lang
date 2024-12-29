@@ -1,4 +1,4 @@
- import os
+import os
 from lark import Lark
 import unittest
 
@@ -6,7 +6,7 @@ import unittest
 class BasicTestLang(unittest.TestCase):
 
     def setUp(self):
-        self.lang_path = os.path.join("..",  "src", "lang", "HimekoMetalang.lark")
+        self.lang_path = os.path.join("..",  "src", "himeko_lang", "lang", "HimekoMetalang.lark")
         self.examples_path = os.path.join("..", "examples")
 
     def load_lang(self):
@@ -30,7 +30,7 @@ class BasicTestLang(unittest.TestCase):
 
     def test_simple_fanuc_arm_test(self):
         p = self.load_lang()
-        p0 = os.path.join(self.examples_path, "kinematics", "kamu_fanuc.himeko")
+        p0 = os.path.join(self.examples_path, "kinematics", "robotics", "industrial", "kamu_fanuc.himeko")
         with open(p0) as f:
             text = p.parse(f.read())
             print(text)
