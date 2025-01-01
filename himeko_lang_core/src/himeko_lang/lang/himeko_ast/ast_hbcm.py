@@ -1,5 +1,6 @@
 import os
 import typing
+import logging
 from copy import copy
 from dataclasses import dataclass
 from queue import Queue, PriorityQueue
@@ -54,6 +55,10 @@ class AstHbcmTransformer(object):
             self.clock_source = clock_source
         else:
             self.clock_source = SystemTimeClock()
+        # Meta elements storage
+        self.meta_elements = {}
+        # Logging
+        self.logger = logging.getLogger(__name__)
 
     def setup_stereotype(self, ast_element: HiNode | HiEdge, element: HypergraphElement):
         # Check for stereotype
@@ -434,26 +439,44 @@ class AstHbcmTransformer(object):
             prio = max(prio, self.max_stereotype(el))
         return prio
 
-    def read_graph(self, path):
+    def read_graph(self, path: str):
         # Transformer
         parser = Lark_StandAlone(transformer=transformer)
         # Read file
-        with open(path) as f:
-            tree = parser.parse(f.read())
+        if os.path.exists(path):
+            with open(path) as f:
+                tree = parser.parse(f.read())
         if tree is None:
             raise AstGraphPathNotFound(f"Unable to read tree from path {path}")
         return tree
 
-    def __import_graphs(self, hyv: typing.List, ast, path: typing.Optional[str] = None):
+    def __import_graphs(self, hyv: typing.List, ast, path: typing.Optional[str|typing.List[str]] = None):
         import_graphs = self.get_importable_graphs(ast)
         if len(import_graphs) > 0:
-            for import_graph in self.get_importable_graphs(ast):
+            for import_graph in import_graphs:
                 if path is not None:
-                    import_graph = os.path.join(path, import_graph)
-                import_ast = self.read_graph(import_graph)
-                create_ast(import_ast)
+                    if isinstance(path, list):
+                        # Iterate over paths
+                        for p in path:
+                            # Check if the file exists in the folder
+                            if os.path.exists(os.path.join(p, import_graph)):
+                                import_graph = os.path.join(p, import_graph)
+                                break
+                    else:
+                        if not os.path.exists(os.path.join(path, import_graph)):
+                            raise AstGraphPathNotFound("Unable to read tree from path {}".format(import_graph))
+                        import_graph = os.path.join(path, import_graph)
+                self.logger.info("Importing graph: {}".format(import_graph))
+                if import_graph in self.meta_elements:
+                    import_ast = self.meta_elements[import_graph]
+
+
+                else:
+                    import_ast = self.read_graph(import_graph)
+                    create_ast(import_ast)
+                    meta_elements = self.create_root_hyper_vertices(import_ast)
                 # Extend hyper vertices
-                hyv.extend(self.create_root_hyper_vertices(import_ast))
+                hyv.extend(meta_elements)
                 # Create edge
                 self.create_edges(import_ast)
                 # Create attributes
