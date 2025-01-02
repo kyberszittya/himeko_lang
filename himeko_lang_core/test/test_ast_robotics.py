@@ -332,7 +332,7 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
         )
         self.assertIsNotNone(op_joint)
         res_joint = op_joint(root)
-        self.assertEqual(len(res_joint), 6)
+        self.assertEqual(len(res_joint), 7)
         joint_names = {'j0', 'j1', 'j2', 'j3', 'j4', 'jtool'}
         for n in joint_names:
             self.assertIn(n, [x.name for x in res_joint])
@@ -383,7 +383,7 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
         op_joint = query_factory.create_query_joint_stereotype()
         self.assertIsNotNone(op_joint)
         res_joint = op_joint(robot)
-        self.assertEqual(len(res_joint), 6)
+        self.assertEqual(len(res_joint), 7)
         joint_names = {'j0', 'j1', 'j2', 'j3', 'j4', 'jtool'}
         for n in joint_names:
             self.assertIn(n, [x.name for x in res_joint])
