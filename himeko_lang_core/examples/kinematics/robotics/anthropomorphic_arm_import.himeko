@@ -3,6 +3,7 @@
 ]
 robot use kinematics.elements use kinematics.geometry use kinematics.axes
 {
+    world: kinematics.elements.frame {}
 
     link_color [0.7, 0.2, 0.4, 1.0]
     base_link: kinematics.elements.link {
@@ -77,6 +78,10 @@ robot use kinematics.elements use kinematics.geometry use kinematics.axes
         color -> robot.link_color
         origin [0.0, 0.0, 0.05]
     }
+    @j_fix_parent: kinematics.fixed_joint {
+        <- world, [0.0, 0.0, 0.0] -> base_link
+    }
+
     @j0: kinematics.rev_joint {
         <- base_link, [0.0, 0.0, 0.15] -> link_0,
         -> AXIS_Z

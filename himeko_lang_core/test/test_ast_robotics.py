@@ -8,7 +8,7 @@ from himeko.hbcm.factories.creation_elements import FactoryHypergraphElements
 from himeko.hbcm.queries.composition import QueryIsStereotypeOperation
 from himeko.hbcm.visualization.graphviz import create_dot_graph, visualize_dot_graph
 from himeko.transformations.ros.urdf import TransformationUrdf
-from himeko.transformations.ros.urdf_queries import FactoryUrdfQueryElements
+from himeko.transformations.ros.robot_queries import FactoryRobotQueryElements
 from himeko_lang.lang.engine.load_desc import HypergraphLoader
 from test_ancestor_testcase import ERROR_MSG_UNABLE_TO_TRANSFORM
 
@@ -371,7 +371,7 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
         self.assertIsNotNone(res)
         link_names = {'base_link', 'link_0', 'link_1', 'link_2', 'link_3', 'link_4', 'tool'}
         # Factory URDF query
-        query_factory = FactoryUrdfQueryElements(kinematics_meta)
+        query_factory = FactoryRobotQueryElements(kinematics_meta)
         # Req suery for
         op_link = query_factory.create_query_link_stereotype()
         self.assertIsNotNone(op_link)

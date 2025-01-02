@@ -9,6 +9,7 @@ kinematics {
     elements {
         meta_element {}
         link: -> meta_element {}
+        frame: -> meta_element {}
         @joint {}
     }
     joint_rev_limit {
@@ -18,6 +19,7 @@ kinematics {
         velocity 1.0
     }
     joint_prismatic_limit [0.0, 0.5]
+    @fixed_joint: -> elements.joint {}
     @rev_joint: -> elements.joint {
         limit -> joint_rev_limit
     }
