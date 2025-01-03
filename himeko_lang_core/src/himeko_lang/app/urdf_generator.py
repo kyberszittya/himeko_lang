@@ -3,6 +3,7 @@ from lxml import etree
 from himeko.hbcm.factories.creation_elements import FactoryHypergraphElements
 from himeko.transformations.ros.robot_queries import FactoryRobotQueryElements
 from himeko.transformations.ros.robot_text_generation import CreateRobotText
+from himeko.transformations.ros.ros_control_configuration import RosControlConfigurationClass
 from himeko_lang.lang.engine.load_desc import HypergraphLoader
 
 
@@ -75,13 +76,18 @@ def main(*args):
     with open(output_file_name, "w") as f:
         f.write(etree.tostring(res_xml, pretty_print=True).decode("utf-8"))
     urdf_file = output_file_name_folder + ".urdf"
+    logger.info("URDF saved in: {}".format(output_file_name))
     with open(os.path.join(output_folder, "launch.sh"), "w") as f:
         f.write(CreateRobotText.create_gz_load_launch_file(urdf_file, robot))
     # Set file executable
     os.system("chmod +x "+os.path.join(output_folder, "launch.sh"))
-    logger.info("URDF saved in: {}".format(output_file_name))
-
-
+    logger.info("Launch file saved in: {}".format(os.path.join(output_folder, "launch.sh")))
+    # Ros control
+    control_config_generator = RosControlConfigurationClass(kinematics_meta)
+    control_config = control_config_generator.create_control_configuration(robot)
+    with open(os.path.join(output_folder, "control.yaml"), "w") as f:
+        f.write(control_config)
+    print(control_config)
 
 
 if __name__ == "__main__":

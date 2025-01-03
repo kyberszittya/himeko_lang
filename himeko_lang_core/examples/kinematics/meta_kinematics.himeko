@@ -10,6 +10,7 @@ kinematics {
         meta_element {}
         link: -> meta_element {}
         frame: -> meta_element {}
+        control: -> meta_element {}
         @joint {}
     }
     joint_rev_limit {

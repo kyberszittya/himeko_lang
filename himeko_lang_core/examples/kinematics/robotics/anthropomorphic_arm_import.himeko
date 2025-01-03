@@ -7,6 +7,9 @@ robot use kinematics.elements use kinematics.geometry use kinematics.axes
 
     link_color [1.0, 0.776, 0.0, 1.0]
     f0_color [0.98, 0.824, 0.6, 1.0]
+    anthropomorphic_arm_control: kinematics.elements.control {
+        update_rate 500
+    }
     base_link: kinematics.elements.link {
         mass 25.0
         link_geometry: cylinder {
