@@ -86,29 +86,68 @@ robot use kinematics.elements use kinematics.geometry use kinematics.axes
         <- world, [0.0, 0.0, 0.0] -> base_link
     }
 
+    @arm_joint_control {
+        <- control_attributes.position,
+        <- control_attributes.velocity,
+        -> control_attributes.position,
+        -> control_attributes.velocity,
+        -> control_attributes.effort
+    }
+
     @j0: kinematics.rev_joint {
         <- base_link, [0.0, 0.0, 0.05] -> link_0,
-        -> AXIS_Z
+        -> AXIS_Z,
+        @control: -> arm_joint_control {}
+
     }
     @j1: kinematics.rev_joint {
         <- link_0, [[0.0, 0.15, 0.15], [0, 0, 90]] -> link_1,
-        -> AXIS_X
+        -> AXIS_X,
+        @control: arm_joint_control {}
     }
     @j2: kinematics.rev_joint {
         <- link_1, [0.0, 0.0, 0.3] -> link_2,
-        -> AXIS_Z
+        -> AXIS_Z,
+        @control: -> arm_joint_control {}
     }
     @j3: kinematics.rev_joint  {
         <- link_2, [-0.15, 0.0, 0.15] -> link_3,
-        -> AXIS_X
+        -> AXIS_X,
+        @control: -> arm_joint_control {}
     }
     @j4: kinematics.rev_joint  {
         <- link_3, [0.0, 0.15, 0.25] -> link_4,
-        -> AXIS_Y
+        -> AXIS_Y,
+        @control: -> arm_joint_control {}
     }
     @jtool: kinematics.rev_joint  {
         <- link_4, [0.0, 0.0, 0.15] -> tool,
-        -> AXIS_Z
+        -> AXIS_Z,
+        @control: -> arm_joint_control {}
     }
-
+    @gazebo_sim_system: kinematics.control_plugin {
+        plugin "gz_ros2_control/GazeboSimSystem",
+        ->j0, ->j1, ->j2, ->j3, ->j4, ->jtool
+    }
+    @sim_control_plugin: kinematics.sim_plugin {
+        plugin "gz_ros2_control::GazeboSimROS2ControlPlugin",
+        filename "gz_ros2_control-system",
+        parameters "control.yaml"
+    }
+    @joint_state_broadcaster: kinematics.control_definition {
+        <- robot.anthropomorphic_arm_control,
+        -> sensors.joint_state_broadcaster
+    }
+    joint_trajectory_controller: controllers.joint_trajectory_controller {
+       state_publish_rate 100.0
+       action_monitor_rate 20.0
+       @interfaces {
+           <- control_attributes.position,
+           -> control_attributes.position,
+           -> control_attributes.velocity
+       }
+       @joints {
+            ->j0, ->j1, ->j2, ->j3, ->j4, ->jtool
+       }
+    }
 }

@@ -11,7 +11,31 @@ kinematics {
         link: -> meta_element {}
         frame: -> meta_element {}
         control: -> meta_element {}
-        @joint {}
+        @control_definition {}
+        @joint {
+            @control {}
+        }
+    }
+    sensors {
+        joint_state_broadcaster {type "joint_state_broadcaster/JointStateBroadcaster"}
+    }
+    controllers {
+        meta_controller {
+            @state_interface {}
+            @command_interface {}
+        }
+        joint_trajectory_controller: meta_controller {type "joint_trajectory_controller/JointTrajectoryController"}
+        force_torque_sensor_controller: meta_controller {type "force_torque_sensor_controller/ForceTorqueSensorController"}
+        forward_position_controller: meta_controller {type "forward_position_controller/ForwardPositionController"}
+        forward_velocity_controller: meta_controller {type "forward_velocity_controller/ForwardVelocityController"}
+    }
+    @control_plugin {}
+    @sim_plugin {}
+
+    control_attributes {
+        position
+        velocity
+        effort
     }
     joint_rev_limit {
         lower -180.0
