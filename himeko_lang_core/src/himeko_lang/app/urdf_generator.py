@@ -85,8 +85,7 @@ def main(*args):
     # Ros control
     control_config_generator = RosControlConfigurationClass(kinematics_meta)
     control_config = control_config_generator.create_control_configuration(robot)
-    # TODO save control configuration according to path in HyMEKO
-    with open(os.path.join(output_folder, "control.yaml"), "w") as f:
+    with open(os.path.join(output_folder, factory_create_robot_text.control_parameters_path), "w") as f:
         f.write(control_config)
     print(control_config)
 
