@@ -94,16 +94,31 @@ robot use kinematics.elements use kinematics.geometry use kinematics.axes
         -> control_attributes.effort
     }
 
+    joint0_limit {
+        lower -180.0
+        upper 180.0
+        effort 500.0
+        velocity 4.0
+    }
+    joint1_limit {
+        lower -180.0
+        upper 180.0
+        effort 500.0
+        velocity 2.0
+    }
+
     @j0: kinematics.rev_joint {
         <- base_link, [0.0, 0.0, 0.05] -> link_0,
         -> AXIS_Z,
-        @control: -> arm_joint_control {}
+        @control: -> arm_joint_control {},
+        limit -> joint0_limit
 
     }
     @j1: kinematics.rev_joint {
         <- link_0, [[0.0, 0.15, 0.15], [0, 0, 90]] -> link_1,
         -> AXIS_X,
-        @control: arm_joint_control {}
+        @control: arm_joint_control {},
+        limit -> joint0_limit
     }
     @j2: kinematics.rev_joint {
         <- link_1, [0.0, 0.0, 0.3] -> link_2,

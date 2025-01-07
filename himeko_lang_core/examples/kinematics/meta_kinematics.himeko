@@ -40,7 +40,7 @@ kinematics {
     joint_rev_limit {
         lower -180.0
         upper 180.0
-        effort 5.0
+        effort 50.0
         velocity 1.0
     }
     joint_prismatic_limit [0.0, 0.5]
