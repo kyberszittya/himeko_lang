@@ -48,6 +48,8 @@ kinematics {
     @rev_joint: -> elements.joint {
         limit -> joint_rev_limit
     }
+    @conti_joint: -> elements.joint {
+    }
     @prismatic_joint: -> elements.joint {
         limit -> joint_prismatic_limit
     }

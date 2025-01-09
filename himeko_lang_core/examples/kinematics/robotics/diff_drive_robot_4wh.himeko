@@ -1,0 +1,77 @@
+[anthropomorphic_arm
+  import "meta_kinematics.himeko"
+]
+diff_robot use kinematics.elements use kinematics.geometry use kinematics.axes
+{
+    body_color [0.0, 0.0, 1.0, 1.0]
+    wheel_color [0.0, 0.0, 0.0, 1.0]
+    diff_robot_control: kinematics.elements.control {
+        update_rate 500
+    }
+    base_link: kinematics.elements.link {
+        mass 25.0
+        link_geometry: box {
+            dimension [0.7, 0.5, 0.2]
+        }
+        visual -> link_geometry
+        collision -> link_geometry
+        color -> diff_robot.body_color
+        origin [0.0, 0.0, 0.05]
+    }
+    wheel_fr: kinematics.elements.link {
+        mass 2.0
+        link_geometry: cylinder {
+            dimension [0.2, 0.05]
+        }
+        visual -> link_geometry
+        collision -> link_geometry
+        color -> diff_robot.wheel_color
+        origin [0.0, 0.0, 0.025]
+    }
+    wheel_fl: kinematics.elements.link {
+        mass 2.0
+        link_geometry: cylinder {
+            dimension [0.2, 0.05]
+        }
+        visual -> link_geometry
+        collision -> link_geometry
+        color -> diff_robot.wheel_color
+        origin [0.0, 0.0, 0.025]
+    }
+    wheel_rr: kinematics.elements.link {
+        mass 2.0
+        link_geometry: cylinder {
+            dimension [0.2, 0.05]
+        }
+        visual -> link_geometry
+        collision -> link_geometry
+        color -> diff_robot.wheel_color
+        origin [0.0, 0.0, 0.025]
+    }
+    wheel_rl: kinematics.elements.link {
+        mass 2.0
+        link_geometry: cylinder {
+            dimension [0.2, 0.05]
+        }
+        visual -> link_geometry
+        collision -> link_geometry
+        color -> diff_robot.wheel_color
+        origin [0.0, 0.0, 0.025]
+    }
+    @joint_fr: kinematics.conti_joint {
+        <- base_link, [[0.25, 0.25, 0.05], [-90.0, 0.0, 0.0]] -> wheel_fr,
+        -> AXIS_Z
+    }
+    @joint_fl: kinematics.conti_joint {
+        <- base_link, [[0.25, -0.25, 0.05], [90.0, 0.0, 0.0]] -> wheel_fl,
+        -> AXIS_Z
+    }
+    @joint_rr: kinematics.conti_joint {
+        <- base_link, [[-0.25, 0.25, 0.05], [-90.0, 0.0, 0.0]] -> wheel_rr,
+        -> AXIS_Z
+    }
+    @joint_rl: kinematics.conti_joint {
+        <- base_link, [[-0.25, -0.25, 0.05], [90.0, 0.0, 0.0]] -> wheel_rl,
+        -> AXIS_Z
+    }
+}

@@ -17,7 +17,7 @@ logger.addHandler(logging.StreamHandler())
 
 
 
-def main(*args):
+def main(args):
     KINEMATIC_DESC_FOLDER = os.path.join("..", "..",  "..", "examples", "kinematics")
 
     PATH_META_KINEMATICS = (
