@@ -25,6 +25,7 @@ kinematics {
             @command_interface {}
         }
         joint_trajectory_controller: meta_controller {type "joint_trajectory_controller/JointTrajectoryController"}
+        diff_drive_controller: meta_controller {type "diff_drive_controller/DiffDriveController"}
         force_torque_sensor_controller: meta_controller {type "force_torque_sensor_controller/ForceTorqueSensorController"}
         forward_position_controller: meta_controller {type "forward_position_controller/ForwardPositionController"}
         forward_velocity_controller: meta_controller {type "forward_velocity_controller/ForwardVelocityController"}
@@ -64,5 +65,6 @@ kinematics {
         AXIS_X: -> axis_definition {ax [1.0, 0.0, 0.0]}
         AXIS_Y: -> axis_definition {ax [0.0, 1.0, 0.0]}
         AXIS_Z: -> axis_definition {ax [0.0, 0.0, 1.0]}
+        AXIS_M_Z: -> axis_definition {ax [0.0, 0.0, -1.0]}
     }
 }

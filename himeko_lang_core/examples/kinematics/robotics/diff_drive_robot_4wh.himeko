@@ -5,8 +5,15 @@ diff_robot use kinematics.elements use kinematics.geometry use kinematics.axes
 {
     body_color [0.0, 0.0, 1.0, 1.0]
     wheel_color [0.0, 0.0, 0.0, 1.0]
-    diff_robot_control: kinematics.elements.control {
-        update_rate 500
+
+    diffdrive_control: kinematics.elements.control {
+        update_rate 100
+    }
+
+    @wheel_joint_control {
+        <- control_attributes.velocity,
+        -> control_attributes.position,
+        -> control_attributes.velocity
     }
     base_link: kinematics.elements.link {
         mass 25.0
@@ -21,57 +28,95 @@ diff_robot use kinematics.elements use kinematics.geometry use kinematics.axes
     wheel_fr: kinematics.elements.link {
         mass 2.0
         link_geometry: cylinder {
-            dimension [0.2, 0.05]
+            dimension [0.2, 0.1]
         }
         visual -> link_geometry
         collision -> link_geometry
         color -> diff_robot.wheel_color
-        origin [0.0, 0.0, 0.025]
+        origin [0.0, 0.0, 0.05]
     }
     wheel_fl: kinematics.elements.link {
         mass 2.0
         link_geometry: cylinder {
-            dimension [0.2, 0.05]
+            dimension [0.2, 0.1]
         }
         visual -> link_geometry
         collision -> link_geometry
         color -> diff_robot.wheel_color
-        origin [0.0, 0.0, 0.025]
+        origin [0.0, 0.0, 0.05]
     }
     wheel_rr: kinematics.elements.link {
         mass 2.0
         link_geometry: cylinder {
-            dimension [0.2, 0.05]
+            dimension [0.2, 0.1]
         }
         visual -> link_geometry
         collision -> link_geometry
         color -> diff_robot.wheel_color
-        origin [0.0, 0.0, 0.025]
+        origin [0.0, 0.0, 0.05]
     }
     wheel_rl: kinematics.elements.link {
         mass 2.0
         link_geometry: cylinder {
-            dimension [0.2, 0.05]
+            dimension [0.2, 0.1]
         }
         visual -> link_geometry
         collision -> link_geometry
         color -> diff_robot.wheel_color
-        origin [0.0, 0.0, 0.025]
+        origin [0.0, 0.0, 0.05]
     }
     @joint_fr: kinematics.conti_joint {
         <- base_link, [[0.25, 0.25, 0.05], [-90.0, 0.0, 0.0]] -> wheel_fr,
-        -> AXIS_Z
+        -> AXIS_Z,
+        @control: wheel_joint_control {}
     }
     @joint_fl: kinematics.conti_joint {
         <- base_link, [[0.25, -0.25, 0.05], [90.0, 0.0, 0.0]] -> wheel_fl,
-        -> AXIS_Z
+        -> AXIS_M_Z,
+        @control: wheel_joint_control {}
     }
     @joint_rr: kinematics.conti_joint {
         <- base_link, [[-0.25, 0.25, 0.05], [-90.0, 0.0, 0.0]] -> wheel_rr,
-        -> AXIS_Z
+        -> AXIS_Z,
+        @control: wheel_joint_control {}
     }
     @joint_rl: kinematics.conti_joint {
         <- base_link, [[-0.25, -0.25, 0.05], [90.0, 0.0, 0.0]] -> wheel_rl,
-        -> AXIS_Z
+        -> AXIS_M_Z,
+        @control: wheel_joint_control {}
+    }
+
+
+    @joint_state_broadcaster: kinematics.control_definition {
+        <- diff_robot.diffdrive_control,
+        -> sensors.joint_state_broadcaster
+    }
+    @sim_control_plugin: kinematics.sim_plugin {
+        plugin "gz_ros2_control::GazeboSimROS2ControlPlugin",
+        filename "gz_ros2_control-system",
+        parameters "diff_control.yaml"
+    }
+    @gazebo_sim_system: kinematics.control_plugin {
+        plugin "gz_ros2_control/GazeboSimSystem",
+        -> joint_fr, -> joint_fl, -> joint_rr, -> joint_rl
+    }
+    diff_drive_base_controller: controllers.diff_drive_controller {
+       publish_rate 50.0
+       wheel_separation 0.5
+       wheel_radius 0.2
+       base_frame_id "base_link"
+       odom_frame_id "odom"
+       pose_covariance  [0.001, 0.001, 0.0, 0.0, 0.0, 0.01]
+       twist_covariance [0.001, 0.0,   0.0, 0.0, 0.0, 0.01]
+
+       @interfaces {
+           <- control_attributes.velocity,
+           -> control_attributes.position,
+           -> control_attributes.velocity
+       }
+       @joints {
+            ["right"] -> joint_fr,  ["right"] -> joint_rr,
+            ["left"] -> joint_fl, ["left"] -> joint_rl
+       }
     }
 }
