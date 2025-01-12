@@ -1,0 +1,257 @@
+<robot name="robot">
+  <link name="world"/>
+  <link name="base_link">
+    <inertial>
+      <mass value="25.0"/>
+      <inertia ixx="0.050833333333333335" iyy="0.050833333333333335" izz="0.03125000000000001" ixz="0" ixy="0" iyz="0"/>
+      <origin xyz="0.0 0.0 0.025"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <cylinder length="0.05" radius="0.13"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.025"/>
+      <material name="link_color">
+        <color rgba="1.0 0.776 0.0 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.05" radius="0.13"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.025"/>
+    </collision>
+  </link>
+  <link name="link_0">
+    <inertial>
+      <mass value="5.0"/>
+      <inertia ixx="0.05234375" iyy="0.05234375" izz="0.10000000000000002" ixz="0" ixy="0" iyz="0"/>
+      <origin xyz="0.0 0.0 0.1"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <cylinder length="0.2" radius="0.075"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.1"/>
+      <material name="link_color">
+        <color rgba="1.0 0.776 0.0 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.2" radius="0.075"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.1"/>
+    </collision>
+  </link>
+  <link name="link_1">
+    <inertial>
+      <mass value="2.0"/>
+      <inertia ixx="0.0459375" iyy="0.0459375" izz="0.09" ixz="0" ixy="0" iyz="0"/>
+      <origin xyz="0.0 0.0 0.15"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <cylinder length="0.3" radius="0.075"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.15"/>
+      <material name="f0_color">
+        <color rgba="0.98 0.824 0.6 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.3" radius="0.075"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.15"/>
+    </collision>
+  </link>
+  <link name="link_2">
+    <inertial>
+      <mass value="2.0"/>
+      <inertia ixx="0.032187499999999994" iyy="0.032187499999999994" izz="0.0625" ixz="0" ixy="0" iyz="0"/>
+      <origin xyz="0.0 0.0 0.125"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <cylinder length="0.25" radius="0.075"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.125"/>
+      <material name="link_color">
+        <color rgba="1.0 0.776 0.0 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.25" radius="0.075"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.125"/>
+    </collision>
+  </link>
+  <link name="link_3">
+    <inertial>
+      <mass value="2.0"/>
+      <inertia ixx="0.0521375" iyy="0.0521375" izz="0.1024" ixz="0" ixy="0" iyz="0"/>
+      <origin xyz="0.0 0.0 0.16"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <cylinder length="0.32" radius="0.075"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.16"/>
+      <material name="link_color">
+        <color rgba="1.0 0.776 0.0 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.32" radius="0.075"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.16"/>
+    </collision>
+  </link>
+  <link name="link_4">
+    <inertial>
+      <mass value="2.0"/>
+      <inertia ixx="0.0121875" iyy="0.0121875" izz="0.0225" ixz="0" ixy="0" iyz="0"/>
+      <origin xyz="0.0 0.0 0.075"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <cylinder length="0.15" radius="0.075"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.075"/>
+      <material name="link_color">
+        <color rgba="1.0 0.776 0.0 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.15" radius="0.075"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.075"/>
+    </collision>
+  </link>
+  <link name="tool">
+    <inertial>
+      <mass value="0.5"/>
+      <inertia ixx="0.0013541666666666667" iyy="0.0006510416666666666" izz="0.0011718749999999997" ixz="0" ixy="0" iyz="0"/>
+      <origin xyz="0.0 0.0 0.05"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <box size="0.075 0.15 0.1"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.05"/>
+      <material name="link_color">
+        <color rgba="1.0 0.776 0.0 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.075 0.15 0.1"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.05"/>
+    </collision>
+  </link>
+  <joint type="fixed" name="j_fix_parent">
+    <parent link="world"/>
+    <child link="base_link"/>
+    <origin xyz="0.0 0.0 0.0"/>
+    <axis xyz="0 0 0"/>
+  </joint>
+  <joint type="revolute" name="j0">
+    <limit lower="-3.141592653589793" upper="3.141592653589793" effort="500.0" velocity="4.0"/>
+    <parent link="base_link"/>
+    <child link="link_0"/>
+    <origin xyz="0.0 0.0 0.05"/>
+    <axis xyz="0.0 0.0 1.0"/>
+  </joint>
+  <joint type="revolute" name="j1">
+    <limit lower="-3.141592653589793" upper="3.141592653589793" effort="500.0" velocity="4.0"/>
+    <parent link="link_0"/>
+    <child link="link_1"/>
+    <origin xyz="0.0 0.15 0.15" rpy="0.0 0.0 1.5707963267948966"/>
+    <axis xyz="1.0 0.0 0.0"/>
+  </joint>
+  <joint type="revolute" name="j2">
+    <limit lower="-3.141592653589793" upper="3.141592653589793" effort="50.0" velocity="1.0"/>
+    <parent link="link_1"/>
+    <child link="link_2"/>
+    <origin xyz="0.0 0.0 0.3"/>
+    <axis xyz="0.0 0.0 1.0"/>
+  </joint>
+  <joint type="revolute" name="j3">
+    <limit lower="-3.141592653589793" upper="3.141592653589793" effort="50.0" velocity="1.0"/>
+    <parent link="link_2"/>
+    <child link="link_3"/>
+    <origin xyz="-0.15 0.0 0.15"/>
+    <axis xyz="1.0 0.0 0.0"/>
+  </joint>
+  <joint type="revolute" name="j4">
+    <limit lower="-3.141592653589793" upper="3.141592653589793" effort="50.0" velocity="1.0"/>
+    <parent link="link_3"/>
+    <child link="link_4"/>
+    <origin xyz="0.0 0.15 0.25"/>
+    <axis xyz="0.0 1.0 0.0"/>
+  </joint>
+  <joint type="revolute" name="jtool">
+    <limit lower="-3.141592653589793" upper="3.141592653589793" effort="50.0" velocity="1.0"/>
+    <parent link="link_4"/>
+    <child link="tool"/>
+    <origin xyz="0.0 0.0 0.15"/>
+    <axis xyz="0.0 0.0 1.0"/>
+  </joint>
+  <gazebo>
+    <plugin name="gz_ros2_control::GazeboSimROS2ControlPlugin" filename="gz_ros2_control-system">
+      <parameters>control.yaml</parameters>
+    </plugin>
+  </gazebo>
+  <ros2_control name="gazebo_sim_system" type="system">
+    <hardware>
+      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+    </hardware>
+    <joint name="j0">
+      <command_interface name="position"/>
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="j1">
+      <command_interface name="position"/>
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="j2">
+      <command_interface name="position"/>
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="j3">
+      <command_interface name="position"/>
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="j4">
+      <command_interface name="position"/>
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="jtool">
+      <command_interface name="position"/>
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+  </ros2_control>
+</robot>

@@ -1,0 +1,166 @@
+<robot name="diff_robot">
+  <link name="base_link">
+    <inertial>
+      <mass value="25.0"/>
+      <inertia ixx="0.6041666666666666" iyy="1.1041666666666663" izz="1.5416666666666665" ixz="0" ixy="0" iyz="0"/>
+      <origin xyz="0.0 0.0 0.05"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <box size="0.7 0.5 0.2"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.05"/>
+      <material name="body_color">
+        <color rgba="0.0 0.0 1.0 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.7 0.5 0.2"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.05"/>
+    </collision>
+  </link>
+  <link name="wheel_fr">
+    <inertial>
+      <mass value="2.0"/>
+      <inertia ixx="0.011666666666666667" iyy="0.011666666666666667" izz="0.010000000000000002" ixz="0" ixy="0" iyz="0"/>
+      <origin xyz="0.0 0.0 0.05"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <cylinder length="0.1" radius="0.2"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.05"/>
+      <material name="wheel_color">
+        <color rgba="0.0 0.0 0.0 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.1" radius="0.2"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.05"/>
+    </collision>
+  </link>
+  <link name="wheel_fl">
+    <inertial>
+      <mass value="2.0"/>
+      <inertia ixx="0.011666666666666667" iyy="0.011666666666666667" izz="0.010000000000000002" ixz="0" ixy="0" iyz="0"/>
+      <origin xyz="0.0 0.0 0.05"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <cylinder length="0.1" radius="0.2"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.05"/>
+      <material name="wheel_color">
+        <color rgba="0.0 0.0 0.0 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.1" radius="0.2"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.05"/>
+    </collision>
+  </link>
+  <link name="wheel_rr">
+    <inertial>
+      <mass value="2.0"/>
+      <inertia ixx="0.011666666666666667" iyy="0.011666666666666667" izz="0.010000000000000002" ixz="0" ixy="0" iyz="0"/>
+      <origin xyz="0.0 0.0 0.05"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <cylinder length="0.1" radius="0.2"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.05"/>
+      <material name="wheel_color">
+        <color rgba="0.0 0.0 0.0 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.1" radius="0.2"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.05"/>
+    </collision>
+  </link>
+  <link name="wheel_rl">
+    <inertial>
+      <mass value="2.0"/>
+      <inertia ixx="0.011666666666666667" iyy="0.011666666666666667" izz="0.010000000000000002" ixz="0" ixy="0" iyz="0"/>
+      <origin xyz="0.0 0.0 0.05"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <cylinder length="0.1" radius="0.2"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.05"/>
+      <material name="wheel_color">
+        <color rgba="0.0 0.0 0.0 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.1" radius="0.2"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.05"/>
+    </collision>
+  </link>
+  <joint type="continuous" name="joint_fr">
+    <parent link="base_link"/>
+    <child link="wheel_fr"/>
+    <origin xyz="0.25 0.25 0.05" rpy="-1.5707963267948966 0.0 0.0"/>
+    <axis xyz="0.0 0.0 1.0"/>
+  </joint>
+  <joint type="continuous" name="joint_fl">
+    <parent link="base_link"/>
+    <child link="wheel_fl"/>
+    <origin xyz="0.25 -0.25 0.05" rpy="1.5707963267948966 0.0 0.0"/>
+    <axis xyz="0.0 0.0 -1.0"/>
+  </joint>
+  <joint type="continuous" name="joint_rr">
+    <parent link="base_link"/>
+    <child link="wheel_rr"/>
+    <origin xyz="-0.25 0.25 0.05" rpy="-1.5707963267948966 0.0 0.0"/>
+    <axis xyz="0.0 0.0 1.0"/>
+  </joint>
+  <joint type="continuous" name="joint_rl">
+    <parent link="base_link"/>
+    <child link="wheel_rl"/>
+    <origin xyz="-0.25 -0.25 0.05" rpy="1.5707963267948966 0.0 0.0"/>
+    <axis xyz="0.0 0.0 -1.0"/>
+  </joint>
+  <gazebo>
+    <plugin name="gz_ros2_control::GazeboSimROS2ControlPlugin" filename="gz_ros2_control-system">
+      <parameters>diff_control.yaml</parameters>
+    </plugin>
+  </gazebo>
+  <ros2_control name="gazebo_sim_system" type="system">
+    <hardware>
+      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+    </hardware>
+    <joint name="joint_fr">
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="joint_fl">
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="joint_rr">
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="joint_rl">
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+  </ros2_control>
+</robot>

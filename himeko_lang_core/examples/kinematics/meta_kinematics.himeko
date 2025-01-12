@@ -11,13 +11,23 @@ kinematics {
         link: -> meta_element {}
         frame: -> meta_element {}
         control: -> meta_element {}
+        sensor: -> meta_element {}
         @control_definition {}
         @joint {
             @control {}
         }
     }
+    @topic {}
+    topic_definition {
+        topic_name
+        message_type
+    }
     sensors {
         joint_state_broadcaster {type "joint_state_broadcaster/JointStateBroadcaster"}
+        rgb_camera: elements.sensor {
+            type "camera"
+        }
+        @sensor_connection {}
     }
     controllers {
         meta_controller {

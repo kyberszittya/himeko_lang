@@ -1,0 +1,14 @@
+# Camera bridge configuration.
+- gz_topic_name: "camera"
+  ros_topic_name: "/camera/image"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "gz.msgs.Image"
+  lazy: false
+  direction: GZ_TO_ROS
+
+- gz_topic_name: "/camera_info"
+  ros_topic_name: "/camera/camera_info"
+  ros_type_name: "sensor_msgs/msg/CameraInfo"
+  gz_type_name: "gz.msgs.CameraInfo"
+  lazy: false
+  direction: GZ_TO_ROS
