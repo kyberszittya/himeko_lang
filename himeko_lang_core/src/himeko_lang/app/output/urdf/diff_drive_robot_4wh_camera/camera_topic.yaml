@@ -1,0 +1,15 @@
+
+- gz_topic_name: "diff_robot/camera"
+  ros_topic_name: "diff_robot/camera/camera"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "gz.msgs.Image"
+  lazy: true
+  direction: GZ_TO_ROS
+                
+- gz_topic_name: "diff_robot/camera_info"
+  ros_topic_name: "diff_robot/camera/camera_info"
+  ros_type_name: "sensor_msgs/msg/CameraInfo"
+  gz_type_name: "gz.msgs.CameraInfo"
+  lazy: true
+  direction: GZ_TO_ROS
+                

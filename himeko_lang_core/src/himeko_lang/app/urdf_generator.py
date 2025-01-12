@@ -1,7 +1,6 @@
 from lxml import etree
 
 from himeko.hbcm.factories.creation_elements import FactoryHypergraphElements
-from himeko.transformations.ros.generate_launch_python import GenerateLaunch
 from himeko.transformations.ros.robot_queries import FactoryRobotQueryElements
 from himeko.transformations.ros.robot_text_generation import CreateRobotText
 from himeko.transformations.ros.ros_control_configuration import RosControlConfigurationClass
