@@ -66,7 +66,7 @@ def launch_setup(context, *args, **kwargs):
         name="camera_bridge",
         parameters=[{
             'use_sim_time': True,
-            'config_file': "camera.yaml"
+            'config_file': "camera_topic.yaml"
         }],
         output="screen"
     )
