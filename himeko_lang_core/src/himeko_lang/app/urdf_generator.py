@@ -4,7 +4,6 @@ from himeko.hbcm.factories.creation_elements import FactoryHypergraphElements
 from himeko.transformations.ros.robot_queries import FactoryRobotQueryElements
 from himeko.transformations.ros.robot_text_generation import CreateRobotText
 from himeko.transformations.ros.ros_control_configuration import RosControlConfigurationClass
-from himeko.transformations.ros.ros_sim_bridge_config_generation import RosGazeboSimConfigurationGenerator
 from himeko_lang.lang.engine.load_desc import HypergraphLoader
 
 
@@ -47,7 +46,8 @@ def main(args):
     )
     hypergraph_loader["path"] = paths
     res = hypergraph_loader()
-    kinematics_meta, robot = res[0]
+    # Kinematics, communication
+    communications_meta, kinematics_meta, robot = res[0]
     logger.info("Robot description loaded: {}".format(robot.name))
     # Queries
     factory_query = FactoryRobotQueryElements(kinematics_meta)
@@ -71,7 +71,7 @@ def main(args):
     # Create output folder
     os.makedirs(output_folder, exist_ok=True)
     # Save URDF
-    factory_create_robot_text = CreateRobotText(kinematics_meta)
+    factory_create_robot_text = CreateRobotText(kinematics_meta, communications_meta)
     xml_generator = factory_create_robot_text.create_robot_urdf_text()
     res_xml = xml_generator(robot)
     with open(output_file_name, "w") as f:
@@ -90,8 +90,8 @@ def main(args):
         f.write(control_config)
     logger.info("Control configuration saved in: {}".format(os.path.join(output_folder, factory_create_robot_text.control_parameters_path)))
     # Sensor SIM configuration
-    sensor_sim_config = RosGazeboSimConfigurationGenerator(kinematics_meta)
-    sim_config_bridge = sensor_sim_config.generate_gazebo_sim_configuration(robot)
+    sensor_sim_config_generator = factory_create_robot_text.create_sim_configuration_generator()
+    sim_config_bridge = sensor_sim_config_generator(robot)
     for key, value in sim_config_bridge.items():
         with open(os.path.join(output_folder, key + ".yaml"), "w") as f:
             f.write(value)

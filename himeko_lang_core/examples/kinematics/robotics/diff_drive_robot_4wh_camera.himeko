@@ -1,5 +1,6 @@
-[anthropomorphic_arm
+[diff_drive_robot_4wh_camera
   import "meta_kinematics.himeko"
+  import "meta_topic.himeko"
 ]
 diff_robot use kinematics.elements use kinematics.geometry use kinematics.axes
 {
@@ -146,15 +147,15 @@ diff_robot use kinematics.elements use kinematics.geometry use kinematics.axes
         always_on 1
         clip [0.1, 100.0]
     }
-    camera_image_topic_definition: kinematics.topic_definition {
+    camera_image_topic_definition: communication.topic_definition {
         topic_name "camera",
         message_type "sensor_msgs/Image"
     }
-    camera_info_topic_definition: kinematics.topic_definition {
+    camera_info_topic_definition: communication.topic_definition {
         topic_name "camera_info",
         message_type "sensor_msgs/CameraInfo"
     }
-    @camera_topic: kinematics.topic {
+    @camera_topic: communication.topic {
         <- camera_image_topic_definition,
         <- camera_info_topic_definition,
         -> camera

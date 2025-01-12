@@ -17,11 +17,7 @@ kinematics {
             @control {}
         }
     }
-    @topic {}
-    topic_definition {
-        topic_name
-        message_type
-    }
+
     sensors {
         joint_state_broadcaster {type "joint_state_broadcaster/JointStateBroadcaster"}
         rgb_camera: elements.sensor {

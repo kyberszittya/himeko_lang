@@ -1,0 +1,8 @@
+[meta_topic]
+communication {
+    @topic {}
+    topic_definition {
+        topic_name
+        message_type
+    }
+}
