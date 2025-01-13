@@ -79,7 +79,7 @@ def main(args):
     urdf_file = output_file_name_folder + ".urdf"
     logger.info("URDF saved in: {}".format(output_file_name))
     with open(os.path.join(output_folder, "launch.sh"), "w") as f:
-        f.write(CreateRobotText.create_gz_load_launch_file(urdf_file, robot))
+        f.write(CreateRobotText.create_gz_load_launch_file(robot.name + ".urdf", robot))
     # Set file executable
     os.system("chmod +x "+os.path.join(output_folder, "launch.sh"))
     logger.info("Launch file saved in: {}".format(os.path.join(output_folder, "launch.sh")))
@@ -92,6 +92,7 @@ def main(args):
     # Sensor SIM configuration
     sensor_sim_config_generator = factory_create_robot_text.create_sim_configuration_generator()
     sim_config_bridge = sensor_sim_config_generator(robot)
+
     for key, value in sim_config_bridge.items():
         with open(os.path.join(output_folder, key + ".yaml"), "w") as f:
             f.write(value)

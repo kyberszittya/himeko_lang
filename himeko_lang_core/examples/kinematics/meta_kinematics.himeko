@@ -23,6 +23,9 @@ kinematics {
         rgb_camera: elements.sensor {
             type "camera"
         }
+        laser_scanner: elements.sensor {
+            type "gpu_lidar"
+        }
         @sensor_connection {}
     }
     controllers {

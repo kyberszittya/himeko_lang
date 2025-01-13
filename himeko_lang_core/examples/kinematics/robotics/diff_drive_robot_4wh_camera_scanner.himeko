@@ -7,6 +7,7 @@ diff_robot use kinematics.elements use kinematics.geometry use kinematics.axes
     body_color [0.0, 0.0, 1.0, 1.0]
     wheel_color [0.0, 0.0, 0.0, 1.0]
     camera_color [0.86, 0.86, 0.86, 1.0]
+    scanner_color [0.86, 0.86, 0.0, 1.0]
 
     diffdrive_control: kinematics.elements.control {
         update_rate 100
@@ -77,10 +78,26 @@ diff_robot use kinematics.elements use kinematics.geometry use kinematics.axes
         color -> diff_robot.camera_color
         origin [0.0, 0.0, 0.05]
     }
+    laser_scanner_link: kinematics.elements.link {
+        mass 1.0
+        link_geometry: cylinder {
+            dimension [0.035, 0.1]
+        }
+        visual -> link_geometry
+        collision -> link_geometry
+        color -> diff_robot.scanner_color
+        origin [0.0, 0.0, 0.05]
+    }
 
     @camera_joint: kinematics.fixed_joint {
         <- base_link, [[0.35, 0.0, 0.15], [0.0, 0.0, 0.0]] -> camera_link,
         -> AXIS_Z
+
+    }
+    @scanner_joint: kinematics.fixed_joint {
+        <- base_link, [[0.4, 0.0, 0.0], [0.0, 0.0, 0.0]] -> laser_scanner_link,
+        -> AXIS_Z
+
     }
 
     @joint_fr: kinematics.conti_joint {
@@ -146,6 +163,15 @@ diff_robot use kinematics.elements use kinematics.geometry use kinematics.axes
         always_on 1
         clip [0.1, 100.0]
     }
+    scanner: kinematics.sensors.laser_scanner {
+        samples 640
+        range [0.08, 10.0]
+        resolution 1
+        range_resolution 0.01
+        angle [-150.0, 150.0]
+        update_rate 10.0
+        always_on 1
+    }
     camera_image_topic_definition: communication.topic_definition {
         topic_name "camera",
         message_type "sensor_msgs/Image"
@@ -162,5 +188,17 @@ diff_robot use kinematics.elements use kinematics.geometry use kinematics.axes
     @camera_connection: kinematics.sensors.sensor_connection {
         <- camera,
         -> camera_link
+    }
+    @scanner_connection: kinematics.sensors.sensor_connection {
+        <- scanner,
+        -> laser_scanner_link
+    }
+    scanner_topic_definition: communication.topic_definition {
+        topic_name "scanner",
+        message_type "sensor_msgs/LaserScan"
+    }
+    @scan_topic: communication.topic {
+        <- scanner_topic_definition,
+        -> scanner
     }
 }
