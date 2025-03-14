@@ -53,7 +53,6 @@ buy_camera: query {
        }
 
    }
-
    webshops {
          urls ["https://www.amazon.com", "https://www.ebay.com", "https://www.aliexpress.com", "alza.hu"]
    }
