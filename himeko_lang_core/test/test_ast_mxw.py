@@ -21,6 +21,9 @@ class TestMaxwhereTransformation(TestAncestorTestCase):
         self.assertEqual(root["munkahenger"]["munkahenger_base"].name, "munkahenger_base")
         self.assertIsNotNone(root["munkahenger"]["munkahenger_moving"])
         self.assertEqual(root["munkahenger"]["munkahenger_moving"].name, "munkahenger_moving")
+        munkahenger_moving_node = root["munkahenger"]["munkahenger_moving"]
+        self.assertIsNotNone(munkahenger_moving_node)
+        self.assertEqual(munkahenger_moving_node["mesh"]["url"].value, "munkahenger_moving.mesh")
         # Assert correct position
         self.assertEqual(root["munkahenger"]["position"].value, [600, 0, 600])
         self.assertEqual(root["munkahenger"]["orientation"].value, [90, 0, 0])

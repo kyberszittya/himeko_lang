@@ -1,0 +1,32 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+' Parser is a Lark_StandAlone object
+' Define parser as a Lark_StandAlone object
+participant main
+participant parser << Lark_StandAlone >>
+participant hbcm_mapper <<AstHbcmTransformer>>
+
+autonumber
+-> main: main()
+activate main
+main -> main: f = open(path)
+activate main
+deactivate main
+' Create a new parser
+create parser
+main -> parser: new(transformer)
+
+
+main -> parser: parse(f)
+activate parser
+return tree
+deactivate parser
+create hbcm_mapper
+main -> hbcm_mapper: new()
+main -> hbcm_mapper: transform(tree)
+activate hbcm_mapper
+return hbcm
+deactivate hbcm_mapper
+
+@enduml
