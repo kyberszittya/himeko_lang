@@ -2,12 +2,12 @@
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 [project]
-name = "himeko_lang_core"
+name = "himeko_lang"
 version = "0.0.1"
 authors = [
     { name="Csaba Hajdu", email="kyberszittya@protonmail.ch" },
 ]
-description = "Himeko language core"
+description = "Himeko language core, LARK parser"
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
@@ -15,7 +15,16 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-
+dependencies = [
+    "himeko>=0.0.1",
+    "lark>=1.1.0",
+]
+[tool.setuptools]
+packages = ["himeko_lang"]
+package-dir = {"" = "src"}
 [project.urls]
 Homepage = "https://github.com/kyberszittya/himeko-lang"
 Issues = "https://github.com/kyberszittya/himeko-lang/issues"
+[tool.pytest.ini_options]
+testpaths = ["test"]
+addopts = ["--verbose"]
