@@ -1,0 +1,30 @@
+[ robotics_iot ]
+robotic_interface {
+    node xr_viewer {
+    }
+    node middleware {
+
+    }
+
+    @connection {
+       <- xr_viewer, -> middleware
+    }
+    @robot_state_update {
+        -> xr_viewer, <- middleware
+    }
+    @middleware_state_update {
+        -> xr_viewer, <- middleware
+    }
+    @object_identification {
+        -> xr_viewer, <- middleware
+    }
+    @setup_robot {
+        -> middleware, <- xr_viewer
+    }
+    @upload_robot_data {
+        -> middleware, <- xr_viewer
+    }
+    @update_kiematic_data {
+        <- middleware, -> xr_viewer
+    }
+}
