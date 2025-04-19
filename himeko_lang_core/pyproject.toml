@@ -24,7 +24,7 @@ dependencies = [
     "pyyaml>=6.0",
 ]
 [tool.flake8]
-exclude = "src/himeko_lang/lang/himeko_meta_parser.py"
+extend-exclude = ["**/himeko_meta_parser.py"]
 [tool.setuptools]
 packages = ["himeko_lang"]
 package-dir = {"" = "src"}
