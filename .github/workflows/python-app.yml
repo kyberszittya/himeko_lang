@@ -13,6 +13,12 @@ permissions:
   contents: read
 
 jobs:
+  himeko-ci:
+    uses: kyberszittya/himeko_hypergraph/.github/workflows/python-ci.yml@v0.1
+    with:
+      python-version: "3.10"                    # overrides the default
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}   # passes through secrets
   build:
 
     runs-on: ubuntu-latest
@@ -27,6 +33,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install flake8 pytest
+        pip install -e .
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Lint with flake8
       run: |
