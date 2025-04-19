@@ -10,12 +10,12 @@ from himeko.hbcm.visualization.graphviz import create_dot_graph, visualize_dot_g
 from himeko.transformations.ros.urdf import TransformationUrdf
 from himeko.transformations.ros.robot_queries import FactoryRobotQueryElements
 from himeko_lang.lang.engine.load_desc import HypergraphLoader
-from test_ancestor_testcase import ERROR_MSG_UNABLE_TO_TRANSFORM
+from .test_ancestor_testcase import ERROR_MSG_UNABLE_TO_TRANSFORM
 
 from himeko_lang.lang.himeko_ast.ast_hbcm import AstHbcmTransformer
-from test_ancestor_testcase import TestAncestorTestCase
+from .test_ancestor_testcase import TestAncestorTestCase
 
-KINEMATIC_DESC_FOLDER = os.path.join("..", "examples", "kinematics")
+KINEMATIC_DESC_FOLDER = os.path.join("examples", "kinematics")
 
 TEST_CASE_ROBOT_ARM_PARSING = (
     os.path.join(KINEMATIC_DESC_FOLDER, "robotics", "anthropomorphic_arm.himeko"))

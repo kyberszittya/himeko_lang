@@ -1,12 +1,12 @@
 import os
 
 from himeko.hbcm.elements.edge import HyperEdge, EnumHyperarcDirection
-from test_ancestor_testcase import ERROR_MSG_UNABLE_TO_TRANSFORM
+from .test_ancestor_testcase import ERROR_MSG_UNABLE_TO_TRANSFORM
 
 from himeko_lang.lang.himeko_ast.ast_hbcm import AstHbcmTransformer
-from test_ancestor_testcase import TestAncestorTestCase
+from .test_ancestor_testcase import TestAncestorTestCase
 
-KINEMATIC_DESC_FOLDER = os.path.join("..", "examples", "simple", "multiedges")
+KINEMATIC_DESC_FOLDER = os.path.join("examples", "simple", "multiedges")
 
 TEST_CASE_MULTIEDGE_SIMPLE = (
     os.path.join(KINEMATIC_DESC_FOLDER, "multiedge_multidimensional_value.himeko"))

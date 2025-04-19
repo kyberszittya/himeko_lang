@@ -4,9 +4,9 @@ from himeko.hbcm.elements.element import common_ancestor
 from himeko.hbcm.elements.vertex import HyperVertex
 from himeko_lang.lang.himeko_ast.ast_hbcm import AstHbcmTransformer
 from himeko_lang.lang.himeko_ast.himeko_ast import create_ast
-from test_ancestor_testcase import TestAncestorTestCase, ERROR_MSG_UNABLE_TO_TRANSFORM
+from .test_ancestor_testcase import TestAncestorTestCase, ERROR_MSG_UNABLE_TO_TRANSFORM
 
-from test_case_descriptions import TEST_CASE_BASIC_FANO, TEST_CASE_BASIC_PARSING, \
+from .test_case_descriptions import TEST_CASE_BASIC_FANO, TEST_CASE_BASIC_PARSING, \
     TEST_CASE_BASIC_PARSING_2, TEST_CASE_MINIMAL_PARSING, TEST_CASE_BASIC_HIERARCHY
 
 

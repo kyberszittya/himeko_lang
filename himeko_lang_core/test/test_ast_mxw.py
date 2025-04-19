@@ -1,6 +1,6 @@
 from himeko.hbcm.factories.creation_elements import FactoryHypergraphElements
 from himeko.transformations.mxw.mxw_scene import TransformationMxw
-from test_ancestor_testcase import TestAncestorTestCase
+from .test_ancestor_testcase import TestAncestorTestCase
 
 from himeko.common.clock import NullClock
 from himeko_lang.lang.himeko_ast.ast_hbcm import AstHbcmTransformer
@@ -9,10 +9,10 @@ from himeko_lang.lang.himeko_ast.ast_hbcm import AstHbcmTransformer
 class TestMaxwhereTransformation(TestAncestorTestCase):
 
     def test_node_maxwhere_simple_scene1(self):
-        p = "../examples/mxw/mxw_cylinder.himeko"
+        p = "examples/mxw/mxw_cylinder.himeko"
         root = self.read_node(p)
         hbcm_mapper = AstHbcmTransformer(NullClock())
-        hyv = hbcm_mapper.convert_tree(root, "../examples/mxw/")
+        hyv = hbcm_mapper.convert_tree(root, "examples/mxw/")
         root = hyv[-1]
         self.assertEqual(root.name, "munkahenger_scene")
         self.assertIsNotNone(root["munkahenger"])

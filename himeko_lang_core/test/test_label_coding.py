@@ -6,9 +6,9 @@ from himeko.hbcm.graph.prufer_sequence import micikievus_code, create_permutatio
 from himeko.hbcm.transformations.transmission import copy_tree, transform_raw_code
 from himeko.hbcm.visualization.graphviz import visualize_dot_graph, create_composition_tree, visualize_prufer_code
 from himeko_lang.lang.himeko_ast.ast_hbcm import AstHbcmTransformer
-from test_case_descriptions import TEST_CASE_SIMPLE_FOLDER
+from .test_case_descriptions import TEST_CASE_SIMPLE_FOLDER
 
-from test_ancestor_testcase import TestAncestorTestCase, ERROR_MSG_UNABLE_TO_TRANSFORM
+from .test_ancestor_testcase import TestAncestorTestCase, ERROR_MSG_UNABLE_TO_TRANSFORM
 
 import os
 

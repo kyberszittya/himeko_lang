@@ -1,6 +1,6 @@
 from himeko.hbcm.elements.vertex import HyperVertex
-from test_case_descriptions import TEST_CASE_BASIC_INHERITANCE
-from test_ancestor_testcase import TestAncestorTestCase, ERROR_MSG_UNABLE_TO_TRANSFORM
+from .test_case_descriptions import TEST_CASE_BASIC_INHERITANCE
+from .test_ancestor_testcase import TestAncestorTestCase, ERROR_MSG_UNABLE_TO_TRANSFORM
 
 
 class TestAstParsingTemplating(TestAncestorTestCase):

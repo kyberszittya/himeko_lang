@@ -1,12 +1,12 @@
 import os
 
 from himeko.hbcm.elements.edge import HyperEdge
-from test_ancestor_testcase import ERROR_MSG_UNABLE_TO_TRANSFORM
+from .test_ancestor_testcase import ERROR_MSG_UNABLE_TO_TRANSFORM
 
 from himeko_lang.lang.himeko_ast.ast_hbcm import AstHbcmTransformer
-from test_ancestor_testcase import TestAncestorTestCase
+from .test_ancestor_testcase import TestAncestorTestCase
 
-CAMERA_DESC_FOLDER = os.path.join("..", "robotics", "sensors")
+CAMERA_DESC_FOLDER = os.path.join("robotics", "sensors")
 
 TEST_CASE_CAMERA_PARSING = (
     os.path.join(CAMERA_DESC_FOLDER, "ip_camera.himeko"))

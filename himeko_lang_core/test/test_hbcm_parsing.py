@@ -17,7 +17,7 @@ class TestBasicTransformation(unittest.TestCase):
 
     def test_basic_node_generation(self):
         print("\n--- START Test: test_basic_node_generation ---")
-        p = "../examples/simple/minimal_example.himeko"
+        p = "examples/simple/minimal_example.himeko"
         tree = self.read_node(p)
         rvisitor = HimekoHbcmTransformer()
         rvisitor.visit_topdown(tree)
@@ -26,7 +26,7 @@ class TestBasicTransformation(unittest.TestCase):
 
     def test_basic_hierarchy(self):
         print("\n--- START Test: test_basic_node_generation ---")
-        p = "../examples/simple/minimal_example_basic_hierarchy.himeko"
+        p = "examples/simple/minimal_example_basic_hierarchy.himeko"
         tree = self.read_node(p)
         rvisitor = HimekoHbcmTransformer()
         rvisitor.visit_topdown(tree)

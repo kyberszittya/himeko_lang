@@ -9,13 +9,17 @@ from himeko.hbcm.mapping.tensor_channel import DefaultTensorChannel
 from himeko.hbcm.mapping.tensor_mapping import BijectiveCliqueExpansionTransformation, StarExpansionTransformation
 from himeko.hbcm.transformations.transmission import copy_node_list
 from himeko_lang.lang.himeko_ast.ast_hbcm import AstHbcmTransformer
-from test_ancestor_testcase import TestAncestorTestCase
+from .test_ancestor_testcase import TestAncestorTestCase
+import os
+
+
+EXAMPLES_FOLDER = os.path.join("examples", "simple")
 
 
 class TestBasicTransformationEncoding(TestAncestorTestCase):
 
     def test_directed3_nodes_1_clique_expansion(self):
-        p = "../examples/simple/tensor/directed_3_nodes_1.himeko"
+        p = os.path.join(EXAMPLES_FOLDER, "tensor/directed_3_nodes_1.himeko")
         root = self.read_node(p)
         hbcm_mapper = AstHbcmTransformer(NullClock())
         hyv = hbcm_mapper.convert_tree(root)
@@ -81,7 +85,7 @@ class TestBasicTransformationEncoding(TestAncestorTestCase):
         self.assertTrue(np.all(tensor == new_tensor))
 
     def test_directed3_nodes_1_star_expansion(self):
-        p = "../examples/simple/tensor/directed_3_nodes_1.himeko"
+        p = os.path.join(EXAMPLES_FOLDER, "tensor/directed_3_nodes_1.himeko")
         root = self.read_node(p)
         hbcm_mapper = AstHbcmTransformer(NullClock())
         hyv = hbcm_mapper.convert_tree(root)

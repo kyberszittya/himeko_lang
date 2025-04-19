@@ -2,10 +2,10 @@ from himeko.hbcm.elements.attribute import HypergraphAttribute
 from himeko.hbcm.elements.edge import EnumHyperarcDirection, HyperEdge
 from himeko_lang.lang.himeko_ast.ast_hbcm import AstHbcmTransformer
 from himeko.hbcm.elements.vertex import HyperVertex
-from test_case_descriptions import TEST_CASE_FIELDS_WITH_REFERENCE, TEST_CASE_HIERARCHY_REF_EDGES, \
+from .test_case_descriptions import TEST_CASE_FIELDS_WITH_REFERENCE, TEST_CASE_HIERARCHY_REF_EDGES, \
     TEST_CASE_HIERARCHY_REF_EDGES_WITH_VALUES, TEST_CASE_BASIC_FIELDS, TEST_CASE_FIELDS_WITH_REFERENCE_2, \
     TEST_CASE_FIELDS_WITH_HIERARCHY_REF_EDGES, TEST_CASE_MULTIPLE_EDGES
-from test_ancestor_testcase import TestAncestorTestCase, ERROR_MSG_UNABLE_TO_TRANSFORM
+from .test_ancestor_testcase import TestAncestorTestCase, ERROR_MSG_UNABLE_TO_TRANSFORM
 
 
 class TestAstParsingWithReferences(TestAncestorTestCase):

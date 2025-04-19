@@ -1,6 +1,6 @@
 import os
 
-TEST_CASE_SIMPLE_FOLDER = os.path.join("..", "examples", "simple")
+TEST_CASE_SIMPLE_FOLDER = os.path.join("examples", "simple")
 TEST_CASE_BASE_FOLDER = os.path.join(TEST_CASE_SIMPLE_FOLDER, "base")
 
 TEST_CASE_MINIMAL_PARSING = (

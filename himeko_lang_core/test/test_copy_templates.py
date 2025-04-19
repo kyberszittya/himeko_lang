@@ -2,14 +2,14 @@ from himeko.hbcm.elements.edge import HyperEdge
 from himeko.hbcm.elements.vertex import HyperVertex
 from himeko.transformations.text.generate_text import TextGenerator
 from himeko_lang.processing.parse_description import ParseDescriptionEdgeFromFile, ParseDescriptionEdge
-from test_ancestor_testcase import TestAncestorTestCase
+from .test_ancestor_testcase import TestAncestorTestCase
 
 class TestAstParsingWithReferences(TestAncestorTestCase):
 
     def test_copy_templates(self):
         e = ParseDescriptionEdgeFromFile("parse_edge", 0, 0, b'0', b'0', "label", None)
-        p = "../examples/kinematics/chicken_kinematics.himeko"
-        library_path = "../examples/kinematics/"
+        p = "examples/kinematics/chicken_kinematics.himeko"
+        library_path = "examples/kinematics/"
         h = e.execute(path=p, library_path=library_path)
         root = h[-1]
         self.assertEqual(root.name, "root")
@@ -77,8 +77,8 @@ class TestAstParsingWithReferences(TestAncestorTestCase):
 
     def test_reparse_text(self):
         e = ParseDescriptionEdgeFromFile("parse_edge", 0, 0, b'0', b'0', "label", None)
-        p = "../examples/kinematics/chicken_kinematics.himeko"
-        library_path = "../examples/kinematics/"
+        p = "examples/kinematics/chicken_kinematics.himeko"
+        library_path = "examples/kinematics/"
         h = e.execute(path=p, library_path=library_path)
         root = h[-1]
         self.assertEqual(root.name, "root")
