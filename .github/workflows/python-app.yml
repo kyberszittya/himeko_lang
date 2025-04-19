@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   himeko-ci:
-    uses: kyberszittya/himeko_hypergraph/.github/workflows/python-ci.yml@v0.1
+    uses: kyberszittya/himeko_hypergraph/.github/workflows/python-app.yml@v0.1
     with:
       python-version: "3.10"                    # overrides the default
     secrets:
