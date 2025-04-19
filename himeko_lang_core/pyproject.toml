@@ -22,12 +22,15 @@ dependencies = [
     "networkx>=3.1",
     "matplotlib>=3.10.0",
     "pyyaml>=6.0",
+    "pygraphviz>=0.18",
 ]
 [tool.flake8]
 extend-exclude = ["**/himeko_meta_parser.py"]
 [tool.setuptools]
-packages = ["himeko_lang"]
 package-dir = {"" = "src"}
+[tool.setuptools.packages.find]
+where = ["src"]          # look under the src‑layout root
+exclude = ["test*", "docs*"]   # optional glob patterns to skip
 [project.urls]
 Homepage = "https://github.com/kyberszittya/himeko-lang"
 Issues = "https://github.com/kyberszittya/himeko-lang/issues"
