@@ -1,4 +1,5 @@
-[ Robot_Kinematic_Structure ]
+Robot_Kinematic_Structure
+
 primitives {
     Link { name<string> }
     NullRpy { rpy [0, 0, 0] }
@@ -23,6 +24,6 @@ robot use primitives
     link2 : Link { name "link2" }
 
     # Joints represented as edges with parameters
-    @joint1 : RevoluteJoint {origin [0, 0, 0], rpy -> NullRpy.rpy, axis -> axis.z, -> base_link, -> link1 }
-    @joint2 : RevoluteJoint {origin [1, 0, 0], rpy -> NullRpy.rpy, axis -> axis.x, -> link1, -> link2 }
+    @joint1 : RevoluteJoint {origin [0, 0, 0], rpy -> NullRpy.rpy, axis -> axis.z, + base_link, - link1 }
+    @joint2 : RevoluteJoint {origin [1, 0, 0], rpy -> NullRpy.rpy, axis -> axis.x, + link1, - link2 }
 }

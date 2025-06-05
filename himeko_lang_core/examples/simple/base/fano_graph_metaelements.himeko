@@ -1,4 +1,7 @@
-Fano_graph
+Fano_graph {
+    author: "kyberszittya"
+    description: "Fano graph with metaelements"
+}
 fano
 {
     n0 {}

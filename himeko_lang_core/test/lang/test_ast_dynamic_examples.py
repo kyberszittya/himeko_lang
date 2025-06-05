@@ -21,6 +21,13 @@ class BasicTestLang(unittest.TestCase):
             text = p.parse(f.read())
             print(text)
 
+    def test_ast_example_fano_graph_metaelements(self):
+        p = self.load_lang()
+        p0 = os.path.join(self.examples_path, "simple", "base", "fano_graph_metaelements.himeko")
+        with open(p0) as f:
+            text = p.parse(f.read())
+            print(text)
+
     def test_simple_kinematics(self):
         p = self.load_lang()
         p0 = os.path.join(self.examples_path, "kinematics", "simple_kinematics.himeko")
