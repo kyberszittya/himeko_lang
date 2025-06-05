@@ -1,4 +1,4 @@
-[meta_topic]
+meta_topic
 communication {
     @topic {}
     topic_definition {

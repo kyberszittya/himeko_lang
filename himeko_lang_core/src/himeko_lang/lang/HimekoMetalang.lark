@@ -2,9 +2,9 @@
 start:  hi_meta  hi_body
 
 // Metadata section
-?hi_meta: element_name ("{" (hi_metaelement)+ "}")? (hi_include)*
+?hi_meta: element_name ("{" (hi_metaelement ((",")? hi_metaelement)*)? "}")? (hi_include)*
 
-hi_metaelement: element_name ":" STRING
+hi_metaelement: element_name STRING
 
 // Metadata inclusion
 hi_include: "import" hi_include_path
@@ -38,7 +38,7 @@ element_reference: vector_field? ((REFERENCE_MODIFIER RELATION_DIRECTION)|RELATI
 REFERENCE_MODIFIER: ("<<copy>>"| "|>") | ("<<use>>"|"*|>") | ("<<extend>>"|"-|>")
 
 // Direction for relationships
-RELATION_DIRECTION: "->" | "+" | "-" | "~" | "<>"
+RELATION_DIRECTION: "->" | "+" | "-" | "=" | "~" | "<>"
 
 
 // Atomic field types

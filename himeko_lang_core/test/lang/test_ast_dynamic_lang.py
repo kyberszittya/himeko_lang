@@ -24,8 +24,6 @@ class BasicTestLang(unittest.TestCase):
             text = p.parse(f.read())
             print(text)
 
-
-
     def test_ast_example_basic_hierarchy(self):
         p = self.load_lang()
         p0 = os.path.join(self.examples_path, "simple", "minimal_example_basic_hierarchy.himeko")

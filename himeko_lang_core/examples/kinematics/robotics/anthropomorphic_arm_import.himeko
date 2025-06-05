@@ -1,6 +1,6 @@
-[anthropomorphic_arm
+anthropomorphic_arm
   import "meta_kinematics.himeko"
-]
+
 robot use kinematics.elements use kinematics.geometry use kinematics.axes
 {
     world: kinematics.elements.frame {}

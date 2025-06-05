@@ -1,6 +1,5 @@
-[ Simple_Kinematic_Description
+Simple_Kinematic_Description
     import "robot_primitives.himeko"
-]
 # Using imported primitives to define the robot
 simple_robot use primitives
 {

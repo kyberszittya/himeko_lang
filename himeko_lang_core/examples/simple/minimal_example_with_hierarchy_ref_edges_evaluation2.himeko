@@ -1,4 +1,4 @@
-[ Minimal_Example ]
+Minimal_Example
 context
 {
     node_lev_0
@@ -6,10 +6,10 @@ context
         node0{
             node0{}
             rel e0 {
-                -> node0,
-                -> context.node_lev_0.node1,
-                -> context.node_lev_0.node2,
-                <- context.node_lev_1.node0
+                + node0,
+                + context.node_lev_0.node1,
+                + context.node_lev_0.node2,
+                - context.node_lev_1.node0
             }
         }
         node1{}
@@ -21,8 +21,8 @@ context
             }
         }
         rel e1 {
-            -> node0,
-            <- context.node_lev_0.node3.node0.node1
+            + node0,
+            - context.node_lev_0.node3.node0.node1
         }
     }
     node_lev_1

@@ -15,7 +15,11 @@ robot use primitives
     Link { name<string> }
 
 
-    @ JointEdge { origin<real>, rpy<real>, axis<real> }
+    @ JointEdge {
+        origin<real> [<?>, <?>, <?>]
+        rpy<real> [<?>, <?>, <?>]
+        axis<real> [<?>, <?>, <?>]
+    }
     @RevoluteJoint: JointEdge {type "revolute"}
 
     # Links
@@ -24,6 +28,6 @@ robot use primitives
     link2 : Link { name "link2" }
 
     # Joints represented as edges with parameters
-    @joint1 : RevoluteJoint {origin [0, 0, 0], rpy -> NullRpy.rpy, axis -> axis.z, + base_link, - link1 }
-    @joint2 : RevoluteJoint {origin [1, 0, 0], rpy -> NullRpy.rpy, axis -> axis.x, + link1, - link2 }
+    @joint1 : -> RevoluteJoint {origin [0, 0, 0], rpy -> NullRpy.rpy, axis -> axis.z, + base_link, - link1 }
+    @joint2 : -> RevoluteJoint {origin [1, 0, 0], rpy -> NullRpy.rpy, axis -> axis.x, + link1, - link2 }
 }

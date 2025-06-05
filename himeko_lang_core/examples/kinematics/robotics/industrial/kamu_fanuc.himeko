@@ -1,13 +1,17 @@
-[ FANUC_Robot_Kinematic_Structure ]
+FANUC_Robot_Kinematic_Structure {
+name "FANUC Kinematic Structure"
+author "kyberszittya"
+}
 primitives {
     Link { name<string>, length<real> }
-    JointParams { type<string>, axis<real>, range<real>, origin<real>, rpy<real> }
-    baseFrame { position<real>, orientation<real> }
+    JointParams { type<string>, axis<real> [<?>, <?>, <?>],
+        range<real> [<?>, <?>], origin<real> [<?>, <?>, <?>], rpy<real> [<?>, <?>, <?>] }
+    baseFrame { position<real> [<?>, <?>, <?>], orientation<real> [<?>, <?>, <?>] }
     endEffector { name<string> }
-    @JointEdge { type<string>, axis<real>, range<real>, origin<real>, rpy<real> }
+    @JointEdge { type<string>, axis<real> [<?>, <?>, <?>], range<real> [<?>, <?>], origin<real>, rpy<real> }
     @RotationalJoint: JointEdge { type "revolute" }
 }
-fanuc use <- primitives
+fanuc use primitives
 {
     # Base frame
     base : baseFrame { position [0, 0, 0], orientation [0, 0, 0] }

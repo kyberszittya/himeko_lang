@@ -1,6 +1,6 @@
 Fano_graph {
-    author: "kyberszittya"
-    description: "Fano graph with metaelements"
+    author "kyberszittya"
+    description "Fano graph with metaelements"
 }
 fano
 {
