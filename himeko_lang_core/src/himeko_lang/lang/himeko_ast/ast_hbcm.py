@@ -451,39 +451,42 @@ class AstHbcmTransformer(object):
         return tree
 
     def __import_graphs(self, hyv: typing.List, ast, path: typing.Optional[str|typing.List[str]] = None):
-        import_graphs = self.get_importable_graphs(ast)
-        if len(import_graphs) > 0:
-            for import_graph in import_graphs:
-                if path is not None:
-                    if isinstance(path, list):
-                        # Iterate over paths
-                        for p in path:
-                            # Check if the file exists in the folder
-                            if os.path.exists(os.path.join(p, import_graph)):
-                                import_graph = os.path.join(p, import_graph)
-                                break
+        # Check if includes are present
+        meta = extract_meta_context(ast)
+        if meta is not None and hasattr(meta, 'includes'):
+            import_graphs = self.get_importable_graphs(ast)
+            if len(import_graphs) > 0:
+                for import_graph in import_graphs:
+                    if path is not None:
+                        if isinstance(path, list):
+                            # Iterate over paths
+                            for p in path:
+                                # Check if the file exists in the folder
+                                if os.path.exists(os.path.join(p, import_graph)):
+                                    import_graph = os.path.join(p, import_graph)
+                                    break
+                        else:
+                            if not os.path.exists(os.path.join(path, import_graph)):
+                                raise AstGraphPathNotFound("Unable to read tree from path {}".format(import_graph))
+                            import_graph = os.path.join(path, import_graph)
+                    self.logger.info("Importing graph: {}".format(import_graph))
+                    if import_graph in self.meta_elements:
+                        import_ast = self.meta_elements[import_graph]
+
+
                     else:
-                        if not os.path.exists(os.path.join(path, import_graph)):
-                            raise AstGraphPathNotFound("Unable to read tree from path {}".format(import_graph))
-                        import_graph = os.path.join(path, import_graph)
-                self.logger.info("Importing graph: {}".format(import_graph))
-                if import_graph in self.meta_elements:
-                    import_ast = self.meta_elements[import_graph]
+                        import_ast = self.read_graph(import_graph)
+                        create_ast(import_ast)
+                        meta_elements = self.create_root_hyper_vertices(import_ast)
+                    # Extend hyper vertices
+                    hyv.extend(meta_elements)
+                    # Create edge
+                    self.create_edges(import_ast)
+                    # Create attributes
+                    self.create_attributes(import_ast)
+                hyv = hyv[::-1]
 
-
-                else:
-                    import_ast = self.read_graph(import_graph)
-                    create_ast(import_ast)
-                    meta_elements = self.create_root_hyper_vertices(import_ast)
-                # Extend hyper vertices
-                hyv.extend(meta_elements)
-                # Create edge
-                self.create_edges(import_ast)
-                # Create attributes
-                self.create_attributes(import_ast)
-            hyv = hyv[::-1]
-
-            return hyv
+                return hyv
         return hyv
 
     def __update_used_elements(self, k, h, used_elements: typing.List):

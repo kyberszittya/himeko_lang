@@ -2,7 +2,7 @@
 start:  hi_meta  hi_body
 
 // Metadata section
-?hi_meta: element_name ("{" (hi_metaelement ((",")? hi_metaelement)*)? "}")? (hi_include)*
+hi_meta: element_name ("{" (hi_metaelement ((",")? hi_metaelement)*)? "}")? (hi_include)*
 
 hi_metaelement: element_name STRING
 
@@ -34,12 +34,17 @@ hi_element_value: SIGNED_NUMBER | STRING | element_reference | QUERY_ELEMENT
 
 // Element names and references
 element_name: CNAME
-element_reference: vector_field? ((REFERENCE_MODIFIER RELATION_DIRECTION)|RELATION_DIRECTION)? REF_NAME
+element_reference: vector_field? ((REFERENCE_MODIFIER relation_direction)|relation_direction)? REF_NAME
 REFERENCE_MODIFIER: ("<<copy>>"| "|>") | ("<<use>>"|"*|>") | ("<<extend>>"|"-|>")
 
 // Direction for relationships
-RELATION_DIRECTION: "->" | "+" | "-" | "=" | "~" | "<>"
+relation_direction: RELATION_IN | RELATION_OUT | RELATION_BIDIRECTIONAL
 
+// Relation direction
+RELATION_IN: "->" | "+"
+RELATION_OUT: "-" | "="
+RELATION_BIDIRECTIONAL: "~"
+RELATION_UNDEFINED: "<>"
 
 // Atomic field types
 EL_ATOMIC: "int" | "string" | "real" | "bool"
