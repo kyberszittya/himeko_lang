@@ -19,7 +19,7 @@ from himeko_lang.lang.himeko_ast.elements.meta_elements import AstEnumRelationDi
 from himeko_lang.lang.himeko_ast.elements.reference import ElementReference
 from himeko_lang.lang.himeko_ast.elements.types.data_type import VectorField, HiElementValue
 from himeko_lang.lang.himeko_ast.himeko_ast import Start, extract_root_context, \
-    create_ast, extract_meta_context
+    create_ast, extract_meta_context, HiMeta
 from himeko_lang.lang.himeko_meta_parser import Lark_StandAlone
 from himeko_lang.lang.himeko_ast.himeko_ast import transformer
 
@@ -531,6 +531,12 @@ class AstHbcmTransformer(object):
         hyv = self.__import_graphs(hyv, ast, path)
         # Create meta for root element
         meta = Metadata(str(ast.meta.name.value))
+        # Add metaelement to meta
+        for m in ast.meta.meta:
+            # TODO: finish key value pairs
+            print(m)
+            meta.add_metaelement(m)
+        # Add includes to meta
         for m in ast.meta.includes:
             meta.add_import(m.value)
         hyv[-1].add_meta(meta)

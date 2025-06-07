@@ -15,6 +15,7 @@ from himeko_lang.lang.himeko_ast.elements.stereotype import HiStereotype
 from himeko_lang.lang.himeko_ast.elements.types.data_type import ValueType, HiElementValue, VectorField
 from himeko_lang.lang.himeko_ast.elements.types.element_type import ElementType, HiType
 from himeko_lang.lang.himeko_ast.elements.use_element import HiUse
+import typing
 
 ast_types = [
     # Main elements
@@ -38,11 +39,15 @@ this_module = sys.modules[__name__]
 
 @dataclass
 class HiMeta(_Ast):
+    name: ElementName
     meta: HiMetaelement
+    includes: typing.List[HiInclude]
 
-    def __init__(self, meta: HiMetaelement, *args):
+    def __init__(self, name: ElementName, *args):
         super().__init__()
-        self.meta = meta
+        self.name = name
+        self.meta = list(filter(lambda x: isinstance(x, HiMetaelement), args))
+        self.includes = list(filter(lambda x: isinstance(x, HiInclude), args))
 
 
 @dataclass

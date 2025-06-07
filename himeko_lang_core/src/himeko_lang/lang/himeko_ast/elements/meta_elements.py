@@ -72,11 +72,9 @@ class HiInclude(_Ast):
 
 class HiMetaelement(_Ast):
     name: ElementName
-    includes: typing.List[HiInclude]
 
     def __init__(self, name: ElementName, *args):
         self.name = name
-        self.includes = list(filter(lambda x: isinstance(x, HiInclude), args))
 
 
 @dataclass

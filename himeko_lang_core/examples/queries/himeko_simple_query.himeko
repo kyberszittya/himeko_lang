@@ -1,0 +1,22 @@
+Dogs
+Dog {
+   color: <string> <?>
+   height: <real> <?>
+   length: <real> <?>
+   intelligence:  <?>
+   braveness: <?>
+   endurance: <?>
+}
+
+GermanShepherd: -> Dog {}
+Dachshund: -> Dog {}
+Corgi: -> Dog {}
+Komondor: -> Dog {}
+Result: -> Table {}
+@search {
+  +GermanShepherd
+  +Dachshund
+   +Corgi
+   +Komondor
+   -Result
+}
