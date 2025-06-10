@@ -27,7 +27,7 @@ class ElementReference(_Ast):
                 self.value = direction
             else:
                 # Else a simple relation is defined
-                self.direction = enumerate_direction(str(direction.value))
+                self.direction = direction.direction
                 self.value = 1.0
             self.modif = AstEnumRefereneModifier.USE
         elif len(args) == 3:
@@ -48,6 +48,7 @@ class ElementReference(_Ast):
             self.name = name.replace('"', '')
             self.value = value
             self.modif = modif
+
         self._reference = None
 
     @property

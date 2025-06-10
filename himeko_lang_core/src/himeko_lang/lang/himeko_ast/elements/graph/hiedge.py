@@ -16,10 +16,12 @@ class EdgeElementType(Enum):
     EDGE = 1
     VALUE = 2
 
+
+
 @dataclass
 class HiEdgeElement(_Ast):
     element: typing.Optional[VectorField|HiElementField|_HiAbstractElement]
-    relation_direction: AstEnumRelationDirection
+    derived_relation_direction: AstEnumRelationDirection
     reference: typing.Optional[ElementReference]
     element_type: EdgeElementType
 
@@ -27,17 +29,17 @@ class HiEdgeElement(_Ast):
         # Check for type of arg (element reference, element field, edge)
         if isinstance(arg, ElementReference):
             self.element = arg.value
-            self.relation_direction = arg.direction
+            self.derived_relation_direction = arg.direction
             self.reference = arg
             self.element_type = EdgeElementType.RELATIONSHIP
         elif isinstance(arg, HiElementField):
             self.element = arg
-            self.relation_direction = AstEnumRelationDirection.UNDEFINED
+            self.derived_relation_direction = AstEnumRelationDirection.UNDEFINED
             self.reference = None
             self.element_type = EdgeElementType.VALUE
         elif isinstance(arg, HiEdge):
             self.element = arg
-            self.relation_direction = AstEnumRelationDirection.UNDEFINED
+            self.derived_relation_direction = AstEnumRelationDirection.UNDEFINED
             self.reference = None
             self.element_type = EdgeElementType.EDGE
 

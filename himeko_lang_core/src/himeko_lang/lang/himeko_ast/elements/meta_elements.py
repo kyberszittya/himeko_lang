@@ -23,16 +23,30 @@ class _Ast(ast_utils.Ast):
 class _Statement(_Ast):
     pass
 
+class RelationDirection(_Ast):
+    direction: AstEnumRelationDirection
+
+    def __init__(self, *args):
+        if len(args) == 1 and isinstance(args[0], str):
+            self.direction = enumerate_direction(args[0])
+        elif len(args) == 1 and isinstance(args[0], AstEnumRelationDirection):
+            self.direction = args[0]
+        else:
+            raise ValueError("Invalid arguments for RelationDirection, expected a string or AstEnumRelationDirection instance.")
+
 
 class Value(_Ast, ast_utils.WithMeta):
     pass
 
 
+
 def enumerate_direction(arg):
     match arg:
-        case '--': return AstEnumRelationDirection.UNDEFINED
-        case '->': return AstEnumRelationDirection.OUT
-        case '<-': return AstEnumRelationDirection.IN
+        case '~': return AstEnumRelationDirection.UNDEFINED
+        case '-': return AstEnumRelationDirection.OUT
+        case '=': return AstEnumRelationDirection.OUT
+        case '+': return AstEnumRelationDirection.IN
+        case '->': return AstEnumRelationDirection.IN
         case '<>': return AstEnumRelationDirection.UNDIRECTED
 
 

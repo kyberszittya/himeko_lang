@@ -97,7 +97,7 @@ class AstHbcmTransformer(object):
         val = 1.0
         if r.element is not None:
             val = self.attempt_to_convert_to_float(r)
-        match r.relation_direction:
+        match r.derived_relation_direction:
             case AstEnumRelationDirection.IN:
                 self.relation_queues.put(
                     (e, r.reference.reference, EnumHyperarcDirection.IN, val))

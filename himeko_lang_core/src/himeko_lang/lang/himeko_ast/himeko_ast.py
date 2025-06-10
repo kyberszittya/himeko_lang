@@ -8,8 +8,9 @@ from himeko_lang.lang.himeko_ast.elements.abstract_elements import HiElementSign
 from himeko_lang.lang.himeko_ast.elements.graph.elementfield import HiElementField
 from himeko_lang.lang.himeko_ast.elements.graph.hiedge import HiEdgeElement, HiEdge, convert_references
 from himeko_lang.lang.himeko_ast.elements.graph.hinode import _HiNodeElement, HiNode
-from himeko_lang.lang.himeko_ast.elements.meta_elements import _Ast, _Statement, Value, ElementName, HiIncludePath, HiInclude, \
-    HiMetaelement, _TreeElement
+from himeko_lang.lang.himeko_ast.elements.meta_elements import _Ast, _Statement, Value, ElementName, HiIncludePath, \
+    HiInclude, \
+    HiMetaelement, _TreeElement, RelationDirection
 from himeko_lang.lang.himeko_ast.elements.reference import ElementReference
 from himeko_lang.lang.himeko_ast.elements.stereotype import HiStereotype
 from himeko_lang.lang.himeko_ast.elements.types.data_type import ValueType, HiElementValue, VectorField
@@ -31,6 +32,7 @@ ast_types = [
     # Typing
     ValueType, HiElementValue, VectorField, # Data type
     ElementType, HiType, # Element type
+    RelationDirection # Relation direction
 ]
 
 
