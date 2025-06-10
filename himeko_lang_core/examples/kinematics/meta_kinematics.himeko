@@ -1,4 +1,4 @@
-[meta_kinematics]
+meta_kinematics
 kinematics {
     units {
         length "m"

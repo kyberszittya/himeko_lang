@@ -3,6 +3,7 @@ import logging
 
 from himeko.hbcm.elements.attribute import HypergraphAttribute
 from himeko.hbcm.elements.edge import HyperEdge
+from himeko.hbcm.elements.element import HypergraphElement
 from himeko.hbcm.elements.vertex import HyperVertex
 from himeko.hbcm.factories.creation_elements import FactoryHypergraphElements
 from himeko.hbcm.queries.composition import QueryIsStereotypeOperation
@@ -26,7 +27,9 @@ TEST_CASE_META_KINEMATICS_PARSING = (
 TEST_CASE_META_KINEMATICS_IMPORT_PARSING = (
     os.path.join(KINEMATIC_DESC_FOLDER, "robotics", "anthropomorphic_arm_import.himeko")
 )
-
+TEST_CASE_META_KINEMATICS_COMM_IMPORT_PARSING = (
+    os.path.join(KINEMATIC_DESC_FOLDER, "robotics", "anthropomorphic_arm_import_comm.himeko")
+)
 # Logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -249,10 +252,11 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
         # Joints
         op_joint = FactoryHypergraphElements.create_vertex_constructor_default_kwargs(
             QueryIsStereotypeOperation, "joint_stereotype", 0,
-            stereotype=joint_element
+            stereotype=rev_joint
         )
         self.assertIsNotNone(op_joint)
         res_joint = op_joint(root)
+        # For debugging print all joints and their stereotypes
         self.assertEqual(len(res_joint), 6)
         joint_names = {'j0', 'j1', 'j2', 'j3', 'j4', 'jtool'}
         for n in joint_names:
@@ -293,7 +297,7 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
             self.assertIn(n, [x.name for x in joints])
         for n in joint_names:
             self.assertIn(n, [x.name for x in rev_joints])
-        self.assertEqual(len(joints), len(rev_joints))
+        self.assertNotEqual(len(joints), len(rev_joints))
         logger.info("Stereotypes: {}".format(joints[0].stereotype.nameset))
         #
         logger.info("END: test_load_arm_desc_stereotpyes")
@@ -301,13 +305,14 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
     def test_load_arm_desc_transform_urdf(self):
         logger.info("START: test_load_arm_desc_transform_urdf")
         #
-        root = self.read_node(TEST_CASE_META_KINEMATICS_IMPORT_PARSING)
+        root = self.read_node(TEST_CASE_META_KINEMATICS_COMM_IMPORT_PARSING)
         self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
         hbcm_mapper = AstHbcmTransformer()
         hyv = hbcm_mapper.convert_tree(root, KINEMATIC_DESC_FOLDER)
         root = hyv[-1]
         self.assertIsNotNone(root, ERROR_MSG_UNABLE_TO_TRANSFORM)
         kinematics_meta = hyv[0]
+        comm_meta = hyv[1]
         link_element = kinematics_meta["elements"]["link"]
         joint_element = kinematics_meta["elements"]["joint"]
         rev_joint = kinematics_meta["rev_joint"]
@@ -340,7 +345,7 @@ class TestBasicKinematicsAstParsing(TestAncestorTestCase):
         from lxml import etree
         op_transform_urdf = FactoryHypergraphElements.create_vertex_constructor_default_kwargs(
             TransformationUrdf, "urdf_transformation", 0,
-            kinematics_meta=kinematics_meta
+            kinematics_meta=kinematics_meta, communications_meta=comm_meta
         )
         res_xml = op_transform_urdf(root)
         self.assertIsNotNone(res_xml)

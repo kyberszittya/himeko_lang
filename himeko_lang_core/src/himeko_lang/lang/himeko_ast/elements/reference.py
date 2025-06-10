@@ -33,18 +33,18 @@ class ElementReference(_Ast):
         elif len(args) == 3:
             if not isinstance(args[0], VectorField) and (args[0].type == "REFERENCE_MODIFIER"):
                 modif, direction, name = args
-                self.direction = enumerate_direction(str(direction.value))
+                self.direction = direction.direction
                 self.name = name.replace('"', '')
                 self.modif = enumerate_modifier(str(modif.value))
                 self.value = 1.0
             else:
                 value, direction, name = args
-                self.direction = enumerate_direction(str(direction.value))
+                self.direction = direction.direction
                 self.name = name.replace('"', '')
                 self.value = value
         elif len(args) == 4:
             value, modif, direction, name = args
-            self.direction = enumerate_direction(str(direction.value))
+            self.direction = direction.direction
             self.name = name.replace('"', '')
             self.value = value
             self.modif = modif

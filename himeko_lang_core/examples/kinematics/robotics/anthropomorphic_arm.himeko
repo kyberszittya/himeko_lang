@@ -107,30 +107,30 @@ robot
 
         }
         @j0: rev_joint {
-            <- base_link, -> link_0,
-            ["axis"] -> AXIS_Z,
-            ["limit"] -> joint_rev_limit
+            + base_link, - link_0,
+            ["axis"] - AXIS_Z,
+            ["limit"] - joint_rev_limit
         }
         @j1: rev_joint {
-            <- link_0, -> link_1,
-            ["axis"] -> AXIS_Y
+            + link_0, - link_1,
+            ["axis"] - AXIS_Y
 
         }
         @j2: rev_joint {
-            <- link_1, -> link_2,
-            ["axis"] -> AXIS_Y
+            + link_1, - link_2,
+            ["axis"] - AXIS_Y
         }
         @j3: rev_joint  {
-            <- link_2, -> link_3,
-            ["axis"] -> robot.AXIS_Z
+            + link_2, - link_3,
+            ["axis"] - robot.AXIS_Z
         }
         @j4: rev_joint  {
-            <- link_3, -> link_4,
-            ["axis"] -> robot.AXIS_Y
+            + link_3, - link_4,
+            ["axis"] - robot.AXIS_Y
         }
         @jtool: rev_joint  {
-            <- link_4, -> tool,
-            ["axis"] -> robot.AXIS_Z
+            + link_4, - tool,
+            ["axis"] - robot.AXIS_Z
         }
     }
 }
