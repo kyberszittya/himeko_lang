@@ -1,7 +1,7 @@
-[diff_drive_robot_4wh_camera
+diff_drive_robot_4wh_camera
   import "meta_kinematics.himeko"
   import "meta_topic.himeko"
-]
+
 diff_robot use kinematics.elements use kinematics.geometry use kinematics.axes
 {
     body_color [0.0, 0.0, 1.0, 1.0]
@@ -14,9 +14,9 @@ diff_robot use kinematics.elements use kinematics.geometry use kinematics.axes
     }
 
     @wheel_joint_control {
-        <- control_attributes.velocity,
-        -> control_attributes.position,
-        -> control_attributes.velocity
+        + control_attributes.velocity,
+        - control_attributes.position,
+        - control_attributes.velocity
     }
     base_link: kinematics.elements.link {
         mass 25.0
@@ -90,41 +90,41 @@ diff_robot use kinematics.elements use kinematics.geometry use kinematics.axes
     }
 
     @camera_joint: kinematics.fixed_joint {
-        <- base_link, [[0.35, 0.0, 0.15], [0.0, 0.0, 0.0]] -> camera_link,
-        -> AXIS_Z
+        + base_link, [[0.35, 0.0, 0.15], [0.0, 0.0, 0.0]] - camera_link,
+        - AXIS_Z
 
     }
     @scanner_joint: kinematics.fixed_joint {
-        <- base_link, [[0.4, 0.0, 0.0], [0.0, 0.0, 0.0]] -> laser_scanner_link,
-        -> AXIS_Z
+        + base_link, [[0.4, 0.0, 0.0], [0.0, 0.0, 0.0]] - laser_scanner_link,
+        - AXIS_Z
 
     }
 
     @joint_fr: kinematics.conti_joint {
-        <- base_link, [[0.25, 0.25, 0.05], [-90.0, 0.0, 0.0]] -> wheel_fr,
-        -> AXIS_Z,
+        + base_link, [[0.25, 0.25, 0.05], [-90.0, 0.0, 0.0]] - wheel_fr,
+        - AXIS_Z,
         @control: wheel_joint_control {}
     }
     @joint_fl: kinematics.conti_joint {
-        <- base_link, [[0.25, -0.25, 0.05], [90.0, 0.0, 0.0]] -> wheel_fl,
-        -> AXIS_M_Z,
+        + base_link, [[0.25, -0.25, 0.05], [90.0, 0.0, 0.0]] - wheel_fl,
+        - AXIS_M_Z,
         @control: wheel_joint_control {}
     }
     @joint_rr: kinematics.conti_joint {
-        <- base_link, [[-0.25, 0.25, 0.05], [-90.0, 0.0, 0.0]] -> wheel_rr,
-        -> AXIS_Z,
+        + base_link, [[-0.25, 0.25, 0.05], [-90.0, 0.0, 0.0]] - wheel_rr,
+        - AXIS_Z,
         @control: wheel_joint_control {}
     }
     @joint_rl: kinematics.conti_joint {
-        <- base_link, [[-0.25, -0.25, 0.05], [90.0, 0.0, 0.0]] -> wheel_rl,
-        -> AXIS_M_Z,
+        + base_link, [[-0.25, -0.25, 0.05], [90.0, 0.0, 0.0]] - wheel_rl,
+        - AXIS_M_Z,
         @control: wheel_joint_control {}
     }
 
 
     @joint_state_broadcaster: kinematics.control_definition {
-        <- diff_robot.diffdrive_control,
-        -> sensors.joint_state_broadcaster
+        + diff_robot.diffdrive_control,
+        - sensors.joint_state_broadcaster
     }
     @sim_control_plugin: kinematics.sim_plugin {
         plugin "gz_ros2_control::GazeboSimROS2ControlPlugin",
@@ -145,9 +145,9 @@ diff_robot use kinematics.elements use kinematics.geometry use kinematics.axes
        twist_covariance [0.001, 0.0,   0.0, 0.0, 0.0, 0.01]
 
        @interfaces {
-           <- control_attributes.velocity,
-           -> control_attributes.position,
-           -> control_attributes.velocity
+           + control_attributes.velocity,
+           - control_attributes.position,
+           - control_attributes.velocity
        }
        @joints {
             ["right"] -> joint_fr,  ["right"] -> joint_rr,
@@ -181,24 +181,24 @@ diff_robot use kinematics.elements use kinematics.geometry use kinematics.axes
         message_type "sensor_msgs/CameraInfo"
     }
     @camera_topic: communication.topic {
-        <- camera_image_topic_definition,
-        <- camera_info_topic_definition,
-        -> camera
+        - camera_image_topic_definition,
+        - camera_info_topic_definition,
+        + camera
     }
     @camera_connection: kinematics.sensors.sensor_connection {
-        <- camera,
-        -> camera_link
+        - camera,
+        + camera_link
     }
     @scanner_connection: kinematics.sensors.sensor_connection {
-        <- scanner,
-        -> laser_scanner_link
+        - scanner,
+        + laser_scanner_link
     }
     scanner_topic_definition: communication.topic_definition {
         topic_name "scanner",
         message_type "sensor_msgs/LaserScan"
     }
     @scan_topic: communication.topic {
-        <- scanner_topic_definition,
-        -> scanner
+        - scanner_topic_definition,
+        + scanner
     }
 }

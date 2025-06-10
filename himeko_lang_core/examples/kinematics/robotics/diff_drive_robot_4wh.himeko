@@ -1,6 +1,6 @@
-[anthropomorphic_arm
+robot4wh_arm
   import "meta_kinematics.himeko"
-]
+
 diff_robot use kinematics.elements use kinematics.geometry use kinematics.axes
 {
     body_color [0.0, 0.0, 1.0, 1.0]

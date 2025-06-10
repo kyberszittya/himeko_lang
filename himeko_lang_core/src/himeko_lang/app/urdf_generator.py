@@ -18,6 +18,7 @@ logger.addHandler(logging.StreamHandler())
 
 
 def main(args):
+    """
     KINEMATIC_DESC_FOLDER = os.path.join("..", "..",  "..", "examples", "kinematics")
 
     PATH_META_KINEMATICS = (
@@ -26,10 +27,11 @@ def main(args):
     PATH_ROBOT_DESC = (
         os.path.join(KINEMATIC_DESC_FOLDER, "robotics", "anthropomorphic_arm_import.himeko")
     )
+    """
     if args is not None and len(args) > 1:
-        PATH_ROBOT_DESC = args[1]
-        PATH_META_KINEMATICS = args[2]
-        KINEMATIC_DESC_FOLDER = args[3]
+        PATH_ROBOT_DESC = args[0]
+        PATH_META_KINEMATICS = args[1]
+        KINEMATIC_DESC_FOLDER = args[2]
         # Logger
         logger.info("Using folder: "+KINEMATIC_DESC_FOLDER)
         logger.info("Using path: "+PATH_ROBOT_DESC)
@@ -47,7 +49,15 @@ def main(args):
     hypergraph_loader["path"] = paths
     res = hypergraph_loader()
     # Kinematics, communication
-    communications_meta, kinematics_meta, robot = res[0]
+    for r in res[0]:
+        match r.name:
+            case "kinematics":
+                print("Found kinematics meta")
+                kinematics_meta = r
+            case "communication":
+                print("Found communications meta")
+                communications_meta = r
+    _, _,  robot = res[0]
     logger.info("Robot description loaded: {}".format(robot.name))
     # Queries
     factory_query = FactoryRobotQueryElements(kinematics_meta)
@@ -104,4 +114,4 @@ def main(args):
 
 
 if __name__ == "__main__":
-    main(sys.argv)
+    main(sys.argv[1:])
