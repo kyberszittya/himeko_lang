@@ -133,8 +133,8 @@ diff_robot use kinematics.elements use kinematics.geometry use kinematics.axes
            - control_attributes.velocity
        }
        @joints {
-            ["right"] -> joint_fr,  ["right"] -> joint_rr,
-            ["left"] -> joint_fl, ["left"] -> joint_rl
+            ["right"] - joint_fr,  ["right"] - joint_rr,
+            ["left"] - joint_fl, ["left"] - joint_rl
        }
     }
     camera: kinematics.sensors.rgb_camera {
