@@ -5,4 +5,10 @@ communication {
         topic_name
         message_type
     }
+    node {
+        node_name <?>
+        node_namespace <?>
+        node_type <?>
+        node_parameters <?>
+    }
 }
