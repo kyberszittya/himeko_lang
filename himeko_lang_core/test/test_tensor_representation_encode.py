@@ -142,6 +142,7 @@ class TestBasicTransformationEncoding(TestAncestorTestCase):
         tensor, n, e = tr.encode(root_el)
         self.assertEqual(n, 5)
         self.assertEqual(e, 2)
+        print(tensor)
         x2_e1 = np.array([[0, 0, 0, 0, 0],
                           [0, 0, 0, 0, 0],
                           [0, 0, 0, 0, 0],

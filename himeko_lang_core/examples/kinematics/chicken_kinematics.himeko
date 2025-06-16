@@ -1,6 +1,6 @@
-[chicken_skeleton_kinematics
+chicken_skeleton_kinematics
    import "meta_kinematics_model.himeko"
-]
+
 root use meta.elements use meta.state {
 
     leg_skeleton {

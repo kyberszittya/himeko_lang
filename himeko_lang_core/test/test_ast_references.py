@@ -230,17 +230,17 @@ class TestAstParsingWithReferences(TestAncestorTestCase):
         for r in rel:
             self.assertIsNotNone(r.target)
         # First relation
-        self.assertEqual([0.85], rel[0].value)
+        self.assertEqual(0.85, rel[0].value)
         self.assertEqual("node0", rel[0].target.name)
         self.assertEqual("node_lev_1", rel[0].target.parent.name)
         self.assertEqual(EnumHyperarcDirection.OUT, rel[0].direction)
         # Next relation
-        self.assertEqual([0.9], rel[1].value)
+        self.assertEqual(0.9, rel[1].value)
         self.assertEqual("node1", rel[1].target.name)
         self.assertEqual("node_lev_0", rel[1].target.parent.name)
         self.assertEqual(EnumHyperarcDirection.IN, rel[1].direction)
         # Negative relation
-        self.assertEqual(rel[2].value, [-0.615])
+        self.assertEqual(rel[2].value, -0.615)
         self.assertEqual("node2", rel[2].target.name)
         self.assertEqual("node_lev_0", rel[2].target.parent.name)
         self.assertEqual(EnumHyperarcDirection.OUT, rel[2].direction)
