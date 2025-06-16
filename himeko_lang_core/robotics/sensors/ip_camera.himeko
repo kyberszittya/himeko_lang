@@ -1,4 +1,4 @@
-[ Ip_camera ]
+Ip_camera
 ip_camera
 {
     units {
@@ -59,11 +59,11 @@ ip_camera
         is_ethernet "true"
         is_poe "true"
     }
-    @resolution_images { <- image.resolution, -> ir_sensor, -> rgb_sensor }
-    @resolution_stream {<-  stream, ->  image.resolution}
-    @stream_input { ->  stream, <-  ir_sensor, <-  rgb_sensor}
-    @lens_sensor_connection { <- lenses, <-  ir_sensor, <-  rgb_sensor}
-    @lens_zooming { <- lenses.lens_zoomed, <- lenses.lens }
-    @network_connection  { ->  network, <- stream }
+    @resolution_images { + image.resolution, - ir_sensor, - rgb_sensor }
+    @resolution_stream {+  stream, -  image.resolution}
+    @stream_input { -  stream, +  ir_sensor, +  rgb_sensor}
+    @lens_sensor_connection { + lenses, +  ir_sensor, + rgb_sensor}
+    @lens_zooming { + lenses.lens_zoomed, + lenses.lens }
+    @network_connection  { -  network, + stream }
 
 }

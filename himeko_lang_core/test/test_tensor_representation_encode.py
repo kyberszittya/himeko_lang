@@ -6,7 +6,7 @@ from .test_ancestor_testcase import TestAncestorTestCase
 import numpy as np
 import os
 
-EXAMPLES_FOLDER = os.path.join("..", "examples")
+EXAMPLES_FOLDER = os.path.join("examples")
 SIMPLE_EXAMPLES_FOLDER = os.path.join(EXAMPLES_FOLDER, "simple")
 
 

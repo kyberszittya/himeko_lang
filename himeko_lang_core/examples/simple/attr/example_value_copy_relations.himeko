@@ -1,4 +1,4 @@
-[ Minimal_Example ]
+Minimal_Example
 context
 {
 
@@ -17,11 +17,11 @@ node_lev_0
         [|> -> val1]-> node0,
         [|> -> val1]-> node1,
         [|> -> val2, |> -> val3]-> node2,
-        <- node3
+        + node3
     }
 
-    @e1 { -> node1, -> node2, <- node3 }
+    @e1 { - node1, - node2, + node3 }
 
-    @e2 { -> node0, <- node0 }
+    @e2 { - node0, + node0 }
 }
 }

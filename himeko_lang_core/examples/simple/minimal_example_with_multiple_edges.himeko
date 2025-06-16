@@ -12,14 +12,14 @@ node_lev_0
     node5{}
 
     rel e0 {
-        + node0,
-        + node1,
-        + node2,
-        - node3
+        - node0,
+        - node1,
+        - node2,
+        + node3
     }
     rel e1 {
-        + node3,
-        - node4
+        - node3,
+        + node4
     }
     rel e2 {
         + node5,

@@ -1,6 +1,6 @@
-[mxw_cylinder
+mxw_cylinder
     import "mxw_meta.himeko"
-]
+
 munkahenger_scene use maxwhere.elements {
     units -> maxwhere.units.design
     munkahenger: -> mxw_node {
