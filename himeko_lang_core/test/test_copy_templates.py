@@ -1,3 +1,4 @@
+from himeko.hbcm.elements.attribute import HypergraphQueryAttribute
 from himeko.hbcm.elements.edge import HyperEdge
 from himeko.hbcm.elements.vertex import HyperVertex
 from himeko.transformations.text.generate_text import TextGenerator
@@ -65,13 +66,19 @@ class TestAstParsingWithReferences(TestAncestorTestCase):
         self.assertNotEqual(root["epistropheus"]["position"], root["sternum"]["position"])
         self.assertNotEqual(root["epistropheus"]["position"].value, root["sternum"]["position"].value)
         self.assertEqual(root["epistropheus"]["position"].value[0], 5.0)
-        self.assertEqual(root["sternum"]["position"].value[0], 0.0)
-        self.assertEqual(root["epistropheus"]["position"].value, [5.0, 0.0, 0.0])
-        self.assertEqual(root["sternum"]["position"].value, [0.0, 0.0, 0.0])
+        self.assertIsInstance(root["sternum"]["position"].value[0], HypergraphQueryAttribute)
+        for i in range(1, 3):
+            self.assertIsInstance(root["epistropheus"]["position"].value[i], HypergraphQueryAttribute)
+        self.assertEqual(root["epistropheus"]["position"].value[0], 5.0)
+        for i in range(0, 3):
+            self.assertIsInstance(root["sternum"]["position"].value[i], HypergraphQueryAttribute)
         root["left_wing"]["left_wing_coracoid"]["position"].value[0] = 5.0
 
-        self.assertEqual(root["left_wing"]["left_wing_coracoid"]["position"].value, [5.0, 0.0, 0.0])
-        self.assertEqual(root["right_wing"]["right_wing_coracoid"]["position"].value, [0.0, 0.0, 0.0])
+        self.assertEqual(root["left_wing"]["left_wing_coracoid"]["position"].value[0], 5.0)
+        self.assertEqual(root["right_wing"]["right_wing_coracoid"]["position"].value[0], 5.0)
+        for i in range(1, 3):
+            self.assertIsInstance(root["left_wing"]["left_wing_coracoid"]["position"].value[i], HypergraphQueryAttribute)
+            self.assertIsInstance(root["right_wing"]["right_wing_coracoid"]["position"].value[i], HypergraphQueryAttribute)
 
         self.assertNotEqual(root["left_wing"]["left_wing_coracoid"], root["right_wing"]["right_wing_coracoid"])
 

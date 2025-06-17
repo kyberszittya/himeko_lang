@@ -4,10 +4,10 @@ import logging
 from copy import copy
 from dataclasses import dataclass
 from queue import Queue, PriorityQueue
-
+from collections.abc import Iterable
 
 from himeko.common.clock import AbstractClock, SystemTimeClock
-from himeko.hbcm.elements.attribute import HypergraphAttribute
+from himeko.hbcm.elements.attribute import HypergraphAttribute, HypergraphQueryPlaceholder
 from himeko.hbcm.elements.edge import EnumHyperarcDirection, HyperEdge, ReferenceQuery, EnumHyperarcModifier
 from himeko.hbcm.elements.element import HypergraphElement
 from himeko.hbcm.elements.vertex import HyperVertex, Metadata
@@ -19,7 +19,7 @@ from himeko_lang.lang.himeko_ast.elements.meta_elements import AstEnumRelationDi
 from himeko_lang.lang.himeko_ast.elements.reference import ElementReference
 from himeko_lang.lang.himeko_ast.elements.types.data_type import VectorField, HiElementValue
 from himeko_lang.lang.himeko_ast.himeko_ast import Start, extract_root_context, \
-    create_ast, extract_meta_context, HiMeta
+    create_ast, extract_meta_context
 from himeko_lang.lang.himeko_meta_parser import Lark_StandAlone
 from himeko_lang.lang.himeko_ast.himeko_ast import transformer
 
@@ -194,6 +194,10 @@ class AstHbcmTransformer(object):
 
             return float(arg)
         except ValueError:
+            # If the value is a placeholder, return a query placeholder
+            if arg == "<?>":
+                return HypergraphQueryPlaceholder()
+            # If conversion fails, return as string
             return cls.convert_string(arg)
 
 
@@ -223,11 +227,31 @@ class AstHbcmTransformer(object):
             value = self.handle_typed_value(n)
         elif n.type is not None:
             typ = str(n.type.value)
+        # Create     the attribute
         atr = FactoryHypergraphElements.create_attribute_default(
             str(n.name.value),
             value, typ, self.clock_source.tick(), self.element_mapping[n.parent])
+        # If the value is a reference query, we need to handle it separately creating a query attribute
+        new_value = []
+        if isinstance(value, Iterable) and not isinstance(value, str):
+            swaps = False
+            for i,v in enumerate(value):
+                if isinstance(v, HypergraphQueryPlaceholder):
+                    q = FactoryHypergraphElements.create_query_attribute_default(
+                        ".".join([str(n.name.value), str(i)]),
+                        value, typ, self.clock_source.tick(), atr
+                    )
+                    new_value.append(q)
+                    # If we have a query placeholder, we need to swap the value
+                    swaps = True
+                else:
+                    new_value.append(v)
+            # Set the value
+            if swaps:
+                atr.value = new_value
         if isinstance(value, ReferenceQuery):
             self.relation_queues.put((atr, value))
+
         return atr
 
     def handle_typed_value(self, n):
@@ -271,6 +295,8 @@ class AstHbcmTransformer(object):
             hv0 = self.__create_hyper_node(v, None)
             contexts.append(hv0)
         return contexts
+
+
 
     def get_importable_graphs(self, ast):
         return [_meta.value for _meta in extract_meta_context(ast).includes]
