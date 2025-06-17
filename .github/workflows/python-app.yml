@@ -45,4 +45,6 @@ jobs:
       - name: Test with pytest
         run: |
           cd himeko_lang_core
+          # Add current directory to PYTHONPATH so that pytest can find the himeko package
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
           pytest

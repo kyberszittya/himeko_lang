@@ -1,4 +1,4 @@
-[meta_kinematics_model]
+meta_kinematics_model
 meta {
     state {
         orientation [<?>, <?>, <?>, <?>]

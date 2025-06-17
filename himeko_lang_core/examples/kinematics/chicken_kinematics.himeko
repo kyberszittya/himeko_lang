@@ -10,9 +10,9 @@ root use meta.elements use meta.state {
       tibia: |> -> bone {}
       metatarsus: |> -> bone {}
       tarsus: |> -> bone {}
-      @tarsometatarsus: joint {  <- metatarsus, -> tarsus }
-      @tibiotarsus: joint {  <- tibia,  -> metatarsus }
-      @femorotibial: joint {  <- femur,  -> tibia }
+      @tarsometatarsus: joint {  + metatarsus, - tarsus }
+      @tibiotarsus: joint {  + tibia,  - metatarsus }
+      @femorotibial: joint {  + femur,  - tibia }
     }
     wing_skeleton {
       coracoid: |> -> bone {}
@@ -22,38 +22,38 @@ root use meta.elements use meta.state {
       carpometacarpus: bone {}
       phalanges: |> -> bone {}
       clavicle: |> -> bone {}
-      @carpophalanges: joint { <- carpometacarpus, -> phalanges }
-      @carpus: joint { <- humerus, -> radius, -> ulna }
-      @coracoid_humerus: joint { <- coracoid, -> humerus, <- clavicle }
+      @carpophalanges: joint { + carpometacarpus, - phalanges }
+      @carpus: joint { + humerus, - radius, - ulna }
+      @coracoid_humerus: joint { + coracoid, - humerus, + clavicle }
     }
     ilium: bone {}
     left_leg: <<copy>> -> leg_skeleton {
     }
-    @left_ilium: joint { <- ilium, -> left_leg }
+    @left_ilium: joint { + ilium, - left_leg }
     right_leg: <<copy>> -> leg_skeleton {
     }
-    @right_ilium: joint { <- ilium, -> right_leg }
+    @right_ilium: joint { + ilium, - right_leg }
     pygostyle: |> -> bone {
     }
-    @pygostyle_ilium { <- pygostyle, -> ilium }
+    @pygostyle_ilium { + pygostyle, - ilium }
     scapula: |> -> bone {}
-    @ilium_scapula { <- ilium, -> scapula }
+    @ilium_scapula { + ilium, - scapula }
 
     sternum: |> -> bone {}
-    @scapula_sternum { <- scapula, -> sternum }
+    @scapula_sternum { + scapula, - sternum }
 
     left_wing: <<copy>> -> wing_skeleton {}
-    @scapula_left_wing: joint { <- sternum, -> left_wing }
+    @scapula_left_wing: joint { + sternum, - left_wing }
     right_wing: <<copy>> -> wing_skeleton {}
-    @scapula_right_wing: joint { <- sternum, -> right_wing }
+    @scapula_right_wing: joint { + sternum, - right_wing }
     epistropheus: |> -> bone {}
-    @scapula_epistropheus: joint { <- scapula, -> epistropheus }
+    @scapula_epistropheus: joint { + scapula, - epistropheus }
     atlas: bone {}
-    @epistropheus_atlas: joint { <- epistropheus, -> atlas }
+    @epistropheus_atlas: joint { + epistropheus, - atlas }
     mandible {}
-    @atlas_mandible: joint { <- atlas, -> mandible }
+    @atlas_mandible: joint { + atlas, - mandible }
     quadrate {}
-    @atlas_quadrate: joint { <- atlas, -> quadrate }
+    @atlas_quadrate: joint { + atlas, - quadrate }
     incisive: |> -> bone {}
-    @quadrate_incisive: joint { <- quadrate, -> incisive }
+    @quadrate_incisive: joint { + quadrate, - incisive }
 }
