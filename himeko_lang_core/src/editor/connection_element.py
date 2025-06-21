@@ -1,16 +1,16 @@
-from PyQt5.QtWidgets import QGraphicsItem, QInputDialog
-from PyQt5.QtGui import QPen, QBrush, QPolygonF, QPainterPath
+from PyQt5.QtWidgets import QGraphicsItem, QInputDialog, QColorDialog, QMenu
+from PyQt5.QtGui import QPen, QBrush, QPolygonF, QPainterPath, QColor
 from PyQt5.QtCore import Qt, QPointF, QRectF
 import math
-from node_element import Node
-from edge_element import Hyperedge
+from node_element import VisualNode
+from edge_element import VisualHyperedge
 
-class Connection(QGraphicsItem):
+class VisualGraphConnection(QGraphicsItem):
     def __init__(self, source, target, value=None):
         super().__init__()
         # Ensure source and target are either Node or Hyperedge
-        if not ((isinstance(source, Node) and isinstance(target, Hyperedge)) or
-                (isinstance(source, Hyperedge) and isinstance(target, Node))):
+        if not ((isinstance(source, VisualNode) and isinstance(target, VisualHyperedge)) or
+                (isinstance(source, VisualHyperedge) and isinstance(target, VisualNode))):
             raise ValueError("Connections must be between a Node and a Hyperedge.")
         self.source = source
         self.target = target
@@ -23,6 +23,8 @@ class Connection(QGraphicsItem):
         self.setZValue(1000)
         self.path = QPainterPath()
         self.arrow_head = QPolygonF()
+        self.color = Qt.black
+        self.direction_normal = True  # True: source->target, False: target->source
         self.updatePosition()
 
     @staticmethod
@@ -63,7 +65,7 @@ class Connection(QGraphicsItem):
         if dx == 0 and dy == 0:
             return center_scene
         angle = math.atan2(dy, dx)
-        if isinstance(item, Node):
+        if isinstance(item, VisualNode):
             rx = rect.width() / 2
             ry = rect.height() / 2
             bx = center_scene.x() + rx * math.cos(angle)
@@ -84,8 +86,13 @@ class Connection(QGraphicsItem):
 
     def updatePosition(self):
         self.prepareGeometryChange()
-        resolved_source = self.source
-        resolved_target = self.target
+        # Handle directionality
+        if self.direction_normal:
+            resolved_source = self.source
+            resolved_target = self.target
+        else:
+            resolved_source = self.target
+            resolved_target = self.source
 
         source_rect = resolved_source.boundingRect()
         target_rect = resolved_target.boundingRect()
@@ -131,12 +138,12 @@ class Connection(QGraphicsItem):
         if self.path.isEmpty():
             return
         if self.isSelected():
-            pen = QPen(Qt.red, 3, Qt.SolidLine)
+            pen = QPen(QColor(self.color), 3, Qt.SolidLine)
         else:
-            pen = QPen(Qt.black, 2, Qt.SolidLine)
+            pen = QPen(QColor(self.color), 2, Qt.SolidLine)
         painter.setPen(pen)
         painter.drawPath(self.path)
-        painter.setBrush(QBrush(Qt.black))
+        painter.setBrush(QBrush(QColor(self.color)))
         painter.drawPolygon(self.arrow_head)
         # Draw value if present
         if self.value is not None:
@@ -150,3 +157,20 @@ class Connection(QGraphicsItem):
             self.value = value
             self.update()
         super().mouseDoubleClickEvent(event)
+
+    def contextMenuEvent(self, event):
+        menu = QMenu()
+        direction_action = menu.addAction("Toggle Direction")
+        color_action = menu.addAction("Change Color...")
+        selected_action = menu.exec_(event.screenPos())
+        if selected_action == direction_action:
+            self.direction_normal = not self.direction_normal
+            self.updatePosition()
+            self.update()
+        elif selected_action == color_action:
+            color = QColorDialog.getColor(QColor(self.color))
+            if color.isValid():
+                self.color = color
+                self.update()
+        else:
+            super().contextMenuEvent(event)

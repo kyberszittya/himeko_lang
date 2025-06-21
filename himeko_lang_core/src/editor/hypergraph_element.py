@@ -4,7 +4,7 @@ from PyQt5.QtCore import QRectF, Qt, QPointF
 
 MARGIN_PUT_ELEMENT_FROM_PARENT = 20
 
-class HypergraphElement(QGraphicsItem):
+class VisualHypergraphElement(QGraphicsItem):
     def __init__(self, name, width=60, height=60):
         super().__init__()
         self.name = name

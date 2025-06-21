@@ -1,9 +1,8 @@
 from PyQt5.QtWidgets import QGraphicsItem
-from PyQt5.QtCore import QRectF, QPointF
 from PyQt5.QtGui import QPainterPath
-from hypergraph_element import HypergraphElement
+from hypergraph_element import VisualHypergraphElement
 
-class Node(HypergraphElement):
+class VisualNode(VisualHypergraphElement):
     def __init__(self, x, y, name, radius=30):
         super().__init__(name, width=radius*2, height=radius*2)
         self.radius = radius

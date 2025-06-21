@@ -4,15 +4,18 @@ from PyQt5.QtWidgets import (
     QApplication, QMainWindow,
     QToolBar, QAction, QInputDialog, QGraphicsView, QGraphicsScene, QLabel,
     QGraphicsTextItem,
-    QTreeWidget, QTreeWidgetItem, QTextEdit, QWidget, QHBoxLayout, QSizePolicy, QVBoxLayout, QMenu,
+    QTreeWidget, QTreeWidgetItem, QTextEdit, QWidget, QHBoxLayout, QSizePolicy, QVBoxLayout,
     QMessageBox
 )
 from PyQt5.QtGui import QPainter, QPen, QBrush, QColor
 from PyQt5.QtCore import Qt, QPointF
 from enum import Enum
-from node_element import Node
-from edge_element import Hyperedge
-from connection_element import Connection
+from node_element import VisualNode
+from edge_element import VisualHyperedge
+from connection_element import VisualGraphConnection
+from hypergraph_factory import HyMeKoVisualHypergraphFactory  # <-- Add import
+# Add import for TextGenerator
+from himeko.transformations.text.generate_text import TextGenerator
 
 # Setup logger
 logger = logging.getLogger("hypergraph_editor")
@@ -38,6 +41,7 @@ class HypergraphScene(QGraphicsScene):
         self.current_state = EditorState.SELECT
         self.temp_connection = None
         self.source_item = None
+        self.factory = HyMeKoVisualHypergraphFactory()  # <-- Add factory instance
 
     def attemptToRevertSelect(self):
         if hasattr(self.parent(), 'revertToSelect'):
@@ -48,8 +52,8 @@ class HypergraphScene(QGraphicsScene):
             pos = event.scenePos()
             items_at_pos = self.items(pos)
             # Fix: Use type() instead of isinstance() for Node/Hyperedge to avoid PyQt/Python import confusion
-            from node_element import Node as NodeType
-            from edge_element import Hyperedge as HyperedgeType
+            from node_element import VisualNode as NodeType
+            from edge_element import VisualHyperedge as HyperedgeType
             if self.current_state == EditorState.ADD_NODE:
                 try:
                     name, ok = QInputDialog.getText(None, "Node Name", "Enter node name:")
@@ -59,10 +63,9 @@ class HypergraphScene(QGraphicsScene):
                             if type(candidate) is NodeType or type(candidate) is HyperedgeType:
                                 parent_candidate = candidate
                                 break
-                        new_node = Node(pos.x(), pos.y(), name.strip())
-                        self.addItem(new_node)
+                        node_elem = self.factory.create_node(name.strip(), pos.x(), pos.y(), parent=parent_candidate)
+                        self.addItem(node_elem)  # <-- FIX: Remove .visual
                         if parent_candidate:
-                            new_node.insert_into(parent_candidate)
                             logger.info(f"Node '{name.strip()}' created as subelement of '{parent_candidate.name}'")
                         else:
                             logger.info(f"Node '{name.strip()}' created at ({pos.x()}, {pos.y()})")
@@ -81,10 +84,9 @@ class HypergraphScene(QGraphicsScene):
                             if type(candidate) is NodeType or type(candidate) is HyperedgeType:
                                 parent_candidate = candidate
                                 break
-                        new_edge = Hyperedge(pos.x(), pos.y(), name.strip())
-                        self.addItem(new_edge)
+                        edge_elem = self.factory.create_hyperedge(name.strip(), pos.x(), pos.y(), parent=parent_candidate)
+                        self.addItem(edge_elem)  # <-- FIX: Remove .visual
                         if parent_candidate:
-                            new_edge.insert_into(parent_candidate)
                             logger.info(f"Hyperedge '{name.strip()}' created as subelement of '{parent_candidate.name}'")
                         else:
                             logger.info(f"Hyperedge '{name.strip()}' created at ({pos.x()}, {pos.y()})")
@@ -111,14 +113,14 @@ class HypergraphScene(QGraphicsScene):
                             scenter = QPointF(spos.x() + srect.width()/2, spos.y() + srect.height()/2)
                             sradius_x = srect.width()/2
                             sradius_y = srect.height()/2
-                            start = Connection._ellipse_edge_point_static(scenter, sradius_x, sradius_y, pos)
+                            start = VisualGraphConnection._ellipse_edge_point_static(scenter, sradius_x, sradius_y, pos)
                         else:
                             srect = item.boundingRect()
                             spos = item.scenePos()
                             scenter = QPointF(spos.x() + srect.width()/2, spos.y() + srect.height()/2)
                             swidth = srect.width()
                             sheight = srect.height()
-                            start = Connection._rect_edge_point_static(scenter, swidth, sheight, pos)
+                            start = VisualGraphConnection._rect_edge_point_static(scenter, swidth, sheight, pos)
                         self.temp_connection = self.addLine(
                             item.scenePos().x() + item.boundingRect().width()/2,
                             item.scenePos().y() + item.boundingRect().height()/2,
@@ -129,19 +131,25 @@ class HypergraphScene(QGraphicsScene):
                         if self.source_item != item:
                             # Ensure connections between nodes and hyperedges
                             if type(self.source_item) is NodeType and type(item) is HyperedgeType:
-                                conn = Connection(self.source_item, item)
+                                conn = self.factory.create_connection(self.source_item, item)
                                 self.addItem(conn)
                                 self.attemptToRevertSelect()
                                 logger.info(
                                     f"Connection created: Node '{getattr(self.source_item, 'name', '?')}' -> Hyperedge '{getattr(item, 'name', '?')}'"
                                 )
+                                # --- Update HyMeKo text after connection ---
+                                if hasattr(self.parent(), "updateHierarchyPanel"):
+                                    self.parent().updateHierarchyPanel()
                             elif type(self.source_item) is HyperedgeType and type(item) is NodeType:
-                                conn = Connection(self.source_item, item)
+                                conn = self.factory.create_connection(self.source_item, item)
                                 self.addItem(conn)
                                 self.attemptToRevertSelect()
                                 logger.info(
                                     f"Connection created: Hyperedge '{getattr(self.source_item, 'name', '?')}' -> Node '{getattr(item, 'name', '?')}'"
                                 )
+                                # --- Update HyMeKo text after connection ---
+                                if hasattr(self.parent(), "updateHierarchyPanel"):
+                                    self.parent().updateHierarchyPanel()
                             else:
                                 logger.warning("Connections must be between a Node and a Hyperedge.")
                                 QMessageBox.warning(None, "Invalid Connection", "Connections must be between a Node and a Hyperedge.")
@@ -154,7 +162,7 @@ class HypergraphScene(QGraphicsScene):
                     if type(candidate) is NodeType or type(candidate) is HyperedgeType:
                         attr_name, ok = QInputDialog.getText(None, "Attribute Name", "Enter attribute name:")
                         if ok and attr_name.strip():
-                            candidate.add_attribute(attr_name.strip())
+                            self.factory.add_attribute(candidate, attr_name.strip())
                             if hasattr(self.parent(), "updateHierarchyPanel"):
                                 self.parent().updateHierarchyPanel()
                             self.attemptToRevertSelect()
@@ -174,20 +182,20 @@ class HypergraphScene(QGraphicsScene):
             pos = event.scenePos()
             # --- Update temp connection to follow edge logic ---
             item = self.source_item
-            if isinstance(item, Node):
+            if isinstance(item, VisualNode):
                 srect = item.boundingRect()
                 spos = item.scenePos()
                 scenter = QPointF(spos.x() + srect.width()/2, spos.y() + srect.height()/2)
                 sradius_x = srect.width()/2
                 sradius_y = srect.height()/2
-                start = Connection._ellipse_edge_point_static(scenter, sradius_x, sradius_y, pos)
+                start = VisualGraphConnection._ellipse_edge_point_static(scenter, sradius_x, sradius_y, pos)
             else:
                 srect = item.boundingRect()
                 spos = item.scenePos()
                 scenter = QPointF(spos.x() + srect.width()/2, spos.y() + srect.height()/2)
                 swidth = srect.width()
                 sheight = srect.height()
-                start = Connection._rect_edge_point_static(scenter, swidth, sheight, pos)
+                start = VisualGraphConnection._rect_edge_point_static(scenter, swidth, sheight, pos)
             self.temp_connection.setLine(
                 item.scenePos().x() + item.boundingRect().width()/2,
                 item.scenePos().y() + item.boundingRect().height()/2,
@@ -199,7 +207,7 @@ class HypergraphScene(QGraphicsScene):
         pos = event.scenePos()
         items_at_pos = self.items(pos)
         for item in items_at_pos:
-            if isinstance(item, Node) or isinstance(item, Hyperedge):
+            if isinstance(item, VisualNode) or isinstance(item, VisualHyperedge):
                 name, ok = QInputDialog.getText(None, "Rename", "Enter new name:", text=item.name)
                 if ok and name.strip():
                     item.name = name.strip()
@@ -213,7 +221,7 @@ class HypergraphScene(QGraphicsScene):
         items_at_pos = self.items(pos)
         item = None
         for candidate in items_at_pos:
-            if isinstance(candidate, Node) or isinstance(candidate, Hyperedge):
+            if isinstance(candidate, VisualNode) or isinstance(candidate, VisualHyperedge):
                 item = candidate
                 break
         if item:
@@ -225,7 +233,7 @@ class HypergraphScene(QGraphicsScene):
             selected_action = menu.exec_(event.screenPos())
             if selected_action == insert_action:
                 # Show dialog to pick parent from other elements
-                elements = [i for i in self.items() if (isinstance(i, Node) or isinstance(i, Hyperedge)) and i != item]
+                elements = [i for i in self.items() if (isinstance(i, VisualNode) or isinstance(i, VisualHyperedge)) and i != item]
                 names = [e.name for e in elements]
                 if names:
                     parent_name, ok = QInputDialog.getItem(None, "Insert Into", "Select parent:", names, editable=False)
@@ -262,6 +270,8 @@ class HypergraphEditor(QMainWindow):
         self.setWindowTitle("Hypergraph Editor")
         self.resize(1200, 800)
         self.scene = HypergraphScene(self)  # Pass self (the editor) to the scene
+        self.factory = self.scene.factory
+        self.text_generator = None  # Will be initialized on demand
 
         # --- Layout without QSplitter ---
         central_widget = QWidget()
@@ -355,7 +365,7 @@ class HypergraphEditor(QMainWindow):
     def deleteSelectedItems(self):
         # Remove connections before removing nodes/hyperedges
         for item in self.scene.selectedItems():
-            if isinstance(item, Node) or isinstance(item, Hyperedge):
+            if isinstance(item, VisualNode) or isinstance(item, VisualHyperedge):
                 for conn in list(item.connections):
                     if conn.scene():
                         self.scene.removeItem(conn)
@@ -375,7 +385,7 @@ class HypergraphEditor(QMainWindow):
         root_item = QTreeWidgetItem(["Elements"])
         self.hierarchy_panel.addTopLevelItem(root_item)
         for item in self.scene.items():
-            if (isinstance(item, Node) or isinstance(item, Hyperedge)) and item.parent_element is None:
+            if (isinstance(item, VisualNode) or isinstance(item, VisualHyperedge)) and item.parent_element is None:
                 add_element_tree(item, root_item)
         self.hierarchy_panel.expandAll()
 
@@ -384,10 +394,40 @@ class HypergraphEditor(QMainWindow):
 
     def generate_hymeko_equivalent(self):
         """
-        Placeholder: Generate the HyMeKo equivalent for the current graph.
-        This should update self.hymeko_textbox with the generated code.
+        Generate the HyMeKo equivalent for the current graph using TextGenerator.
+        This updates self.hymeko_textbox with the generated code.
         """
-        self.hymeko_textbox.setPlainText("// HyMeKo equivalent will be generated here.\n// TODO: Implement actual generation logic.")
+        # Find all top-level visual elements
+        roots = [
+            item for item in self.scene.items()
+            if (isinstance(item, VisualNode) or isinstance(item, VisualHyperedge)) and item.parent_element is None
+        ]
+        # Only generate if there is at least one root with a hypergraph_element
+        texts = []
+        for root in roots:
+            hg_elem = getattr(root, "hypergraph_element", None)
+            if hg_elem is not None:
+                # Lazy init TextGenerator with root's hypergraph element info
+                if self.text_generator is None:
+                    # Use root's info for TextGenerator constructor
+                    self.text_generator = TextGenerator(
+                        "text_generator",
+                        getattr(hg_elem, "timestamp", 0),
+                        getattr(hg_elem, "serial", 0),
+                        getattr(hg_elem, "guid", b""),
+                        getattr(hg_elem, "suid", b""),
+                        getattr(hg_elem, "label", ""),
+                        getattr(hg_elem, "parent", None)
+                    )
+                try:
+                    text = self.text_generator(hg_elem)
+                except Exception as e:
+                    text = f"// Error generating text: {e}"
+                texts.append(text)
+        if texts:
+            self.hymeko_textbox.setPlainText('\n\n'.join(texts))
+        else:
+            self.hymeko_textbox.setPlainText("// HyMeKo equivalent will be generated here.\n// TODO: Implement actual generation logic.")
 
 class NodeLabel(QGraphicsTextItem):
     def __init__(self, text, parent):

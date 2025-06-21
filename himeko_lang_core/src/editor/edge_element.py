@@ -1,8 +1,6 @@
-from PyQt5.QtWidgets import QGraphicsItem
-from PyQt5.QtCore import QRectF, QPointF
-from hypergraph_element import HypergraphElement
+from hypergraph_element import VisualHypergraphElement
 
-class Hyperedge(HypergraphElement):
+class VisualHyperedge(VisualHypergraphElement):
     def __init__(self, x, y, name, width=80, height=30):
         super().__init__(name, width, height)
         self.setPos(x - width / 2, y - height / 2)
