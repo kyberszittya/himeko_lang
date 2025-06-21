@@ -1,13 +1,17 @@
 import sys
 import math
 from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton,
+    QApplication, QMainWindow,
     QToolBar, QAction, QInputDialog, QGraphicsView, QGraphicsScene, QLabel,
-    QGraphicsEllipseItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsItem, QStatusBar
+    QGraphicsTextItem, QGraphicsItem,
+    QTreeWidget, QTreeWidgetItem, QSplitter
 )
 from PyQt5.QtGui import QPainter, QPen, QBrush, QColor, QTransform, QPolygonF, QPainterPath
 from PyQt5.QtCore import Qt, QPointF, QRectF
 from enum import Enum
+from hypergraph_element import HypergraphElement
+from node_element import Node
+from edge_element import Hyperedge
 
 class EditorState(Enum):
     SELECT = 1
@@ -49,10 +53,31 @@ class HypergraphScene(QGraphicsScene):
                 except Exception as e:
                     print(f"Error creating hyperedge: {e}")  # Log any errors
             elif self.current_state == EditorState.ADD_CONNECTION:
-                item = self.itemAt(pos, self.views()[0].transform())  # Use view's transform
-                if item and (isinstance(item, Node) or isinstance(item, Hyperedge)):
+                # Use items(pos) to get all items at the position, pick the topmost Node/Hyperedge
+                items_at_pos = self.items(pos)
+                item = None
+                for candidate in items_at_pos:
+                    if isinstance(candidate, Node) or isinstance(candidate, Hyperedge):
+                        item = candidate
+                        break
+                if item:
                     if not self.source_item:
                         self.source_item = item
+                        # --- Draw temp connection from edge, not center ---
+                        if isinstance(item, Node):
+                            srect = item.boundingRect()
+                            spos = item.pos()
+                            scenter = QPointF(spos.x() + srect.width()/2, spos.y() + srect.height()/2)
+                            sradius_x = srect.width()/2
+                            sradius_y = srect.height()/2
+                            start = Connection._ellipse_edge_point_static(scenter, sradius_x, sradius_y, pos)
+                        else:
+                            srect = item.boundingRect()
+                            spos = item.pos()
+                            scenter = QPointF(spos.x() + srect.width()/2, spos.y() + srect.height()/2)
+                            swidth = srect.width()
+                            sheight = srect.height()
+                            start = Connection._rect_edge_point_static(scenter, swidth, sheight, pos)
                         self.temp_connection = self.addLine(
                             item.x() + item.boundingRect().width()/2,
                             item.y() + item.boundingRect().height()/2,
@@ -61,18 +86,49 @@ class HypergraphScene(QGraphicsScene):
                         )
                     else:
                         if self.source_item != item:
-                            conn = Connection(self.source_item, item)
-                            self.addItem(conn)
-                            self.attemptToRevertSelect()
-                        if self.temp_connection:
-                            self.removeItem(self.temp_connection)
-                        self.temp_connection = None
-                        self.source_item = None
+                            # Ensure connections between nodes and hyperedges
+                            if isinstance(self.source_item, Node) and isinstance(item, Hyperedge):
+                                conn = Connection(self.source_item, item)
+                                self.addItem(conn)
+                                self.attemptToRevertSelect()
+                            elif isinstance(self.source_item, Hyperedge) and isinstance(item, Node):
+                                conn = Connection(self.source_item, item)
+                                self.addItem(conn)
+                                self.attemptToRevertSelect()
+                            else:
+                                print("Connections must be between a Node and a Hyperedge.")
+                        self.resetConnectionState()
+                else:
+                    # If clicked on empty space, reset connection state
+                    self.resetConnectionState()
         super().mousePressEvent(event)
+
+    def resetConnectionState(self):
+        """Reset temporary connection state."""
+        if self.temp_connection:
+            self.removeItem(self.temp_connection)
+        self.temp_connection = None
+        self.source_item = None
 
     def mouseMoveEvent(self, event):
         if self.temp_connection and self.source_item:
             pos = event.scenePos()
+            # --- Update temp connection to follow edge logic ---
+            item = self.source_item
+            if isinstance(item, Node):
+                srect = item.boundingRect()
+                spos = item.pos()
+                scenter = QPointF(spos.x() + srect.width()/2, spos.y() + srect.height()/2)
+                sradius_x = srect.width()/2
+                sradius_y = srect.height()/2
+                start = Connection._ellipse_edge_point_static(scenter, sradius_x, sradius_y, pos)
+            else:
+                srect = item.boundingRect()
+                spos = item.pos()
+                scenter = QPointF(spos.x() + srect.width()/2, spos.y() + srect.height()/2)
+                swidth = srect.width()
+                sheight = srect.height()
+                start = Connection._rect_edge_point_static(scenter, swidth, sheight, pos)
             self.temp_connection.setLine(
                 self.source_item.x() + self.source_item.boundingRect().width()/2,
                 self.source_item.y() + self.source_item.boundingRect().height()/2,
@@ -80,13 +136,56 @@ class HypergraphScene(QGraphicsScene):
             )
         super().mouseMoveEvent(event)
 
+    def mouseDoubleClickEvent(self, event):
+        pos = event.scenePos()
+        items_at_pos = self.items(pos)
+        for item in items_at_pos:
+            if isinstance(item, Node) or isinstance(item, Hyperedge):
+                name, ok = QInputDialog.getText(None, "Rename", "Enter new name:", text=item.name)
+                if ok and name.strip():
+                    item.name = name.strip()
+                    item.label.setPlainText(item.name)
+                    item._updateLabel()
+                break
+        super().mouseDoubleClickEvent(event)
+
+    def contextMenuEvent(self, event):
+        pos = event.scenePos()
+        items_at_pos = self.items(pos)
+        item = None
+        for candidate in items_at_pos:
+            if isinstance(candidate, Node) or isinstance(candidate, Hyperedge):
+                item = candidate
+                break
+        if item:
+            from PyQt5.QtWidgets import QMenu
+            menu = QMenu()
+            insert_action = menu.addAction("Insert Into...")
+            color_action = menu.addAction("Change Color...")  # Add color change option
+            selected_action = menu.exec_(event.screenPos())
+            if selected_action == insert_action:
+                # Show dialog to pick parent from other elements
+                elements = [i for i in self.items() if (isinstance(i, Node) or isinstance(i, Hyperedge)) and i != item]
+                names = [e.name for e in elements]
+                if names:
+                    parent_name, ok = QInputDialog.getItem(None, "Insert Into", "Select parent:", names, editable=False)
+                    if ok:
+                        parent = next(e for e in elements if e.name == parent_name)
+                        item.insert_into(parent)
+                        if hasattr(self.parent(), 'updateHierarchyPanel'):
+                            self.parent().updateHierarchyPanel()
+            elif selected_action == color_action:
+                item.changeColor()
+        else:
+            super().contextMenuEvent(event)
+
 class HypergraphView(QGraphicsView):
     def __init__(self, scene, parent=None):
         super().__init__(scene, parent)
         self.setRenderHint(QPainter.Antialiasing)
         self.setDragMode(QGraphicsView.RubberBandDrag)
         self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
-        self.setBackgroundBrush(QBrush(QColor(240, 240, 240)))
+        self.setBackgroundBrush(QBrush(QColor(255, 255, 255)))  # Set to white
 
     def wheelEvent(self, event):
         factor = 1.2
@@ -100,14 +199,25 @@ class HypergraphEditor(QMainWindow):
         self.setWindowTitle("Hypergraph Editor")
         self.resize(1200, 800)
         self.scene = HypergraphScene(self)  # Pass self (the editor) to the scene
+
+        self.splitter = QSplitter()
+        self.splitter.setStyleSheet("background-color: white;")  # Set background to white
+        self.setCentralWidget(self.splitter)
+
+        # Main view
         self.view = HypergraphView(self.scene)
+        self.splitter.addWidget(self.view)
+
+        # Hierarchy panel (now on the right)
+        self.hierarchy_panel = QTreeWidget()
+        self.hierarchy_panel.setHeaderLabel("Hierarchy")
+        self.splitter.addWidget(self.hierarchy_panel)
+
         self.createToolbar()
         self.status_label = QLabel("Ready")
-        central_widget = QWidget()
-        layout = QVBoxLayout(central_widget)
-        layout.addWidget(self.view)
-        self.setCentralWidget(central_widget)
+        # Remove central_widget and layout, since splitter is now central widget
         self.statusBar().addWidget(self.status_label)
+        self.updateHierarchyPanel()
 
     def createToolbar(self):
         toolbar = QToolBar("Editor Tools")
@@ -150,102 +260,195 @@ class HypergraphEditor(QMainWindow):
     def deleteSelectedItems(self):
         for item in self.scene.selectedItems():
             self.scene.removeItem(item)
+        self.updateHierarchyPanel()
 
     def revertToSelect(self):
         self.setMode("select")
         self.statusBar().showMessage("You have switched the editor to 'select' mode. Any new mouse clicks will select items instead of creating them.")
 
-class Node(QGraphicsEllipseItem):
-    def __init__(self, x, y, name, radius=30):
-        super().__init__(0, 0, radius*2, radius*2)
-        self.setPos(x - radius, y - radius)
-        self.setBrush(QBrush(QColor(200, 230, 255)))
-        self.setPen(QPen(Qt.black, 2))
-        self.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable | QGraphicsItem.ItemSendsGeometryChanges)
-        self.name = name
-        self.label = QGraphicsTextItem(name, self)
-        self._updateLabel()
-        self.connections = []
+    def deleteSelectedItems(self):
+        # Remove connections before removing nodes/hyperedges
+        for item in self.scene.selectedItems():
+            if isinstance(item, Node) or isinstance(item, Hyperedge):
+                for conn in list(item.connections):
+                    if conn.scene():
+                        self.scene.removeItem(conn)
+            self.scene.removeItem(item)
+        self.updateHierarchyPanel()
 
-    def _updateLabel(self):
-        rect = self.boundingRect()
-        tw = self.label.boundingRect().width()
-        th = self.label.boundingRect().height()
-        self.label.setPos(rect.width()/2 - tw/2, rect.height()/2 - th/2)
+    def updateHierarchyPanel(self):
+        self.hierarchy_panel.clear()
+        def add_element_tree(element, parent_item):
+            item = QTreeWidgetItem([element.name])
+            parent_item.addChild(item)
+            for child in getattr(element, "children_elements", []):
+                add_element_tree(child, item)
 
-    def itemChange(self, change, value):
-        if change == QGraphicsItem.ItemPositionChange:
-            for conn in self.connections:
-                conn.updatePosition()
-        return super().itemChange(change, value)
+        # Top-level: elements with no parent
+        nodes_item = QTreeWidgetItem(["Nodes"])
+        edges_item = QTreeWidgetItem(["Hyperedges"])
+        self.hierarchy_panel.addTopLevelItem(nodes_item)
+        self.hierarchy_panel.addTopLevelItem(edges_item)
+        for item in self.scene.items():
+            if isinstance(item, Node) and item.parent_element is None:
+                add_element_tree(item, nodes_item)
+            elif isinstance(item, Hyperedge) and item.parent_element is None:
+                add_element_tree(item, edges_item)
+        self.hierarchy_panel.expandAll()
 
-class Hyperedge(QGraphicsRectItem):
-    def __init__(self, x, y, name, width=120, height=60):
-        super().__init__(0, 0, width, height)
-        self.setPos(x - width/2, y - height/2)
-        self.setBrush(QBrush(QColor(255, 230, 200)))
-        self.setPen(QPen(Qt.black, 2))
-        self.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable | QGraphicsItem.ItemSendsGeometryChanges)
-        self.name = name
-        self.label = QGraphicsTextItem(name, self)
-        self._updateLabel()
-        self.connections = []
+class NodeLabel(QGraphicsTextItem):
+    def __init__(self, text, parent):
+        super().__init__(text, parent)
+        self.parent_node = parent
 
-    def _updateLabel(self):
-        rect = self.boundingRect()
-        tw = self.label.boundingRect().width()
-        th = self.label.boundingRect().height()
-        self.label.setPos(rect.width()/2 - tw/2, rect.height()/2 - th/2)
+    def mouseDoubleClickEvent(self, event):
+        name, ok = QInputDialog.getText(None, "Rename", "Enter new name:", text=self.parent_node.name)
+        if ok and name.strip():
+            self.parent_node.name = name.strip()
+            self.setPlainText(self.parent_node.name)
+            self.parent_node._updateLabel()
+        super().mouseDoubleClickEvent(event)
 
-    def itemChange(self, change, value):
-        if change == QGraphicsItem.ItemPositionChange:
-            for conn in self.connections:
-                conn.updatePosition()
-        return super().itemChange(change, value)
+class EdgeLabel(QGraphicsTextItem):
+    def __init__(self, text, parent):
+        super().__init__(text, parent)
+        self.parent_edge = parent
+
+    def mouseDoubleClickEvent(self, event):
+        name, ok = QInputDialog.getText(None, "Rename", "Enter new name:", text=self.parent_edge.name)
+        if ok and name.strip():
+            self.parent_edge.name = name.strip()
+            self.setPlainText(self.parent_edge.name)
+            self.parent_edge._updateLabel()
+        super().mouseDoubleClickEvent(event)
 
 class Connection(QGraphicsItem):
     def __init__(self, source, target):
         super().__init__()
+        # Ensure source and target are either Node or Hyperedge
+        if not ((isinstance(source, Node) and isinstance(target, Hyperedge)) or
+                (isinstance(source, Hyperedge) and isinstance(target, Node))):
+            raise ValueError("Connections must be between a Node and a Hyperedge.")
         self.source = source
         self.target = target
         self.source.connections.append(self)
         self.target.connections.append(self)
         self.arrow_size = 10
         self.setFlag(QGraphicsItem.ItemIsSelectable)
-        self.path = QPainterPath()  # Initialize path
-        self.arrow_head = QPolygonF()  # Initialize arrow_head
+        self.setZValue(-1)  # Ensure connections are drawn below nodes/edges
+        self.path = QPainterPath()
+        self.arrow_head = QPolygonF()
         self.updatePosition()
 
+    def _resolve_connection_point(self, element, other):
+        """
+        If the element is contained in another element, but the other element is a child,
+        connect to the element itself. Otherwise, use the top-most parent.
+        """
+        # If 'other' is a descendant of 'element', connect to 'element' itself
+        current = other
+        while current is not None:
+            if current is element:
+                return element
+            current = getattr(current, "parent_element", None)
+        # Otherwise, connect to the top-most parent
+        while element.parent_element is not None:
+            element = element.parent_element
+        return element
+
+    def mapToSceneCenter(self, item):
+        rect = item.boundingRect()
+        center = QPointF(rect.width() / 2, rect.height() / 2)
+        return item.mapToScene(center)
+
+    def mapToSceneRectCenterOrTop(self, item):
+        """
+        Return the best connection point for an item in scene coordinates:
+        - If the item has children (is a container), connect to the top center (just below the label).
+        - Otherwise, connect to the center.
+        """
+        rect = item.boundingRect()
+        if hasattr(item, "children_elements") and item.children_elements:
+            # Connect to the top center, just below the label
+            label_rect = item.label.boundingRect()
+            y = label_rect.height() + 2  # 2px below label
+            x = rect.width() / 2
+            return item.mapToScene(QPointF(x, y))
+        else:
+            # Center
+            center = QPointF(rect.width() / 2, rect.height() / 2)
+            return item.mapToScene(center)
+
     def updatePosition(self):
-        self.prepareGeometryChange()  # Call before modifying geometry
-        srect = self.source.boundingRect()
-        spos = self.source.pos()
-        scenter = QPointF(spos.x() + srect.width()/2, spos.y() + srect.height()/2)
-        trect = self.target.boundingRect()
-        tpos = self.target.pos()
-        tcenter = QPointF(tpos.x() + trect.width()/2, tpos.y() + trect.height()/2)
-        self.path = QPainterPath(scenter)
-        self.path.lineTo(tcenter)
-        dx = tcenter.x() - scenter.x()
-        dy = tcenter.y() - scenter.y()
+        self.prepareGeometryChange()
+
+        resolved_source = self._resolve_connection_point(self.source, self.target)
+        resolved_target = self._resolve_connection_point(self.target, self.source)
+
+        # Use improved connection point logic for containers
+        if isinstance(resolved_source, Node):
+            srect = resolved_source.boundingRect()
+            scenter_scene = self.mapToSceneRectCenterOrTop(resolved_source)
+            sradius_x = srect.width() / 2
+            sradius_y = srect.height() / 2
+        else:
+            srect = resolved_source.boundingRect()
+            scenter_scene = self.mapToSceneRectCenterOrTop(resolved_source)
+            swidth = srect.width()
+            sheight = srect.height()
+        if isinstance(resolved_target, Node):
+            trect = resolved_target.boundingRect()
+            tcenter_scene = self.mapToSceneRectCenterOrTop(resolved_target)
+            tradius_x = trect.width() / 2
+            tradius_y = trect.height() / 2
+        else:
+            trect = resolved_target.boundingRect()
+            tcenter_scene = self.mapToSceneRectCenterOrTop(resolved_target)
+            twidth = trect.width()
+            theight = trect.height()
+
+        # Use static methods for edge point calculation
+        if isinstance(resolved_source, Node):
+            start = self._ellipse_edge_point_static(scenter_scene, sradius_x, sradius_y, tcenter_scene)
+        else:
+            start = self._rect_edge_point_static(scenter_scene, swidth, sheight, tcenter_scene)
+        if isinstance(resolved_target, Node):
+            end = self._ellipse_edge_point_static(tcenter_scene, tradius_x, tradius_y, scenter_scene)
+        else:
+            end = self._rect_edge_point_static(tcenter_scene, twidth, theight, scenter_scene)
+
+        start_local = self.mapFromScene(start)
+        end_local = self.mapFromScene(end)
+
+        self.path = QPainterPath(start_local)
+        self.path.lineTo(end_local)
+
+        dx = end_local.x() - start_local.x()
+        dy = end_local.y() - start_local.y()
         raw_angle = math.degrees(math.atan2(dy, dx))
         if raw_angle < 0:
             raw_angle += 360
         angle = raw_angle
 
-        p1 = tcenter - QPointF(
+        p1 = end_local - QPointF(
             math.cos(math.radians(angle - 20)) * self.arrow_size,
             math.sin(math.radians(angle - 20)) * self.arrow_size
         )
-        p2 = tcenter - QPointF(
+        p2 = end_local - QPointF(
             math.cos(math.radians(angle + 20)) * self.arrow_size,
             math.sin(math.radians(angle + 20)) * self.arrow_size
         )
         poly = QPolygonF()
-        poly.append(tcenter)
+        poly.append(end_local)
         poly.append(p1)
         poly.append(p2)
         self.arrow_head = poly
+
+    def boundingRect(self):
+        # Return a rectangle that contains the connection line and arrow
+        if self.path.isEmpty():
+            return QRectF()
+        return self.path.boundingRect().adjusted(-self.arrow_size, -self.arrow_size, self.arrow_size, self.arrow_size)
 
     def paint(self, painter, option, widget):
         if self.path.isEmpty():  # Ensure path is valid
@@ -254,6 +457,33 @@ class Connection(QGraphicsItem):
         painter.drawPath(self.path)
         painter.setBrush(QBrush(Qt.black))
         painter.drawPolygon(self.arrow_head)
+
+    @staticmethod
+    def _ellipse_edge_point_static(center, radius_x, radius_y, target_point):
+        dx = target_point.x() - center.x()
+        dy = target_point.y() - center.y()
+        if dx == 0 and dy == 0:
+            return center
+        angle = math.atan2(dy, dx)
+        x = center.x() + radius_x * math.cos(angle)
+        y = center.y() + radius_y * math.sin(angle)
+        return QPointF(x, y)
+
+    @staticmethod
+    def _rect_edge_point_static(rect_center, width, height, target_point):
+        dx = target_point.x() - rect_center.x()
+        dy = target_point.y() - rect_center.y()
+        if dx == 0 and dy == 0:
+            return rect_center
+        abs_dx = abs(dx)
+        abs_dy = abs(dy)
+        if abs_dx * height > abs_dy * width:
+            scale = (width / 2) / abs_dx
+        else:
+            scale = (height / 2) / abs_dy
+        x = rect_center.x() + dx * scale
+        y = rect_center.y() + dy * scale
+        return QPointF(x, y)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
