@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (
     QToolBar, QAction, QInputDialog, QGraphicsView, QGraphicsScene, QLabel,
     QGraphicsTextItem,
     QTreeWidget, QTreeWidgetItem, QTextEdit, QWidget, QHBoxLayout, QSizePolicy, QVBoxLayout,
-    QMessageBox
+    QMessageBox, QFileDialog
 )
 from PyQt5.QtGui import QPainter, QPen, QBrush, QColor
 from PyQt5.QtCore import Qt, QPointF
@@ -16,6 +16,7 @@ from connection_element import VisualGraphConnection
 from hypergraph_factory import HyMeKoVisualHypergraphFactory  # <-- Add import
 # Add import for TextGenerator
 from himeko.transformations.text.generate_text import TextGenerator
+import json
 
 # Setup logger
 logger = logging.getLogger("hypergraph_editor")
@@ -331,6 +332,12 @@ class HypergraphEditor(QMainWindow):
         delete_action = QAction("Delete", self)
         delete_action.triggered.connect(self.deleteSelectedItems)
         toolbar.addAction(delete_action)
+        save_json_action = QAction("Save as JSON", self)
+        save_json_action.triggered.connect(self.save_as_json)
+        toolbar.addAction(save_json_action)
+        load_json_action = QAction("Load from JSON", self)
+        load_json_action.triggered.connect(self.load_from_json)
+        toolbar.addAction(load_json_action)
 
     def setMode(self, mode):
         if mode == "select":
@@ -428,6 +435,149 @@ class HypergraphEditor(QMainWindow):
             self.hymeko_textbox.setPlainText('\n\n'.join(texts))
         else:
             self.hymeko_textbox.setPlainText("// HyMeKo equivalent will be generated here.\n// TODO: Implement actual generation logic.")
+
+    def save_as_json(self):
+        """
+        Save the current graphical elements and their hierarchy into a JSON file.
+        """
+        data = {
+            "nodes": [],
+            "hyperedges": [],
+            "connections": [],
+        }
+
+        # Helper to get a unique id for each element
+        def get_elem_id(elem):
+            return id(elem)
+
+        # Serialize nodes and hyperedges
+        for item in self.scene.items():
+            if isinstance(item, VisualNode):
+                node_data = {
+                    "id": get_elem_id(item),
+                    "type": "node",
+                    "name": item.name,
+                    "x": item.pos().x(),
+                    "y": item.pos().y(),
+                    "radius": getattr(item, "radius", 30),
+                    "parent": get_elem_id(item.parent_element) if item.parent_element else None,
+                    "attributes": [attr.name for attr in getattr(item, "attributes", [])],
+                    "children": [get_elem_id(child) for child in getattr(item, "children_elements", [])],
+                }
+                data["nodes"].append(node_data)
+            elif isinstance(item, VisualHyperedge):
+                edge_data = {
+                    "id": get_elem_id(item),
+                    "type": "hyperedge",
+                    "name": item.name,
+                    "x": item.pos().x(),
+                    "y": item.pos().y(),
+                    "width": getattr(item, "rect_width", 80),
+                    "height": getattr(item, "rect_height", 30),
+                    "parent": get_elem_id(item.parent_element) if item.parent_element else None,
+                    "attributes": [attr.name for attr in getattr(item, "attributes", [])],
+                    "children": [get_elem_id(child) for child in getattr(item, "children_elements", [])],
+                }
+                data["hyperedges"].append(edge_data)
+
+        # Serialize connections
+        for item in self.scene.items():
+            if isinstance(item, VisualGraphConnection):
+                conn_data = {
+                    "source": get_elem_id(item.source),
+                    "target": get_elem_id(item.target),
+                    "value": item.value,
+                }
+                data["connections"].append(conn_data)
+
+        # Save to file
+        filename, _ = QFileDialog.getSaveFileName(self, "Save as JSON", "", "JSON Files (*.json)")
+        if filename:
+            try:
+                with open(filename, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=2)
+                self.statusBar().showMessage(f"Saved to {filename}")
+            except Exception as e:
+                QMessageBox.critical(self, "Save Error", f"Failed to save JSON: {e}")
+
+    def load_from_json(self):
+        """
+        Load graphical elements and their hierarchy from a JSON file.
+        """
+        filename, _ = QFileDialog.getOpenFileName(self, "Load from JSON", "", "JSON Files (*.json)")
+        if not filename:
+            return
+
+        try:
+            with open(filename, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception as e:
+            QMessageBox.critical(self, "Load Error", f"Failed to load JSON: {e}")
+            return
+
+        # Clear current scene
+        self.scene.clear()
+        self.factory.reset()
+
+        # Maps for reconstructing relationships
+        id_to_elem = {}
+
+        # Create nodes
+        for node_data in data.get("nodes", []):
+            node = self.factory.create_node(
+                node_data["name"],
+                node_data["x"],
+                node_data["y"],
+                radius=node_data.get("radius", 30),
+                parent=None  # Parent will be set later
+            )
+            id_to_elem[node_data["id"]] = node
+
+        # Create hyperedges
+        for edge_data in data.get("hyperedges", []):
+            edge = self.factory.create_hyperedge(
+                edge_data["name"],
+                edge_data["x"],
+                edge_data["y"],
+                width=edge_data.get("width", 80),
+                height=edge_data.get("height", 30),
+                parent=None  # Parent will be set later
+            )
+            id_to_elem[edge_data["id"]] = edge
+
+        # Set parents and children
+        for node_data in data.get("nodes", []):
+            node = id_to_elem.get(node_data["id"])
+            parent_id = node_data.get("parent")
+            if parent_id and parent_id in id_to_elem:
+                node.insert_into(id_to_elem[parent_id])
+            # Attributes
+            for attr_name in node_data.get("attributes", []):
+                self.factory.add_attribute(node, attr_name)
+
+        for edge_data in data.get("hyperedges", []):
+            edge = id_to_elem.get(edge_data["id"])
+            parent_id = edge_data.get("parent")
+            if parent_id and parent_id in id_to_elem:
+                edge.insert_into(id_to_elem[parent_id])
+            # Attributes
+            for attr_name in edge_data.get("attributes", []):
+                self.factory.add_attribute(edge, attr_name)
+
+        # Add all nodes and edges to the scene
+        for elem in id_to_elem.values():
+            self.scene.addItem(elem)
+
+        # Create connections
+        for conn_data in data.get("connections", []):
+            source = id_to_elem.get(conn_data["source"])
+            target = id_to_elem.get(conn_data["target"])
+            if source and target:
+                conn = self.factory.create_connection(source, target, value=conn_data.get("value"))
+                self.scene.addItem(conn)
+
+        self.updateHierarchyPanel()
+        self.statusBar().showMessage(f"Loaded from {filename}")
 
 class NodeLabel(QGraphicsTextItem):
     def __init__(self, text, parent):
