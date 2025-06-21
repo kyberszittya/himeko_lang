@@ -1,19 +1,18 @@
 import sys
-import math
 import logging
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow,
     QToolBar, QAction, QInputDialog, QGraphicsView, QGraphicsScene, QLabel,
-    QGraphicsTextItem, QGraphicsItem,
-    QTreeWidget, QTreeWidgetItem, QSplitter, QTextEdit, QWidget, QHBoxLayout, QSizePolicy, QVBoxLayout, QMenu,
+    QGraphicsTextItem,
+    QTreeWidget, QTreeWidgetItem, QTextEdit, QWidget, QHBoxLayout, QSizePolicy, QVBoxLayout, QMenu,
     QMessageBox
 )
-from PyQt5.QtGui import QPainter, QPen, QBrush, QColor, QTransform, QPolygonF, QPainterPath
-from PyQt5.QtCore import Qt, QPointF, QRectF
+from PyQt5.QtGui import QPainter, QPen, QBrush, QColor
+from PyQt5.QtCore import Qt, QPointF
 from enum import Enum
-from hypergraph_element import HypergraphElement
 from node_element import Node
 from edge_element import Hyperedge
+from connection_element import Connection
 
 # Setup logger
 logger = logging.getLogger("hypergraph_editor")
@@ -21,7 +20,8 @@ logger.setLevel(logging.INFO)
 handler = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter('[%(levelname)s] %(message)s')
 handler.setFormatter(formatter)
-if not logger.hasHandlers():
+# Prevent duplicate handlers
+if not any(isinstance(h, logging.StreamHandler) for h in logger.handlers):
     logger.addHandler(handler)
 
 class EditorState(Enum):
@@ -47,13 +47,16 @@ class HypergraphScene(QGraphicsScene):
         if event.button() == Qt.LeftButton:
             pos = event.scenePos()
             items_at_pos = self.items(pos)
+            # Fix: Use type() instead of isinstance() for Node/Hyperedge to avoid PyQt/Python import confusion
+            from node_element import Node as NodeType
+            from edge_element import Hyperedge as HyperedgeType
             if self.current_state == EditorState.ADD_NODE:
                 try:
                     name, ok = QInputDialog.getText(None, "Node Name", "Enter node name:")
                     if ok and name.strip():
                         parent_candidate = None
                         for candidate in items_at_pos:
-                            if isinstance(candidate, Node) or isinstance(candidate, Hyperedge):
+                            if type(candidate) is NodeType or type(candidate) is HyperedgeType:
                                 parent_candidate = candidate
                                 break
                         new_node = Node(pos.x(), pos.y(), name.strip())
@@ -75,7 +78,7 @@ class HypergraphScene(QGraphicsScene):
                     if ok and name.strip():
                         parent_candidate = None
                         for candidate in items_at_pos:
-                            if isinstance(candidate, Node) or isinstance(candidate, Hyperedge):
+                            if type(candidate) is NodeType or type(candidate) is HyperedgeType:
                                 parent_candidate = candidate
                                 break
                         new_edge = Hyperedge(pos.x(), pos.y(), name.strip())
@@ -94,14 +97,14 @@ class HypergraphScene(QGraphicsScene):
             elif self.current_state == EditorState.ADD_CONNECTION:
                 item = None
                 for candidate in items_at_pos:
-                    if isinstance(candidate, Node) or isinstance(candidate, Hyperedge):
+                    if type(candidate) is NodeType or type(candidate) is HyperedgeType:
                         item = candidate
                         break
                 if item:
                     if not self.source_item:
                         self.source_item = item
                         # --- Draw temp connection from edge, not center ---
-                        if isinstance(item, Node):
+                        if type(item) is NodeType:
                             srect = item.boundingRect()
                             # Add parent position if item is contained
                             spos = item.scenePos()
@@ -125,14 +128,14 @@ class HypergraphScene(QGraphicsScene):
                     else:
                         if self.source_item != item:
                             # Ensure connections between nodes and hyperedges
-                            if isinstance(self.source_item, Node) and isinstance(item, Hyperedge):
+                            if type(self.source_item) is NodeType and type(item) is HyperedgeType:
                                 conn = Connection(self.source_item, item)
                                 self.addItem(conn)
                                 self.attemptToRevertSelect()
                                 logger.info(
                                     f"Connection created: Node '{getattr(self.source_item, 'name', '?')}' -> Hyperedge '{getattr(item, 'name', '?')}'"
                                 )
-                            elif isinstance(self.source_item, Hyperedge) and isinstance(item, Node):
+                            elif type(self.source_item) is HyperedgeType and type(item) is NodeType:
                                 conn = Connection(self.source_item, item)
                                 self.addItem(conn)
                                 self.attemptToRevertSelect()
@@ -148,7 +151,7 @@ class HypergraphScene(QGraphicsScene):
             elif self.current_state == EditorState.ADD_ATTRIBUTE:
                 # Add attribute to the element under the cursor
                 for candidate in items_at_pos:
-                    if isinstance(candidate, Node) or isinstance(candidate, Hyperedge):
+                    if type(candidate) is NodeType or type(candidate) is HyperedgeType:
                         attr_name, ok = QInputDialog.getText(None, "Attribute Name", "Enter attribute name:")
                         if ok and attr_name.strip():
                             candidate.add_attribute(attr_name.strip())
@@ -411,155 +414,6 @@ class EdgeLabel(QGraphicsTextItem):
             self.setPlainText(self.parent_edge.name)
             self.parent_edge._updateLabel()
         super().mouseDoubleClickEvent(event)
-
-class Connection(QGraphicsItem):
-    def __init__(self, source, target):
-        super().__init__()
-        # Ensure source and target are either Node or Hyperedge
-        if not ((isinstance(source, Node) and isinstance(target, Hyperedge)) or
-                (isinstance(source, Hyperedge) and isinstance(target, Node))):
-            raise ValueError("Connections must be between a Node and a Hyperedge.")
-        self.source = source
-        self.target = target
-        self.source.connections.append(self)
-        self.target.connections.append(self)
-        self.arrow_size = 10
-        self.setFlag(QGraphicsItem.ItemIsSelectable)
-        self.setZValue(1000)  # Raise z-value to ensure connections are always in front of nodes/edges
-        self.path = QPainterPath()
-        self.arrow_head = QPolygonF()
-        self.updatePosition()
-        # Remove installSceneEventFilter: rely on itemChange in elements
-
-    def sceneEventFilter(self, watched, event):
-        # Update connection if either endpoint moves or is transformed
-        if event.type() in (event.GraphicsSceneMove, event.GraphicsSceneTransformChanged):
-            self.updatePosition()
-        return False
-
-    def mapToSceneRectBoundary(self, item, toward_point):
-        """
-        Return a point on the boundary of the item (ellipse or rect) in scene coordinates,
-        in the direction of toward_point (scene coordinates).
-        """
-        rect = item.boundingRect()
-        center_local = QPointF(rect.width() / 2, rect.height() / 2)
-        center_scene = item.mapToScene(center_local)
-        dx = toward_point.x() - center_scene.x()
-        dy = toward_point.y() - center_scene.y()
-        if dx == 0 and dy == 0:
-            return center_scene
-        angle = math.atan2(dy, dx)
-        if isinstance(item, Node):
-            # Ellipse boundary
-            rx = rect.width() / 2
-            ry = rect.height() / 2
-            if dx == 0 and dy == 0:
-                return center_scene
-            angle = math.atan2(dy, dx)
-            bx = center_scene.x() + rx * math.cos(angle)
-            by = center_scene.y() + ry * math.sin(angle)
-            return QPointF(bx, by)
-        else:
-            # Rect boundary
-            if dx == 0 and dy == 0:
-                return center_scene
-            w = rect.width()
-            h = rect.height()
-            abs_dx = abs(dx)
-            abs_dy = abs(dy)
-            if abs_dx * h > abs_dy * w:
-                # Intersection with left/right
-                scale = (w / 2) / abs_dx
-            else:
-                # Intersection with top/bottom
-                scale = (h / 2) / abs_dy
-            bx = center_scene.x() + dx * scale
-            by = center_scene.y() + dy * scale
-            return QPointF(bx, by)
-
-    def updatePosition(self):
-        self.prepareGeometryChange()
-        resolved_source = self.source
-        resolved_target = self.target
-
-        # Get scene centers
-        source_rect = resolved_source.boundingRect()
-        target_rect = resolved_target.boundingRect()
-        source_center_scene = resolved_source.mapToScene(QPointF(source_rect.width() / 2, source_rect.height() / 2))
-        target_center_scene = resolved_target.mapToScene(QPointF(target_rect.width() / 2, target_rect.height() / 2))
-
-        # Compute boundary points
-        start = self.mapToSceneRectBoundary(resolved_source, target_center_scene)
-        end = self.mapToSceneRectBoundary(resolved_target, source_center_scene)
-
-        start_local = self.mapFromScene(start)
-        end_local = self.mapFromScene(end)
-
-        self.path = QPainterPath(start_local)
-        self.path.lineTo(end_local)
-
-        dx = end_local.x() - start_local.x()
-        dy = end_local.y() - start_local.y()
-        raw_angle = math.degrees(math.atan2(dy, dx))
-        if raw_angle < 0:
-            raw_angle += 360
-        angle = raw_angle
-
-        p1 = end_local - QPointF(
-            math.cos(math.radians(angle - 20)) * self.arrow_size,
-            math.sin(math.radians(angle - 20)) * self.arrow_size
-        )
-        p2 = end_local - QPointF(
-            math.cos(math.radians(angle + 20)) * self.arrow_size,
-            math.sin(math.radians(angle + 20)) * self.arrow_size
-        )
-        poly = QPolygonF()
-        poly.append(end_local)
-        poly.append(p1)
-        poly.append(p2)
-        self.arrow_head = poly
-
-    def boundingRect(self):
-        # Return a rectangle that contains the connection line and arrow
-        if self.path.isEmpty():
-            return QRectF()
-        return self.path.boundingRect().adjusted(-self.arrow_size, -self.arrow_size, self.arrow_size, self.arrow_size)
-
-    def paint(self, painter, option, widget):
-        if self.path.isEmpty():  # Ensure path is valid
-            return
-        painter.setPen(QPen(Qt.black, 2, Qt.SolidLine))
-        painter.drawPath(self.path)
-        painter.setBrush(QBrush(Qt.black))
-        painter.drawPolygon(self.arrow_head)
-
-    @staticmethod
-    def _ellipse_edge_point_static(center, radius_x, radius_y, target_point):
-        dx = target_point.x() - center.x()
-        dy = target_point.y() - center.y()
-        if dx == 0 and dy == 0:
-            return center
-        angle = math.atan2(dy, dx)
-        x = center.x() + radius_x * math.cos(angle)
-        y = center.y() + radius_y * math.sin(angle)
-        return QPointF(x, y)
-
-    @staticmethod
-    def _rect_edge_point_static(rect_center, width, height, target_point):
-        dx = target_point.x() - rect_center.x()
-        dy = target_point.y() - rect_center.y()
-        if dx == 0 and dy == 0:
-            return rect_center
-        abs_dx = abs(dx)
-        abs_dy = abs(dy)
-        if abs_dx * height > abs_dy * width:
-            scale = (width / 2) / abs_dx
-        else:
-            scale = (height / 2) / abs_dy
-        x = rect_center.x() + dx * scale
-        y = rect_center.y() + dy * scale
-        return QPointF(x, y)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
