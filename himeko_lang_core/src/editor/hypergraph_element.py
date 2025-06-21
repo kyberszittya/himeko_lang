@@ -1,6 +1,8 @@
 from PyQt5.QtWidgets import QGraphicsItem, QGraphicsTextItem, QInputDialog, QColorDialog
 from PyQt5.QtGui import QBrush, QPen, QColor
-from PyQt5.QtCore import QRectF, Qt
+from PyQt5.QtCore import QRectF, Qt, QPointF
+
+MARGIN_PUT_ELEMENT_FROM_PARENT = 20
 
 class HypergraphElement(QGraphicsItem):
     def __init__(self, name, width=60, height=60):
@@ -76,6 +78,28 @@ class HypergraphElement(QGraphicsItem):
         parent._updateGeometry()
         parent.update()
         self.update()
+        # --- Notify the editor to update the hierarchy panel if possible ---
+        scene = self.scene()
+        if scene and hasattr(scene.parent(), "updateHierarchyPanel"):
+            scene.parent().updateHierarchyPanel()
+
+    def remove_from_parent(self):
+        """Remove this element from its parent (if any) and make it top-level, placing it to the left of the previous parent with a margin."""
+        if self.parent_element:
+            # Save parent's scene position before detaching
+            parent_scene_pos = self.parent_element.mapToScene(self.parent_element.boundingRect().topLeft())
+            self.parent_element.children_elements.remove(self)
+            self.setParentItem(None)
+            self.parent_element._updateGeometry()
+            self.parent_element.update()
+            self.parent_element = None
+            # Place this element to the left of the previous parent, using its own width plus a margin
+            margin = MARGIN_PUT_ELEMENT_FROM_PARENT
+            new_top_left = parent_scene_pos - QPointF(self.rect_width + margin, 0)
+            self.setPos(new_top_left)
+            scene = self.scene()
+            if scene and hasattr(scene.parent(), "updateHierarchyPanel"):
+                scene.parent().updateHierarchyPanel()
 
 class ElementLabel(QGraphicsTextItem):
     def __init__(self, text, parent):

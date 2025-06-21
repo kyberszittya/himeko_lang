@@ -40,6 +40,9 @@ class HypergraphScene(QGraphicsScene):
                     if ok and name.strip():  # Ensure name is not empty or whitespace
                         new_node = Node(pos.x(), pos.y(), name.strip())
                         self.addItem(new_node)
+                        # --- Update hierarchy panel when a new node is added ---
+                        if hasattr(self.parent(), "updateHierarchyPanel"):
+                            self.parent().updateHierarchyPanel()
                         self.attemptToRevertSelect()
                 except Exception as e:
                     print(f"Error creating node: {e}")  # Log any errors
@@ -49,6 +52,9 @@ class HypergraphScene(QGraphicsScene):
                     if ok and name.strip():  # Ensure name is not empty or whitespace
                         new_edge = Hyperedge(pos.x(), pos.y(), name.strip())
                         self.addItem(new_edge)
+                        # --- Update hierarchy panel when a new hyperedge is added ---
+                        if hasattr(self.parent(), "updateHierarchyPanel"):
+                            self.parent().updateHierarchyPanel()
                         self.attemptToRevertSelect()
                 except Exception as e:
                     print(f"Error creating hyperedge: {e}")  # Log any errors
@@ -161,6 +167,7 @@ class HypergraphScene(QGraphicsScene):
             from PyQt5.QtWidgets import QMenu
             menu = QMenu()
             insert_action = menu.addAction("Insert Into...")
+            remove_action = menu.addAction("Remove From Parent")  # Add remove option
             color_action = menu.addAction("Change Color...")  # Add color change option
             selected_action = menu.exec_(event.screenPos())
             if selected_action == insert_action:
@@ -174,6 +181,9 @@ class HypergraphScene(QGraphicsScene):
                         item.insert_into(parent)
                         if hasattr(self.parent(), 'updateHierarchyPanel'):
                             self.parent().updateHierarchyPanel()
+            elif selected_action == remove_action:
+                if hasattr(item, "remove_from_parent"):
+                    item.remove_from_parent()
             elif selected_action == color_action:
                 item.changeColor()
         else:
@@ -278,22 +288,19 @@ class HypergraphEditor(QMainWindow):
 
     def updateHierarchyPanel(self):
         self.hierarchy_panel.clear()
+
         def add_element_tree(element, parent_item):
             item = QTreeWidgetItem([element.name])
             parent_item.addChild(item)
             for child in getattr(element, "children_elements", []):
                 add_element_tree(child, item)
 
-        # Top-level: elements with no parent
-        nodes_item = QTreeWidgetItem(["Nodes"])
-        edges_item = QTreeWidgetItem(["Hyperedges"])
-        self.hierarchy_panel.addTopLevelItem(nodes_item)
-        self.hierarchy_panel.addTopLevelItem(edges_item)
+        # Unified root for all top-level elements
+        root_item = QTreeWidgetItem(["Elements"])
+        self.hierarchy_panel.addTopLevelItem(root_item)
         for item in self.scene.items():
-            if isinstance(item, Node) and item.parent_element is None:
-                add_element_tree(item, nodes_item)
-            elif isinstance(item, Hyperedge) and item.parent_element is None:
-                add_element_tree(item, edges_item)
+            if (isinstance(item, Node) or isinstance(item, Hyperedge)) and item.parent_element is None:
+                add_element_tree(item, root_item)
         self.hierarchy_panel.expandAll()
 
 class NodeLabel(QGraphicsTextItem):
@@ -335,87 +342,74 @@ class Connection(QGraphicsItem):
         self.target.connections.append(self)
         self.arrow_size = 10
         self.setFlag(QGraphicsItem.ItemIsSelectable)
-        self.setZValue(-1)  # Ensure connections are drawn below nodes/edges
+        self.setZValue(1000)  # Raise z-value to ensure connections are always in front of nodes/edges
         self.path = QPainterPath()
         self.arrow_head = QPolygonF()
         self.updatePosition()
+        # Remove installSceneEventFilter: rely on itemChange in elements
 
-    def _resolve_connection_point(self, element, other):
-        """
-        If the element is contained in another element, but the other element is a child,
-        connect to the element itself. Otherwise, use the top-most parent.
-        """
-        # If 'other' is a descendant of 'element', connect to 'element' itself
-        current = other
-        while current is not None:
-            if current is element:
-                return element
-            current = getattr(current, "parent_element", None)
-        # Otherwise, connect to the top-most parent
-        while element.parent_element is not None:
-            element = element.parent_element
-        return element
+    def sceneEventFilter(self, watched, event):
+        # Update connection if either endpoint moves or is transformed
+        if event.type() in (event.GraphicsSceneMove, event.GraphicsSceneTransformChanged):
+            self.updatePosition()
+        return False
 
-    def mapToSceneCenter(self, item):
-        rect = item.boundingRect()
-        center = QPointF(rect.width() / 2, rect.height() / 2)
-        return item.mapToScene(center)
-
-    def mapToSceneRectCenterOrTop(self, item):
+    def mapToSceneRectBoundary(self, item, toward_point):
         """
-        Return the best connection point for an item in scene coordinates:
-        - If the item has children (is a container), connect to the top center (just below the label).
-        - Otherwise, connect to the center.
+        Return a point on the boundary of the item (ellipse or rect) in scene coordinates,
+        in the direction of toward_point (scene coordinates).
         """
         rect = item.boundingRect()
-        if hasattr(item, "children_elements") and item.children_elements:
-            # Connect to the top center, just below the label
-            label_rect = item.label.boundingRect()
-            y = label_rect.height() + 2  # 2px below label
-            x = rect.width() / 2
-            return item.mapToScene(QPointF(x, y))
+        center_local = QPointF(rect.width() / 2, rect.height() / 2)
+        center_scene = item.mapToScene(center_local)
+        dx = toward_point.x() - center_scene.x()
+        dy = toward_point.y() - center_scene.y()
+        if isinstance(item, Node):
+            # Ellipse boundary
+            rx = rect.width() / 2
+            ry = rect.height() / 2
+            if dx == 0 and dy == 0:
+                return center_scene
+            angle = math.atan2(dy, dx)
+            bx = center_scene.x() + rx * math.cos(angle)
+            by = center_scene.y() + ry * math.sin(angle)
+            return QPointF(bx, by)
         else:
-            # Center
-            center = QPointF(rect.width() / 2, rect.height() / 2)
-            return item.mapToScene(center)
+            # Rect boundary
+            if dx == 0 and dy == 0:
+                return center_scene
+            w = rect.width()
+            h = rect.height()
+            abs_dx = abs(dx)
+            abs_dy = abs(dy)
+            if abs_dx * h > abs_dy * w:
+                # Intersection with left/right
+                scale = (w / 2) / abs_dx
+            else:
+                # Intersection with top/bottom
+                scale = (h / 2) / abs_dy
+            bx = center_scene.x() + dx * scale
+            by = center_scene.y() + dy * scale
+            return QPointF(bx, by)
 
     def updatePosition(self):
         self.prepareGeometryChange()
 
-        resolved_source = self._resolve_connection_point(self.source, self.target)
-        resolved_target = self._resolve_connection_point(self.target, self.source)
+        # --- CRITICAL FIX: Use the actual source/target, not their parents ---
+        # The previous logic may have been "bubbling up" to the parent, causing the connection to go to the parent's (0,0)
+        # Instead, always use the actual selected element for the connection point
+        resolved_source = self.source
+        resolved_target = self.target
 
-        # Use improved connection point logic for containers
-        if isinstance(resolved_source, Node):
-            srect = resolved_source.boundingRect()
-            scenter_scene = self.mapToSceneRectCenterOrTop(resolved_source)
-            sradius_x = srect.width() / 2
-            sradius_y = srect.height() / 2
-        else:
-            srect = resolved_source.boundingRect()
-            scenter_scene = self.mapToSceneRectCenterOrTop(resolved_source)
-            swidth = srect.width()
-            sheight = srect.height()
-        if isinstance(resolved_target, Node):
-            trect = resolved_target.boundingRect()
-            tcenter_scene = self.mapToSceneRectCenterOrTop(resolved_target)
-            tradius_x = trect.width() / 2
-            tradius_y = trect.height() / 2
-        else:
-            trect = resolved_target.boundingRect()
-            tcenter_scene = self.mapToSceneRectCenterOrTop(resolved_target)
-            twidth = trect.width()
-            theight = trect.height()
+        # Get scene centers
+        source_rect = resolved_source.boundingRect()
+        target_rect = resolved_target.boundingRect()
+        source_center_scene = resolved_source.mapToScene(QPointF(source_rect.width() / 2, source_rect.height() / 2))
+        target_center_scene = resolved_target.mapToScene(QPointF(target_rect.width() / 2, target_rect.height() / 2))
 
-        # Use static methods for edge point calculation
-        if isinstance(resolved_source, Node):
-            start = self._ellipse_edge_point_static(scenter_scene, sradius_x, sradius_y, tcenter_scene)
-        else:
-            start = self._rect_edge_point_static(scenter_scene, swidth, sheight, tcenter_scene)
-        if isinstance(resolved_target, Node):
-            end = self._ellipse_edge_point_static(tcenter_scene, tradius_x, tradius_y, scenter_scene)
-        else:
-            end = self._rect_edge_point_static(tcenter_scene, twidth, theight, scenter_scene)
+        # Compute boundary points
+        start = self.mapToSceneRectBoundary(resolved_source, target_center_scene)
+        end = self.mapToSceneRectBoundary(resolved_target, source_center_scene)
 
         start_local = self.mapFromScene(start)
         end_local = self.mapFromScene(end)

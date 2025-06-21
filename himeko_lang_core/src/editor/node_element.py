@@ -45,15 +45,17 @@ class Node(HypergraphElement):
         # ...existing code for selection, etc...
 
     def itemChange(self, change, value):
-        if change == QGraphicsItem.ItemPositionChange:
-            if self.parentItem():
-                parent_rect = self.parentItem().boundingRect()
-                my_rect = self.boundingRect()
-                x = max(0, min(value.x(), parent_rect.width() - my_rect.width()))
-                y = max(0, min(value.y(), parent_rect.height() - my_rect.height()))
-                value = QPointF(x, y)
+        if change == QGraphicsItem.ItemPositionChange or change == QGraphicsItem.ItemTransformChange:
+            # Always update connections, even if contained
             for conn in self.connections:
                 conn.updatePosition()
+            # --- Update all descendant connections as well ---
+            def update_descendant_connections(element):
+                for child in getattr(element, "children_elements", []):
+                    for conn in getattr(child, "connections", []):
+                        conn.updatePosition()
+                    update_descendant_connections(child)
+            update_descendant_connections(self)
         elif change == QGraphicsItem.ItemSceneChange and value is None:
             for conn in list(self.connections):
                 if conn.scene():
