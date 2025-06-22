@@ -1,6 +1,7 @@
+from himeko.hbcm.elements.attribute import HypergraphAttribute
 from himeko.hbcm.elements.edge import HyperEdge, HyperVertex, EnumHyperarcDirection
-from himeko.hbcm.factories.creation_elements import FactoryHypergraphElements
 from himeko.common.clock import SystemTimeClock
+from himeko.hbcm.factories.creation_elements import FactoryHypergraphElements
 
 class HyMeKoVisualHypergraphFactory:
     """
@@ -65,7 +66,24 @@ class HyMeKoVisualHypergraphFactory:
         return visual_conn
 
     def add_attribute(self, element, attr_name):
+        # Create the visual attribute
         attr = element.add_attribute(attr_name)
+        # Create the hypergraph attribute and associate it
+        parent_hg = getattr(element, "hypergraph_element", None)
+        if parent_hg is not None:
+            # Use current time as timestamp, type as "str", value as attr_name (can be customized)
+            timestamp = self.clock.nano_sec
+            hypergraph_attr: HypergraphAttribute = FactoryHypergraphElements.create_attribute_default(
+                attr_name, None, "str", timestamp, parent_hg
+            )
+            # Hypergraph add unknown element
+            query_value = FactoryHypergraphElements.create_query_attribute_default(
+                f"{attr_name}_query", None, "str", timestamp, None)
+            hypergraph_attr.value = query_value
+            attr.hypergraph_element = hypergraph_attr
+            # Optionally, add to parent's hypergraph attributes if such a list exists
+            if hasattr(parent_hg, "attributes"):
+                parent_hg.attributes.append(hypergraph_attr)
         self.attributes.append(attr)
         return attr
 

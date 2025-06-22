@@ -5,7 +5,8 @@ from PyQt5.QtWidgets import (
     QToolBar, QAction, QInputDialog, QGraphicsView, QGraphicsScene, QLabel,
     QGraphicsTextItem,
     QTreeWidget, QTreeWidgetItem, QTextEdit, QWidget, QHBoxLayout, QSizePolicy, QVBoxLayout,
-    QMessageBox, QFileDialog
+    QMessageBox, QFileDialog,
+    QTableWidget, QTableWidgetItem  # <-- Add QTableWidget imports
 )
 from PyQt5.QtGui import QPainter, QPen, QBrush, QColor
 from PyQt5.QtCore import Qt, QPointF
@@ -13,7 +14,7 @@ from enum import Enum
 from node_element import VisualNode
 from edge_element import VisualHyperedge
 from connection_element import VisualGraphConnection
-from hypergraph_factory import HyMeKoVisualHypergraphFactory  # <-- Add import
+from hypergraph_factory import HyMeKoVisualHypergraphFactory  # <-- Add factory instance
 # Add import for TextGenerator
 from himeko.transformations.text.generate_text import TextGenerator
 import json
@@ -214,6 +215,7 @@ class HypergraphScene(QGraphicsScene):
                     item.name = name.strip()
                     item.label.setPlainText(item.name)
                     item._updateLabel()
+                    item.rename(name)
                 break
         super().mouseDoubleClickEvent(event)
 
@@ -281,7 +283,27 @@ class HypergraphEditor(QMainWindow):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        # Main view (left)
+        # --- Left panel: vertical layout for controls and attribute table ---
+        left_panel = QWidget()
+        left_layout = QVBoxLayout(left_panel)
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.setSpacing(4)
+        main_layout.addWidget(left_panel, 1)
+
+        # Toolbar (control buttons) at the top of the left panel
+        self.toolbar = QToolBar("Editor Tools")
+        left_layout.addWidget(self.toolbar, 0)
+
+        # Attribute Table below the toolbar, fills remaining space
+        self.attribute_table = QTableWidget()
+        self.attribute_table.setColumnCount(2)
+        self.attribute_table.setHorizontalHeaderLabels(["Attribute", "Value"])
+        self.attribute_table.setEditTriggers(QTableWidget.DoubleClicked | QTableWidget.SelectedClicked)
+        self.attribute_table.itemChanged.connect(self.on_attribute_table_item_changed)
+        self.attribute_table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        left_layout.addWidget(self.attribute_table, 1)
+
+        # Main view (center)
         self.view = HypergraphView(self.scene)
         self.view.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         main_layout.addWidget(self.view, 3)
@@ -306,38 +328,110 @@ class HypergraphEditor(QMainWindow):
         self.hymeko_textbox.setMinimumHeight(200)
         right_layout.addWidget(self.hymeko_textbox, 2)
 
-        self.createToolbar()
+        self.selected_element = None  # Track selected node/hyperedge for attribute editing
+
+        self.createToolbar(self.toolbar)  # Pass toolbar to use the left panel's toolbar
         self.status_label = QLabel("Ready")
         self.statusBar().addWidget(self.status_label)
         self.updateHierarchyPanel()
 
-    def createToolbar(self):
-        toolbar = QToolBar("Editor Tools")
-        self.addToolBar(Qt.LeftToolBarArea, toolbar)
+        # Connect selection change to update attribute table
+        self.scene.selectionChanged.connect(self.on_selection_changed)
+
+    def on_selection_changed(self):
+        selected = self.scene.selectedItems()
+        if selected and (hasattr(selected[0], "attributes")):
+            self.selected_element = selected[0]
+            self.update_attribute_table(self.selected_element)
+        else:
+            self.selected_element = None
+            self.attribute_table.setRowCount(0)
+
+    def update_attribute_table(self, element):
+        self.attribute_table.blockSignals(True)
+        self.attribute_table.setRowCount(len(element.attributes))
+        for row, attr in enumerate(element.attributes):
+            name_item = QTableWidgetItem(attr.name)
+            name_item.setFlags(name_item.flags() & ~Qt.ItemIsEditable)
+            self.attribute_table.setItem(row, 0, name_item)
+            value_item = QTableWidgetItem(str(attr.value))
+            self.attribute_table.setItem(row, 1, value_item)
+        self.attribute_table.blockSignals(False)
+
+    def on_attribute_table_item_changed(self, item):
+        if not self.selected_element:
+            return
+        row = item.row()
+        col = item.column()
+        if col == 1:  # Value column
+            attr = self.selected_element.attributes[row]
+            value = item.text()
+            try:
+                parsed_value = float(value)
+            except ValueError:
+                parsed_value = value
+            attr.value = parsed_value
+            if attr.hypergraph_element is not None:
+                attr.hypergraph_element.value = parsed_value
+            attr.update()
+            self.generate_hymeko_equivalent()
+
+    def createToolbar(self, toolbar=None):
+        # Accept an optional toolbar argument (for left panel)
+        if toolbar is None:
+            toolbar = QToolBar("Editor Tools")
+            self.addToolBar(Qt.LeftToolBarArea, toolbar)
+        toolbar.setMovable(False)
+        toolbar.setFloatable(False)
+        toolbar.setAllowedAreas(Qt.AllToolBarAreas)
+        toolbar.setOrientation(Qt.Vertical)
+        toolbar.setVisible(True)  # Ensure toolbar is visible
+
+        # Ensure all actions are always visible by not using overflow or hiding
         select_action = QAction("Select", self)
+        select_action.setVisible(True)
         select_action.triggered.connect(lambda: self.setMode("select"))
         toolbar.addAction(select_action)
+
         add_node = QAction("Add Node", self)
+        add_node.setVisible(True)
         add_node.triggered.connect(lambda: self.setMode("add_node"))
         toolbar.addAction(add_node)
+
         add_hyperedge = QAction("Add Hyperedge", self)
+        add_hyperedge.setVisible(True)
         add_hyperedge.triggered.connect(lambda: self.setMode("add_hyperedge"))
         toolbar.addAction(add_hyperedge)
+
         add_connection = QAction("Add Connection", self)
+        add_connection.setVisible(True)
         add_connection.triggered.connect(lambda: self.setMode("add_connection"))
         toolbar.addAction(add_connection)
+
         add_attribute = QAction("Add Attribute", self)
+        add_attribute.setVisible(True)
         add_attribute.triggered.connect(lambda: self.setMode("add_attribute"))
         toolbar.addAction(add_attribute)
+
         delete_action = QAction("Delete", self)
+        delete_action.setVisible(True)
         delete_action.triggered.connect(self.deleteSelectedItems)
         toolbar.addAction(delete_action)
+
         save_json_action = QAction("Save as JSON", self)
+        save_json_action.setVisible(True)
         save_json_action.triggered.connect(self.save_as_json)
         toolbar.addAction(save_json_action)
+
         load_json_action = QAction("Load from JSON", self)
+        load_json_action.setVisible(True)
         load_json_action.triggered.connect(self.load_from_json)
         toolbar.addAction(load_json_action)
+
+        save_hymeko_action = QAction("Save HyMeKo Text", self)
+        save_hymeko_action.setVisible(True)
+        save_hymeko_action.triggered.connect(self.save_hymeko_text)
+        toolbar.addAction(save_hymeko_action)
 
     def setMode(self, mode):
         if mode == "select":
@@ -579,31 +673,24 @@ class HypergraphEditor(QMainWindow):
         self.updateHierarchyPanel()
         self.statusBar().showMessage(f"Loaded from {filename}")
 
-class NodeLabel(QGraphicsTextItem):
-    def __init__(self, text, parent):
-        super().__init__(text, parent)
-        self.parent_node = parent
+    def save_hymeko_text(self):
+        """
+        Save the generated HyMeKo description to a text file.
+        """
+        text = self.hymeko_textbox.toPlainText()
+        if not text.strip():
+            QMessageBox.warning(self, "Save HyMeKo Text", "No HyMeKo text to save.")
+            return
+        filename, _ = QFileDialog.getSaveFileName(self, "Save HyMeKo Text", "", "HyMeKo Files (*.himeko);;Text Files (*.txt);;All Files (*)")
+        if filename:
+            try:
+                with open(filename, "w", encoding="utf-8") as f:
+                    f.write(text)
+                self.statusBar().showMessage(f"HyMeKo text saved to {filename}")
+            except Exception as e:
+                QMessageBox.critical(self, "Save Error", f"Failed to save HyMeKo text: {e}")
 
-    def mouseDoubleClickEvent(self, event):
-        name, ok = QInputDialog.getText(None, "Rename", "Enter new name:", text=self.parent_node.name)
-        if ok and name.strip():
-            self.parent_node.name = name.strip()
-            self.setPlainText(self.parent_node.name)
-            self.parent_node._updateLabel()
-        super().mouseDoubleClickEvent(event)
 
-class EdgeLabel(QGraphicsTextItem):
-    def __init__(self, text, parent):
-        super().__init__(text, parent)
-        self.parent_edge = parent
-
-    def mouseDoubleClickEvent(self, event):
-        name, ok = QInputDialog.getText(None, "Rename", "Enter new name:", text=self.parent_edge.name)
-        if ok and name.strip():
-            self.parent_edge.name = name.strip()
-            self.setPlainText(self.parent_edge.name)
-            self.parent_edge._updateLabel()
-        super().mouseDoubleClickEvent(event)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

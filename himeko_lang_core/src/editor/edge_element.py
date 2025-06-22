@@ -1,9 +1,11 @@
 from hypergraph_element import VisualHypergraphElement
+from PyQt5.QtGui import QBrush, QColor
 
 class VisualHyperedge(VisualHypergraphElement):
     def __init__(self, x, y, name, width=80, height=30):
         super().__init__(name, width, height)
         self.setPos(x - width / 2, y - height / 2)
+        self.brush = QBrush(QColor(160, 80, 200))  # Set default to purple
         self._updateGeometry()
 
     def _updateGeometry(self):
