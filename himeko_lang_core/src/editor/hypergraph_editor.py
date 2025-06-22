@@ -11,6 +11,7 @@ from PyQt5.QtCore import Qt
 
 from editor.editor_commands import SaveJsonCommand, LoadJsonCommand
 from editor.editor_commands import ClearCommand
+from editor.editor_commands import SaveScreenshotCommand  # <-- Add import
 from editor.editor_scene import HypergraphScene, HypergraphView
 from editor.graphics_helpers import EditorState
 from himeko.hbcm.elements.edge import HyperArc, EnumHyperarcDirection
@@ -119,10 +120,12 @@ class HypergraphEditor(QMainWindow):
         blank_scene_action = QAction("Blank Scene", self)
         blank_scene_action.triggered.connect(self.blank_scene)
         scene_menu.addAction(blank_scene_action)
-        # Add horizontal separator
         scene_menu.addSeparator()
 
-
+        # Screenshot action
+        screenshot_action = QAction("Screenshot", self)
+        screenshot_action.triggered.connect(self.save_screenshot)
+        scene_menu.addAction(screenshot_action)
 
         # Add Save as JSON and Load from JSON actions
         load_json_action = QAction("Load from JSON", self)
@@ -456,24 +459,68 @@ class HypergraphEditor(QMainWindow):
         def get_elem_id(elem):
             return id(elem)
 
+        # Assign increasing z-order for each element based on their stacking order in the scene
+        # Items at the end of self.scene.items() are on top
+        z_map = {}
+        for item in reversed(self.scene.items()):  # bottom to top
+            z_map[item] = item.zValue()
+
         # Serialize nodes
         for item in self.scene.items():
             if isinstance(item, VisualNode):
+                parent = getattr(item, "parent_element", None)
+                if parent:
+                    rel_pos = item.get_relative_pos()
+                    x, y = rel_pos.x(), rel_pos.y()
+                else:
+                    x, y = item.pos().x(), item.pos().y()
+                node_data = {
+                    "id": get_elem_id(item),
+                    "name": getattr(item, "name", ""),
+                    "x": x,
+                    "y": y,
+                    "radius": getattr(item, "radius", 30),
+                    "z": z_map.get(item, item.zValue()),
+                    "parent": get_elem_id(item.parent_element) if getattr(item, "parent_element", None) else None,
+                    "attributes": [getattr(attr, "name", "") for attr in getattr(item, "attributes", [])],
+                }
+                data["nodes"].append(node_data)
+                """
                 node_data = {
                     "id": get_elem_id(item),
                     "name": getattr(item, "name", ""),
                     "x": item.pos().x(),
                     "y": item.pos().y(),
                     "radius": getattr(item, "radius", 30),
-                    "z": item.zValue(),
+                    "z": z_map.get(item, item.zValue()),
                     "parent": get_elem_id(item.parent_element) if getattr(item, "parent_element", None) else None,
                     "attributes": [getattr(attr, "name", "") for attr in getattr(item, "attributes", [])],
                 }
                 data["nodes"].append(node_data)
+                """
 
         # Serialize hyperedges
         for item in self.scene.items():
             if isinstance(item, VisualHyperedge):
+                parent = getattr(item, "parent_element", None)
+                if parent:
+                    rel_pos = item.get_relative_pos()
+                    x, y = rel_pos.x(), rel_pos.y()
+                else:
+                    x, y = item.pos().x(), item.pos().y()
+                edge_data = {
+                    "id": get_elem_id(item),
+                    "name": getattr(item, "name", ""),
+                    "x": x,
+                    "y": y,
+                    "width": getattr(item, "width", 80),
+                    "height": getattr(item, "height", 30),
+                    "z": z_map.get(item, item.zValue()),
+                    "parent": get_elem_id(item.parent_element) if getattr(item, "parent_element", None) else None,
+                    "attributes": [getattr(attr, "name", "") for attr in getattr(item, "attributes", [])],
+                }
+                data["hyperedges"].append(edge_data)
+                """
                 edge_data = {
                     "id": get_elem_id(item),
                     "name": getattr(item, "name", ""),
@@ -481,11 +528,12 @@ class HypergraphEditor(QMainWindow):
                     "y": item.pos().y(),
                     "width": getattr(item, "width", 80),
                     "height": getattr(item, "height", 30),
-                    "z": item.zValue(),
+                    "z": z_map.get(item, item.zValue()),
                     "parent": get_elem_id(item.parent_element) if getattr(item, "parent_element", None) else None,
                     "attributes": [getattr(attr, "name", "") for attr in getattr(item, "attributes", [])],
                 }
                 data["hyperedges"].append(edge_data)
+                """
 
         # Serialize connections
         for item in self.scene.items():
@@ -494,7 +542,7 @@ class HypergraphEditor(QMainWindow):
                     "source": get_elem_id(item.source),
                     "target": get_elem_id(item.target),
                     "value": getattr(item, "value", None),
-                    "z": item.zValue(),
+                    "z": z_map.get(item, item.zValue()),
                 }
                 data["connections"].append(conn_data)
         return data
@@ -508,7 +556,9 @@ class HypergraphEditor(QMainWindow):
         self.factory.reset()
 
         id_to_elem = {}
-        z_orders = {}
+        node_z_orders = {}
+        edge_z_orders = {}
+        conn_z_orders = []
         parent_map = {}
         pos_map = {}
 
@@ -520,8 +570,8 @@ class HypergraphEditor(QMainWindow):
                 radius=node_data.get("radius", 30),
                 parent=None  # Parent will be set later
             )
-            z_orders[node] = node_data.get("z", 0)
             id_to_elem[node_data["id"]] = node
+            node_z_orders[node_data["id"]] = node_data.get("z", 0)
             parent_map[node_data["id"]] = node_data.get("parent")
             pos_map[node_data["id"]] = (node_data["x"], node_data["y"])
 
@@ -534,28 +584,21 @@ class HypergraphEditor(QMainWindow):
                 height=edge_data.get("height", 30),
                 parent=None  # Parent will be set later
             )
-            z_orders[edge] = edge_data.get("z", 0)
             id_to_elem[edge_data["id"]] = edge
+            edge_z_orders[edge_data["id"]] = edge_data.get("z", 0)
             parent_map[edge_data["id"]] = edge_data.get("parent")
             pos_map[edge_data["id"]] = (edge_data["x"], edge_data["y"])
 
-        # Set parents and children, and set positions
-        # First, set all top-level elements (no parent)
+        # Set parents and children, but do not set positions yet
         for elem_id, elem in id_to_elem.items():
             parent_id = parent_map.get(elem_id)
-            rel_x, rel_y = pos_map[elem_id]
-            if not parent_id or parent_id not in id_to_elem:
-                elem.setParentItem(None)
-                elem.setPos(rel_x, rel_y)
-
-        # Then, set all contained elements (with parent)
-        for elem_id, elem in id_to_elem.items():
-            parent_id = parent_map.get(elem_id)
-            rel_x, rel_y = pos_map[elem_id]
             if parent_id and parent_id in id_to_elem:
                 parent_elem = id_to_elem[parent_id]
-                elem.insert_into(parent_elem)
-                elem.setPos(rel_x, rel_y)
+                elem.parent_element = parent_elem
+                parent_elem.children_elements.append(elem)
+                elem.setParentItem(parent_elem)
+            else:
+                elem.setParentItem(None)
 
             # Attributes
             if isinstance(elem, VisualNode):
@@ -569,25 +612,34 @@ class HypergraphEditor(QMainWindow):
                         for attr_name in edge_data.get("attributes", []):
                             self.factory.add_attribute(elem, attr_name)
 
-        # Add all nodes and edges to the scene
-        for elem in id_to_elem.values():
-            self.scene.addItem(elem)
-
+        # Add only top-level nodes and edges to the scene
+        for elem_id, elem in id_to_elem.items():
+            parent_id = parent_map.get(elem_id)
+            if not parent_id or parent_id not in id_to_elem:
+                self.scene.addItem(elem)
         # Create connections and store their z-orders
-        conn_z_orders = []
+        conn_objs = []
         for conn_data in data.get("connections", []):
             source = id_to_elem.get(conn_data["source"])
             target = id_to_elem.get(conn_data["target"])
             if source and target:
                 conn = self.factory.create_connection(source, target, value=conn_data.get("value"))
-                conn_z_orders.append((conn, conn_data.get("z", 0)))
+                conn_objs.append((conn, conn_data.get("z", 0)))
                 self.scene.addItem(conn)
 
         # --- Set z-ordering for all elements after all are added ---
-        for elem, z in sorted(z_orders.items(), key=lambda x: x[1]):
+        for elem_id, z in node_z_orders.items():
+            elem = id_to_elem[elem_id]
             elem.setZValue(z)
-        for conn, z in sorted(conn_z_orders, key=lambda x: x[1]):
+        for elem_id, z in edge_z_orders.items():
+            elem = id_to_elem[elem_id]
+            elem.setZValue(z)
+        for conn, z in conn_objs:
             conn.setZValue(z)
+        # Now set positions (after all parents are set)
+        for elem_id, elem in id_to_elem.items():
+            rel_x, rel_y = pos_map[elem_id]
+            elem.setPos(rel_x, rel_y)
 
         self.updateHierarchyPanel()
 
@@ -637,6 +689,15 @@ class HypergraphEditor(QMainWindow):
         """Clear the scene to create a blank scene."""
         cmd = ClearCommand(self)
         cmd.execute()
+
+    def save_screenshot(self):
+        """
+        Save a screenshot of the current view to a PNG file using the command pattern.
+        """
+        filename, _ = QFileDialog.getSaveFileName(self, "Save Screenshot", "", "PNG Files (*.png)")
+        if filename:
+            cmd = SaveScreenshotCommand(self, filename)
+            cmd.execute()
 
 
 if __name__ == "__main__":

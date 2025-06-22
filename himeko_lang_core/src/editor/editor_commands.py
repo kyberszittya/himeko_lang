@@ -48,3 +48,14 @@ class DeserializeFromJsonCommand:
 
     def execute(self):
         self.editor.deserialize_from_json(self.data)
+
+class SaveScreenshotCommand:
+    def __init__(self, editor, filename):
+        self.editor = editor
+        self.filename = filename
+
+    def execute(self):
+        pixmap = self.editor.view.grab()
+        pixmap.save(self.filename, "PNG")
+        if hasattr(self.editor, "statusBar"):
+            self.editor.statusBar().showMessage(f"Screenshot saved to {self.filename}")

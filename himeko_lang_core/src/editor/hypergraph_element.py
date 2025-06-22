@@ -88,7 +88,10 @@ class VisualHypergraphElement(QGraphicsItem):
         self.parent_element = parent
         parent.children_elements.append(self)
         self.setParentItem(parent)
-        self.setPos(parent.rect_width / 2 - self.rect_width / 2, parent.rect_height / 2 - self.rect_height / 2)
+        self.setPos((parent.rect_width / 2) - (self.rect_width / 2), (parent.rect_height / 2) - (self.rect_height / 2))
+        # --- Z-order: appear above the container element ---
+        self.setZValue(parent.zValue() + 1)
+        print(parent.zValue())
         parent._updateGeometry()
         parent.update()
         self.update()
@@ -187,6 +190,14 @@ class VisualHypergraphElement(QGraphicsItem):
         else:
             event.ignore()
         # Do not call super().mouseDoubleClickEvent(event) to prevent propagation to parent
+
+    def get_relative_pos(self):
+        if self.parentItem():
+            parent_pos = self.parentItem().scenePos()
+            my_pos = self.scenePos()
+            return my_pos - parent_pos
+        else:
+            return self.scenePos()
 
 class Attribute(VisualHypergraphElement):
     def __init__(self, name, parent_element):
