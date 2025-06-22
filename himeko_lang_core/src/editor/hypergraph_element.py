@@ -32,7 +32,6 @@ class VisualHypergraphElement(QGraphicsItem):
         if hasattr(self, "hypergraph_element") and self.hypergraph_element is not None:
             hg_elem = self.hypergraph_element
             hg_elem.name = new_name
-        print(self.hypergraph_element.name)
         # Update hierarchy and HyMeKo text if possible
         scene = self.scene()
         if scene and hasattr(scene.parent(), "updateHierarchyPanel"):

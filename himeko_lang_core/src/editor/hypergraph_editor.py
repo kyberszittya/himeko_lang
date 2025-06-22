@@ -321,6 +321,11 @@ class HypergraphEditor(QMainWindow):
         self.hierarchy_panel.setMinimumHeight(150)
         right_layout.addWidget(self.hierarchy_panel, 1)
 
+        # --- Prüfer code display under hierarchy ---
+        self.prufer_label = QLabel("Prüfer code: ")
+        self.prufer_label.setWordWrap(True)
+        right_layout.addWidget(self.prufer_label, 0)
+
         # HyMeKo equivalent textbox (bottom right, wider)
         self.hymeko_textbox = QTextEdit()
         self.hymeko_textbox.setReadOnly(True)
@@ -335,17 +340,45 @@ class HypergraphEditor(QMainWindow):
         self.statusBar().addWidget(self.status_label)
         self.updateHierarchyPanel()
 
-        # Connect selection change to update attribute table
+        # Connect selection change to update attribute table and Prüfer code
         self.scene.selectionChanged.connect(self.on_selection_changed)
+        self.hierarchy_panel.itemSelectionChanged.connect(self.on_hierarchy_selection_changed)
 
     def on_selection_changed(self):
         selected = self.scene.selectedItems()
         if selected and (hasattr(selected[0], "attributes")):
             self.selected_element = selected[0]
             self.update_attribute_table(self.selected_element)
+            self.update_prufer_code(self.selected_element)
         else:
             self.selected_element = None
             self.attribute_table.setRowCount(0)
+            self.prufer_label.setText("Prüfer code: ")
+
+    def on_hierarchy_selection_changed(self):
+        selected_items = self.hierarchy_panel.selectedItems()
+        if not selected_items:
+            self.prufer_label.setText("Prüfer code: ")
+            return
+        selected_name = selected_items[0].text(0)
+        # Find the corresponding element by name
+        for item in self.scene.items():
+            if hasattr(item, "name") and item.name == selected_name:
+                self.update_prufer_code(item)
+                break
+
+    def update_prufer_code(self, element):
+        # Dummy Prüfer code generator for demonstration
+        # Replace this with your actual Prüfer code logic as needed
+        prufer_code = self.generate_prufer_code(element)
+        self.prufer_label.setText(f"Prüfer code: {prufer_code}")
+
+    def generate_prufer_code(self, element):
+        # Placeholder: returns a string representation of the element's children names
+        # Replace with actual Prüfer code computation for your structure
+        if not hasattr(element, "children_elements") or not element.children_elements:
+            return "-"
+        return "[" + ", ".join(child.name for child in element.children_elements) + "]"
 
     def update_attribute_table(self, element):
         self.attribute_table.blockSignals(True)
