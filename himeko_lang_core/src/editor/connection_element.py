@@ -145,11 +145,18 @@ class VisualGraphConnection(QGraphicsItem):
         painter.drawPath(self.path)
         painter.setBrush(QBrush(QColor(self.color)))
         painter.drawPolygon(self.arrow_head)
-        # Draw value if present
+        # Draw value if present, on the arrow
         if self.value is not None:
-            mid = self.path.pointAtPercent(0.5)
+            # Draw the value at 2/3 along the arrow, slightly offset above the line
+            pos = self.path.pointAtPercent(0.66)
+            # Calculate a perpendicular offset for better visibility
+            if self.path.length() > 0:
+                angle = self.path.angleAtPercent(0.66)
+                dx = 10 * -math.sin(math.radians(angle))
+                dy = 10 * -math.cos(math.radians(angle))
+                pos = QPointF(pos.x() + dx, pos.y() + dy)
             painter.setPen(Qt.darkBlue)
-            painter.drawText(mid, str(self.value))
+            painter.drawText(pos, str(self.value))
 
     def mouseDoubleClickEvent(self, event):
         value, ok = QInputDialog.getText(None, "Set Connection Value", "Enter value:", text=str(self.value) if self.value is not None else "")

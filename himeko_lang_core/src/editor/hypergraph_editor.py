@@ -2,22 +2,23 @@ import sys
 import logging
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow,
-    QToolBar, QAction, QInputDialog, QGraphicsView, QGraphicsScene, QLabel,
-    QGraphicsTextItem,
+    QToolBar, QAction, QGraphicsView, QLabel,
     QTreeWidget, QTreeWidgetItem, QTextEdit, QWidget, QHBoxLayout, QSizePolicy, QVBoxLayout,
     QMessageBox, QFileDialog,
     QTableWidget, QTableWidgetItem  # <-- Add QTableWidget imports
 )
-from PyQt5.QtGui import QPainter, QPen, QBrush, QColor
-from PyQt5.QtCore import Qt, QPointF
-from enum import Enum
+from PyQt5.QtCore import Qt
+
+from editor.editor_commands import SaveJsonCommand, LoadJsonCommand
+from editor.editor_commands import ClearCommand
+from editor.editor_scene import HypergraphScene, HypergraphView
+from editor.graphics_helpers import EditorState
+from himeko.hbcm.elements.edge import HyperArc, EnumHyperarcDirection
 from node_element import VisualNode
 from edge_element import VisualHyperedge
 from connection_element import VisualGraphConnection
-from hypergraph_factory import HyMeKoVisualHypergraphFactory  # <-- Add factory instance
 # Add import for TextGenerator
 from himeko.transformations.text.generate_text import TextGenerator
-import json
 
 # Setup logger
 logger = logging.getLogger("hypergraph_editor")
@@ -29,243 +30,9 @@ handler.setFormatter(formatter)
 if not any(isinstance(h, logging.StreamHandler) for h in logger.handlers):
     logger.addHandler(handler)
 
-class EditorState(Enum):
-    SELECT = 1
-    ADD_NODE = 2
-    ADD_HYPEREDGE = 3
-    ADD_CONNECTION = 4
-    ADD_ATTRIBUTE = 5
 
-class HypergraphScene(QGraphicsScene):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setSceneRect(0, 0, 2000, 2000)
-        self.current_state = EditorState.SELECT
-        self.temp_connection = None
-        self.source_item = None
-        self.factory = HyMeKoVisualHypergraphFactory()  # <-- Add factory instance
 
-    def attemptToRevertSelect(self):
-        if hasattr(self.parent(), 'revertToSelect'):
-            self.parent().revertToSelect()  # Directly call revertToSelect
 
-    def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            pos = event.scenePos()
-            items_at_pos = self.items(pos)
-            # Fix: Use type() instead of isinstance() for Node/Hyperedge to avoid PyQt/Python import confusion
-            from node_element import VisualNode as NodeType
-            from edge_element import VisualHyperedge as HyperedgeType
-            if self.current_state == EditorState.ADD_NODE:
-                try:
-                    name, ok = QInputDialog.getText(None, "Node Name", "Enter node name:")
-                    if ok and name.strip():
-                        parent_candidate = None
-                        for candidate in items_at_pos:
-                            if type(candidate) is NodeType or type(candidate) is HyperedgeType:
-                                parent_candidate = candidate
-                                break
-                        node_elem = self.factory.create_node(name.strip(), pos.x(), pos.y(), parent=parent_candidate)
-                        self.addItem(node_elem)  # <-- FIX: Remove .visual
-                        if parent_candidate:
-                            logger.info(f"Node '{name.strip()}' created as subelement of '{parent_candidate.name}'")
-                        else:
-                            logger.info(f"Node '{name.strip()}' created at ({pos.x()}, {pos.y()})")
-                        if hasattr(self.parent(), "updateHierarchyPanel"):
-                            self.parent().updateHierarchyPanel()
-                        self.attemptToRevertSelect()
-                except Exception as e:
-                    logger.error(f"Error creating node: {e}")
-                    QMessageBox.critical(None, "Error", f"Error creating node: {e}")
-            elif self.current_state == EditorState.ADD_HYPEREDGE:
-                try:
-                    name, ok = QInputDialog.getText(None, "Hyperedge Name", "Enter hyperedge name:")
-                    if ok and name.strip():
-                        parent_candidate = None
-                        for candidate in items_at_pos:
-                            if type(candidate) is NodeType or type(candidate) is HyperedgeType:
-                                parent_candidate = candidate
-                                break
-                        edge_elem = self.factory.create_hyperedge(name.strip(), pos.x(), pos.y(), parent=parent_candidate)
-                        self.addItem(edge_elem)  # <-- FIX: Remove .visual
-                        if parent_candidate:
-                            logger.info(f"Hyperedge '{name.strip()}' created as subelement of '{parent_candidate.name}'")
-                        else:
-                            logger.info(f"Hyperedge '{name.strip()}' created at ({pos.x()}, {pos.y()})")
-                        if hasattr(self.parent(), "updateHierarchyPanel"):
-                            self.parent().updateHierarchyPanel()
-                        self.attemptToRevertSelect()
-                except Exception as e:
-                    logger.error(f"Error creating hyperedge: {e}")
-                    QMessageBox.critical(None, "Error", f"Error creating hyperedge: {e}")
-            elif self.current_state == EditorState.ADD_CONNECTION:
-                item = None
-                for candidate in items_at_pos:
-                    if type(candidate) is NodeType or type(candidate) is HyperedgeType:
-                        item = candidate
-                        break
-                if item:
-                    if not self.source_item:
-                        self.source_item = item
-                        # --- Draw temp connection from edge, not center ---
-                        if type(item) is NodeType:
-                            srect = item.boundingRect()
-                            # Add parent position if item is contained
-                            spos = item.scenePos()
-                            scenter = QPointF(spos.x() + srect.width()/2, spos.y() + srect.height()/2)
-                            sradius_x = srect.width()/2
-                            sradius_y = srect.height()/2
-                            start = VisualGraphConnection._ellipse_edge_point_static(scenter, sradius_x, sradius_y, pos)
-                        else:
-                            srect = item.boundingRect()
-                            spos = item.scenePos()
-                            scenter = QPointF(spos.x() + srect.width()/2, spos.y() + srect.height()/2)
-                            swidth = srect.width()
-                            sheight = srect.height()
-                            start = VisualGraphConnection._rect_edge_point_static(scenter, swidth, sheight, pos)
-                        self.temp_connection = self.addLine(
-                            item.scenePos().x() + item.boundingRect().width()/2,
-                            item.scenePos().y() + item.boundingRect().height()/2,
-                            pos.x(), pos.y(),
-                            QPen(Qt.DashLine)
-                        )
-                    else:
-                        if self.source_item != item:
-                            # Ensure connections between nodes and hyperedges
-                            if type(self.source_item) is NodeType and type(item) is HyperedgeType:
-                                conn = self.factory.create_connection(self.source_item, item)
-                                self.addItem(conn)
-                                self.attemptToRevertSelect()
-                                logger.info(
-                                    f"Connection created: Node '{getattr(self.source_item, 'name', '?')}' -> Hyperedge '{getattr(item, 'name', '?')}'"
-                                )
-                                # --- Update HyMeKo text after connection ---
-                                if hasattr(self.parent(), "updateHierarchyPanel"):
-                                    self.parent().updateHierarchyPanel()
-                            elif type(self.source_item) is HyperedgeType and type(item) is NodeType:
-                                conn = self.factory.create_connection(self.source_item, item)
-                                self.addItem(conn)
-                                self.attemptToRevertSelect()
-                                logger.info(
-                                    f"Connection created: Hyperedge '{getattr(self.source_item, 'name', '?')}' -> Node '{getattr(item, 'name', '?')}'"
-                                )
-                                # --- Update HyMeKo text after connection ---
-                                if hasattr(self.parent(), "updateHierarchyPanel"):
-                                    self.parent().updateHierarchyPanel()
-                            else:
-                                logger.warning("Connections must be between a Node and a Hyperedge.")
-                                QMessageBox.warning(None, "Invalid Connection", "Connections must be between a Node and a Hyperedge.")
-                        self.resetConnectionState()
-                else:
-                    self.resetConnectionState()
-            elif self.current_state == EditorState.ADD_ATTRIBUTE:
-                # Add attribute to the element under the cursor
-                for candidate in items_at_pos:
-                    if type(candidate) is NodeType or type(candidate) is HyperedgeType:
-                        attr_name, ok = QInputDialog.getText(None, "Attribute Name", "Enter attribute name:")
-                        if ok and attr_name.strip():
-                            self.factory.add_attribute(candidate, attr_name.strip())
-                            if hasattr(self.parent(), "updateHierarchyPanel"):
-                                self.parent().updateHierarchyPanel()
-                            self.attemptToRevertSelect()
-                            logger.info(f"Attribute '{attr_name.strip()}' added to '{candidate.name}'")
-                        break
-        super().mousePressEvent(event)
-
-    def resetConnectionState(self):
-        """Reset temporary connection state."""
-        if self.temp_connection:
-            self.removeItem(self.temp_connection)
-        self.temp_connection = None
-        self.source_item = None
-
-    def mouseMoveEvent(self, event):
-        if self.temp_connection and self.source_item:
-            pos = event.scenePos()
-            # --- Update temp connection to follow edge logic ---
-            item = self.source_item
-            if isinstance(item, VisualNode):
-                srect = item.boundingRect()
-                spos = item.scenePos()
-                scenter = QPointF(spos.x() + srect.width()/2, spos.y() + srect.height()/2)
-                sradius_x = srect.width()/2
-                sradius_y = srect.height()/2
-                start = VisualGraphConnection._ellipse_edge_point_static(scenter, sradius_x, sradius_y, pos)
-            else:
-                srect = item.boundingRect()
-                spos = item.scenePos()
-                scenter = QPointF(spos.x() + srect.width()/2, spos.y() + srect.height()/2)
-                swidth = srect.width()
-                sheight = srect.height()
-                start = VisualGraphConnection._rect_edge_point_static(scenter, swidth, sheight, pos)
-            self.temp_connection.setLine(
-                item.scenePos().x() + item.boundingRect().width()/2,
-                item.scenePos().y() + item.boundingRect().height()/2,
-                pos.x(), pos.y()
-            )
-        super().mouseMoveEvent(event)
-
-    def mouseDoubleClickEvent(self, event):
-        pos = event.scenePos()
-        items_at_pos = self.items(pos)
-        for item in items_at_pos:
-            if isinstance(item, VisualNode) or isinstance(item, VisualHyperedge):
-                name, ok = QInputDialog.getText(None, "Rename", "Enter new name:", text=item.name)
-                if ok and name.strip():
-                    item.name = name.strip()
-                    item.label.setPlainText(item.name)
-                    item._updateLabel()
-                    item.rename(name)
-                break
-        super().mouseDoubleClickEvent(event)
-
-    def contextMenuEvent(self, event):
-        pos = event.scenePos()
-        items_at_pos = self.items(pos)
-        item = None
-        for candidate in items_at_pos:
-            if isinstance(candidate, VisualNode) or isinstance(candidate, VisualHyperedge):
-                item = candidate
-                break
-        if item:
-            from PyQt5.QtWidgets import QMenu
-            menu = QMenu()
-            insert_action = menu.addAction("Insert Into...")
-            remove_action = menu.addAction("Remove From Parent")  # Add remove option
-            color_action = menu.addAction("Change Color...")  # Add color change option
-            selected_action = menu.exec_(event.screenPos())
-            if selected_action == insert_action:
-                # Show dialog to pick parent from other elements
-                elements = [i for i in self.items() if (isinstance(i, VisualNode) or isinstance(i, VisualHyperedge)) and i != item]
-                names = [e.name for e in elements]
-                if names:
-                    parent_name, ok = QInputDialog.getItem(None, "Insert Into", "Select parent:", names, editable=False)
-                    if ok:
-                        parent = next(e for e in elements if e.name == parent_name)
-                        item.insert_into(parent)
-                        if hasattr(self.parent(), 'updateHierarchyPanel'):
-                            self.parent().updateHierarchyPanel()
-            elif selected_action == remove_action:
-                if hasattr(item, "remove_from_parent"):
-                    item.remove_from_parent()
-            elif selected_action == color_action:
-                item.changeColor()
-        else:
-            super().contextMenuEvent(event)
-
-class HypergraphView(QGraphicsView):
-    def __init__(self, scene, parent=None):
-        super().__init__(scene, parent)
-        self.setRenderHint(QPainter.Antialiasing)
-        self.setDragMode(QGraphicsView.RubberBandDrag)
-        self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
-        self.setBackgroundBrush(QBrush(QColor(255, 255, 255)))  # Set to white
-
-    def wheelEvent(self, event):
-        factor = 1.2
-        if event.angleDelta().y() < 0:
-            factor = 1.0 / factor
-        self.scale(factor, factor)
 
 class HypergraphEditor(QMainWindow):
     def __init__(self, parent=None):
@@ -294,10 +61,10 @@ class HypergraphEditor(QMainWindow):
         self.toolbar = QToolBar("Editor Tools")
         left_layout.addWidget(self.toolbar, 0)
 
-        # Attribute Table below the toolbar, fills remaining space
+        # Attribute/Relationship Table below the toolbar, fills remaining space
         self.attribute_table = QTableWidget()
         self.attribute_table.setColumnCount(2)
-        self.attribute_table.setHorizontalHeaderLabels(["Attribute", "Value"])
+        self.attribute_table.setHorizontalHeaderLabels(["Attribute/Relation", "Value"])
         self.attribute_table.setEditTriggers(QTableWidget.DoubleClicked | QTableWidget.SelectedClicked)
         self.attribute_table.itemChanged.connect(self.on_attribute_table_item_changed)
         self.attribute_table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -340,13 +107,56 @@ class HypergraphEditor(QMainWindow):
         self.statusBar().addWidget(self.status_label)
         self.updateHierarchyPanel()
 
+        self.createMenuBar()  # <-- Add this line to create the menubar
+
         # Connect selection change to update attribute table and Prüfer code
         self.scene.selectionChanged.connect(self.on_selection_changed)
         self.hierarchy_panel.itemSelectionChanged.connect(self.on_hierarchy_selection_changed)
 
+    def createMenuBar(self):
+        menubar = self.menuBar()
+        scene_menu = menubar.addMenu("Scene")
+        blank_scene_action = QAction("Blank Scene", self)
+        blank_scene_action.triggered.connect(self.blank_scene)
+        scene_menu.addAction(blank_scene_action)
+        # Add horizontal separator
+        scene_menu.addSeparator()
+
+
+
+        # Add Save as JSON and Load from JSON actions
+        load_json_action = QAction("Load from JSON", self)
+        load_json_action.triggered.connect(self.load_from_json)
+        scene_menu.addAction(load_json_action)
+
+        save_json_action = QAction("Save as JSON", self)
+        save_json_action.triggered.connect(self.save_as_json)
+        scene_menu.addAction(save_json_action)
+
+
+
+        view_menu = menubar.addMenu("View")
+
+        self.action_show_grid = QAction("Show Grid", self, checkable=True)
+        self.action_show_grid.setChecked(True)
+        self.action_show_grid.triggered.connect(self.toggle_grid)
+        view_menu.addAction(self.action_show_grid)
+
+        self.action_show_axis = QAction("Show Axis", self, checkable=True)
+        self.action_show_axis.setChecked(True)
+        self.action_show_axis.triggered.connect(self.toggle_axis)
+        view_menu.addAction(self.action_show_axis)
+
+
+    def toggle_grid(self, checked):
+        self.view.setShowGrid(checked)
+
+    def toggle_axis(self, checked):
+        self.view.setShowAxis(checked)
+
     def on_selection_changed(self):
         selected = self.scene.selectedItems()
-        if selected and (hasattr(selected[0], "attributes")):
+        if selected and (hasattr(selected[0], "attributes") or hasattr(selected[0], "relations")):
             self.selected_element = selected[0]
             self.update_attribute_table(self.selected_element)
             self.update_prufer_code(self.selected_element)
@@ -380,14 +190,67 @@ class HypergraphEditor(QMainWindow):
             return "-"
         return "[" + ", ".join(child.name for child in element.children_elements) + "]"
 
+    def get_hyperarc_relationships(self, hg_elem):
+        # For HyperEdge, hyperarcs are typically in .arcs or .hyperarcs or .relations
+        # Try common attribute names
+        if hasattr(hg_elem, "arcs") and isinstance(hg_elem.arcs, list):
+            hyperarcs = hg_elem.arcs
+        elif hasattr(hg_elem, "hyperarcs") and isinstance(hg_elem.hyperarcs, list):
+            hyperarcs = hg_elem.hyperarcs
+        elif hasattr(hg_elem, "relations") and isinstance(hg_elem.relations, list):
+            hyperarcs = hg_elem.relations
+        elif hasattr(hg_elem, "all_relations"):
+            hyperarcs = list(hg_elem.all_relations())
+        return hyperarcs if 'hyperarcs' in locals() else []
+
     def update_attribute_table(self, element):
+        # Show both attributes and, for hyperedges, hyperarcs (relations)
+        attributes = getattr(element, "attributes", [])
+        hyperarcs = []
+        arc_names = []
+        arc_values = []
+        # If the selected element is a hyperedge, try to get its hyperarcs
+        if hasattr(element, "hypergraph_element"):
+            hg_elem = element.hypergraph_element
+            hyperarcs = self.get_hyperarc_relationships(hg_elem)
+
+            # Try to extract arc names and values if possible
+            for arc in hyperarcs:
+                # Try to get a name and value for the arc
+                arc_name = getattr(arc, "name", None)
+                arc_value = getattr(arc, "value", None)
+                # If not present, try to use string representation
+                if arc_name is None:
+                    arc_name = str(arc)
+                arc_names.append(arc_name)
+                arc_values.append(arc_value)
+
+        total_rows = len(attributes) + len(hyperarcs)
         self.attribute_table.blockSignals(True)
-        self.attribute_table.setRowCount(len(element.attributes))
-        for row, attr in enumerate(element.attributes):
+        self.attribute_table.setRowCount(total_rows)
+        # Attributes
+        for row, attr in enumerate(attributes):
             name_item = QTableWidgetItem(attr.name)
             name_item.setFlags(name_item.flags() & ~Qt.ItemIsEditable)
             self.attribute_table.setItem(row, 0, name_item)
             value_item = QTableWidgetItem(str(attr.value))
+            self.attribute_table.setItem(row, 1, value_item)
+        # Hyperarcs (for hyperedges)
+        for i, arc in enumerate(hyperarcs):
+            row = len(attributes) + i
+            arc: HyperArc
+            arc_name = ""
+            match arc.direction:
+                case EnumHyperarcDirection.OUT:
+                    arc_name += f"[OUT]{arc.target.name}"
+                case EnumHyperarcDirection.IN:
+                    arc_name += f"[IN]{arc.target.name}"
+
+            arc_value = arc_values[i]
+            name_item = QTableWidgetItem(f"{arc_name}")
+            name_item.setFlags(name_item.flags() & ~Qt.ItemIsEditable)
+            self.attribute_table.setItem(row, 0, name_item)
+            value_item = QTableWidgetItem(str(arc_value) if arc_value is not None else "")
             self.attribute_table.setItem(row, 1, value_item)
         self.attribute_table.blockSignals(False)
 
@@ -396,18 +259,43 @@ class HypergraphEditor(QMainWindow):
             return
         row = item.row()
         col = item.column()
-        if col == 1:  # Value column
-            attr = self.selected_element.attributes[row]
-            value = item.text()
-            try:
-                parsed_value = float(value)
-            except ValueError:
-                parsed_value = value
-            attr.value = parsed_value
-            if attr.hypergraph_element is not None:
-                attr.hypergraph_element.value = parsed_value
-            attr.update()
+        # Count attributes and relations
+        attributes = getattr(self.selected_element, "attributes", [])
+        hyperarcs = []
+        if hasattr(self.selected_element, "hypergraph_element"):
+            hg_elem = self.selected_element.hypergraph_element
+            hyperarcs = self.get_hyperarc_relationships(hg_elem)
+        if col == 1:
+            if row < len(attributes):
+                attr = attributes[row]
+                value = item.text()
+                try:
+                    parsed_value = float(value)
+                except ValueError:
+                    parsed_value = value
+                attr.value = parsed_value
+                if attr.hypergraph_element is not None:
+                    attr.hypergraph_element.value = parsed_value
+                attr.update()
+            else:
+                rel_idx = row - len(attributes)
+                if 0 <= rel_idx < len(hyperarcs):
+                    rel = hyperarcs[rel_idx]
+                    value = item.text()
+                    try:
+                        parsed_value = float(value)
+                    except ValueError:
+                        parsed_value = value
+                    # Try to set the value if possible
+                    if hasattr(rel, "value"):
+                        rel.value = parsed_value
+                    # --- Update the table cell to reflect the new value ---
+                    self.attribute_table.blockSignals(True)
+                    self.attribute_table.item(row, 1).setText(str(parsed_value))
+                    self.attribute_table.blockSignals(False)
             self.generate_hymeko_equivalent()
+            # --- Force a redraw of the view to reflect changes visually ---
+            self.view.viewport().update()
 
     def createToolbar(self, toolbar=None):
         # Accept an optional toolbar argument (for left panel)
@@ -451,15 +339,7 @@ class HypergraphEditor(QMainWindow):
         delete_action.triggered.connect(self.deleteSelectedItems)
         toolbar.addAction(delete_action)
 
-        save_json_action = QAction("Save as JSON", self)
-        save_json_action.setVisible(True)
-        save_json_action.triggered.connect(self.save_as_json)
-        toolbar.addAction(save_json_action)
 
-        load_json_action = QAction("Load from JSON", self)
-        load_json_action.setVisible(True)
-        load_json_action.triggered.connect(self.load_from_json)
-        toolbar.addAction(load_json_action)
 
         save_hymeko_action = QAction("Save HyMeKo Text", self)
         save_hymeko_action.setVisible(True)
@@ -563,9 +443,9 @@ class HypergraphEditor(QMainWindow):
         else:
             self.hymeko_textbox.setPlainText("// HyMeKo equivalent will be generated here.\n// TODO: Implement actual generation logic.")
 
-    def save_as_json(self):
+    def serialize_to_json(self):
         """
-        Save the current graphical elements and their hierarchy into a JSON file.
+        Serialize the current graphical elements and their hierarchy into a JSON-serializable dict.
         """
         data = {
             "nodes": [],
@@ -573,37 +453,37 @@ class HypergraphEditor(QMainWindow):
             "connections": [],
         }
 
-        # Helper to get a unique id for each element
         def get_elem_id(elem):
             return id(elem)
 
-        # Serialize nodes and hyperedges
+        # Serialize nodes
         for item in self.scene.items():
             if isinstance(item, VisualNode):
                 node_data = {
                     "id": get_elem_id(item),
-                    "type": "node",
-                    "name": item.name,
+                    "name": getattr(item, "name", ""),
                     "x": item.pos().x(),
                     "y": item.pos().y(),
                     "radius": getattr(item, "radius", 30),
-                    "parent": get_elem_id(item.parent_element) if item.parent_element else None,
-                    "attributes": [attr.name for attr in getattr(item, "attributes", [])],
-                    "children": [get_elem_id(child) for child in getattr(item, "children_elements", [])],
+                    "z": item.zValue(),
+                    "parent": get_elem_id(item.parent_element) if getattr(item, "parent_element", None) else None,
+                    "attributes": [getattr(attr, "name", "") for attr in getattr(item, "attributes", [])],
                 }
                 data["nodes"].append(node_data)
-            elif isinstance(item, VisualHyperedge):
+
+        # Serialize hyperedges
+        for item in self.scene.items():
+            if isinstance(item, VisualHyperedge):
                 edge_data = {
                     "id": get_elem_id(item),
-                    "type": "hyperedge",
-                    "name": item.name,
+                    "name": getattr(item, "name", ""),
                     "x": item.pos().x(),
                     "y": item.pos().y(),
-                    "width": getattr(item, "rect_width", 80),
-                    "height": getattr(item, "rect_height", 30),
-                    "parent": get_elem_id(item.parent_element) if item.parent_element else None,
-                    "attributes": [attr.name for attr in getattr(item, "attributes", [])],
-                    "children": [get_elem_id(child) for child in getattr(item, "children_elements", [])],
+                    "width": getattr(item, "width", 80),
+                    "height": getattr(item, "height", 30),
+                    "z": item.zValue(),
+                    "parent": get_elem_id(item.parent_element) if getattr(item, "parent_element", None) else None,
+                    "attributes": [getattr(attr, "name", "") for attr in getattr(item, "attributes", [])],
                 }
                 data["hyperedges"].append(edge_data)
 
@@ -613,98 +493,128 @@ class HypergraphEditor(QMainWindow):
                 conn_data = {
                     "source": get_elem_id(item.source),
                     "target": get_elem_id(item.target),
-                    "value": item.value,
+                    "value": getattr(item, "value", None),
+                    "z": item.zValue(),
                 }
                 data["connections"].append(conn_data)
+        return data
 
-        # Save to file
-        filename, _ = QFileDialog.getSaveFileName(self, "Save as JSON", "", "JSON Files (*.json)")
-        if filename:
-            try:
-                with open(filename, "w", encoding="utf-8") as f:
-                    json.dump(data, f, indent=2)
-                self.statusBar().showMessage(f"Saved to {filename}")
-            except Exception as e:
-                QMessageBox.critical(self, "Save Error", f"Failed to save JSON: {e}")
-
-    def load_from_json(self):
+    def deserialize_from_json(self, data):
         """
-        Load graphical elements and their hierarchy from a JSON file.
+        Load graphical elements and their hierarchy from a JSON-serializable dict.
         """
-        filename, _ = QFileDialog.getOpenFileName(self, "Load from JSON", "", "JSON Files (*.json)")
-        if not filename:
-            return
-
-        try:
-            with open(filename, "r", encoding="utf-8") as f:
-                data = json.load(f)
-        except Exception as e:
-            QMessageBox.critical(self, "Load Error", f"Failed to load JSON: {e}")
-            return
-
         # Clear current scene
         self.scene.clear()
         self.factory.reset()
 
-        # Maps for reconstructing relationships
         id_to_elem = {}
+        z_orders = {}
+        parent_map = {}
+        pos_map = {}
 
         # Create nodes
         for node_data in data.get("nodes", []):
             node = self.factory.create_node(
                 node_data["name"],
-                node_data["x"],
-                node_data["y"],
+                0, 0,  # Temporary position, will set below
                 radius=node_data.get("radius", 30),
                 parent=None  # Parent will be set later
             )
+            z_orders[node] = node_data.get("z", 0)
             id_to_elem[node_data["id"]] = node
+            parent_map[node_data["id"]] = node_data.get("parent")
+            pos_map[node_data["id"]] = (node_data["x"], node_data["y"])
 
         # Create hyperedges
         for edge_data in data.get("hyperedges", []):
             edge = self.factory.create_hyperedge(
                 edge_data["name"],
-                edge_data["x"],
-                edge_data["y"],
+                0, 0,  # Temporary position, will set below
                 width=edge_data.get("width", 80),
                 height=edge_data.get("height", 30),
                 parent=None  # Parent will be set later
             )
+            z_orders[edge] = edge_data.get("z", 0)
             id_to_elem[edge_data["id"]] = edge
+            parent_map[edge_data["id"]] = edge_data.get("parent")
+            pos_map[edge_data["id"]] = (edge_data["x"], edge_data["y"])
 
-        # Set parents and children
-        for node_data in data.get("nodes", []):
-            node = id_to_elem.get(node_data["id"])
-            parent_id = node_data.get("parent")
-            if parent_id and parent_id in id_to_elem:
-                node.insert_into(id_to_elem[parent_id])
-            # Attributes
-            for attr_name in node_data.get("attributes", []):
-                self.factory.add_attribute(node, attr_name)
+        # Set parents and children, and set positions
+        # First, set all top-level elements (no parent)
+        for elem_id, elem in id_to_elem.items():
+            parent_id = parent_map.get(elem_id)
+            rel_x, rel_y = pos_map[elem_id]
+            if not parent_id or parent_id not in id_to_elem:
+                elem.setParentItem(None)
+                elem.setPos(rel_x, rel_y)
 
-        for edge_data in data.get("hyperedges", []):
-            edge = id_to_elem.get(edge_data["id"])
-            parent_id = edge_data.get("parent")
+        # Then, set all contained elements (with parent)
+        for elem_id, elem in id_to_elem.items():
+            parent_id = parent_map.get(elem_id)
+            rel_x, rel_y = pos_map[elem_id]
             if parent_id and parent_id in id_to_elem:
-                edge.insert_into(id_to_elem[parent_id])
+                parent_elem = id_to_elem[parent_id]
+                elem.insert_into(parent_elem)
+                elem.setPos(rel_x, rel_y)
+
             # Attributes
-            for attr_name in edge_data.get("attributes", []):
-                self.factory.add_attribute(edge, attr_name)
+            if isinstance(elem, VisualNode):
+                for node_data in data.get("nodes", []):
+                    if node_data["id"] == elem_id:
+                        for attr_name in node_data.get("attributes", []):
+                            self.factory.add_attribute(elem, attr_name)
+            elif isinstance(elem, VisualHyperedge):
+                for edge_data in data.get("hyperedges", []):
+                    if edge_data["id"] == elem_id:
+                        for attr_name in edge_data.get("attributes", []):
+                            self.factory.add_attribute(elem, attr_name)
 
         # Add all nodes and edges to the scene
         for elem in id_to_elem.values():
             self.scene.addItem(elem)
 
-        # Create connections
+        # Create connections and store their z-orders
+        conn_z_orders = []
         for conn_data in data.get("connections", []):
             source = id_to_elem.get(conn_data["source"])
             target = id_to_elem.get(conn_data["target"])
             if source and target:
                 conn = self.factory.create_connection(source, target, value=conn_data.get("value"))
+                conn_z_orders.append((conn, conn_data.get("z", 0)))
                 self.scene.addItem(conn)
 
+        # --- Set z-ordering for all elements after all are added ---
+        for elem, z in sorted(z_orders.items(), key=lambda x: x[1]):
+            elem.setZValue(z)
+        for conn, z in sorted(conn_z_orders, key=lambda x: x[1]):
+            conn.setZValue(z)
+
         self.updateHierarchyPanel()
-        self.statusBar().showMessage(f"Loaded from {filename}")
+
+    def save_as_json(self):
+        """
+        Save the current graphical elements and their hierarchy into a JSON file using the command pattern.
+        """
+        filename, _ = QFileDialog.getSaveFileName(self, "Save as JSON", "", "JSON Files (*.json)")
+        if filename:
+            try:
+                cmd = SaveJsonCommand(self, filename)
+                cmd.execute()
+            except Exception as e:
+                QMessageBox.critical(self, "Save Error", f"Failed to save JSON: {e}")
+
+    def load_from_json(self):
+        """
+        Load graphical elements and their hierarchy from a JSON file using the command pattern.
+        """
+        filename, _ = QFileDialog.getOpenFileName(self, "Load from JSON", "", "JSON Files (*.json)")
+        if not filename:
+            return
+        try:
+            cmd = LoadJsonCommand(self, filename)
+            cmd.execute()
+        except Exception as e:
+            QMessageBox.critical(self, "Load Error", f"Failed to load JSON: {e}")
 
     def save_hymeko_text(self):
         """
@@ -723,6 +633,10 @@ class HypergraphEditor(QMainWindow):
             except Exception as e:
                 QMessageBox.critical(self, "Save Error", f"Failed to save HyMeKo text: {e}")
 
+    def blank_scene(self):
+        """Clear the scene to create a blank scene."""
+        cmd = ClearCommand(self)
+        cmd.execute()
 
 
 if __name__ == "__main__":
