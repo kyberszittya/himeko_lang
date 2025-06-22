@@ -180,6 +180,15 @@ class VisualHypergraphElement(QGraphicsItem):
         self.update()
         return attr
 
+    def mouseDoubleClickEvent(self, event):
+        # Only handle double-click if the click is on this element, not a child (like label or attribute)
+        if self.isUnderMouse():
+            # Optionally, implement renaming or other logic here for the base element
+            pass
+        else:
+            event.ignore()
+        # Do not call super().mouseDoubleClickEvent(event) to prevent propagation to parent
+
 class Attribute(VisualHypergraphElement):
     def __init__(self, name, parent_element):
         super().__init__(name, width=60, height=30)
@@ -225,20 +234,24 @@ class Attribute(VisualHypergraphElement):
             )
 
     def mouseDoubleClickEvent(self, event):
-        name, ok = QInputDialog.getText(None, "Attribute Name", "Enter attribute name:", text=self.name)
-        if ok and name.strip():
-            self.rename(name.strip())
-            value, ok2 = QInputDialog.getText(None, "Attribute Value", "Enter value:", text=str(self.value))
-            if ok2:
-                try:
-                    parsed_value = float(value)
-                except ValueError:
-                    parsed_value = value
-                self.value = parsed_value
-                if self.hypergraph_element is not None:
-                    self.hypergraph_element.value = parsed_value
-                self.update()
-        super().mouseDoubleClickEvent(event)
+        # Only handle double-click if the click is on this attribute, not its parent
+        if self.isUnderMouse():
+            name, ok = QInputDialog.getText(None, "Attribute Name", "Enter attribute name:", text=self.name)
+            if ok and name.strip():
+                self.rename(name.strip())
+                value, ok2 = QInputDialog.getText(None, "Attribute Value", "Enter value:", text=str(self.value))
+                if ok2:
+                    try:
+                        parsed_value = float(value)
+                    except ValueError:
+                        parsed_value = value
+                    self.value = parsed_value
+                    if self.hypergraph_element is not None:
+                        self.hypergraph_element.value = parsed_value
+                    self.update()
+        else:
+            event.ignore()
+        # Do not call super().mouseDoubleClickEvent(event) to prevent propagation to parent
 
     def contextMenuEvent(self, event):
         from PyQt5.QtWidgets import QMenu
@@ -296,7 +309,11 @@ class ElementLabel(QGraphicsTextItem):
         self.parent_element = parent
 
     def mouseDoubleClickEvent(self, event):
-        name, ok = QInputDialog.getText(None, "Rename", "Enter new name:", text=self.parent_element.name)
-        if ok and name.strip():
-            self.parent_element.rename(name.strip())
-        super().mouseDoubleClickEvent(event)
+        # Only handle double-click if the click is on this label, not its parent
+        if self.isUnderMouse():
+            name, ok = QInputDialog.getText(None, "Rename", "Enter new name:", text=self.parent_element.name)
+            if ok and name.strip():
+                self.parent_element.rename(name.strip())
+        else:
+            event.ignore()
+        # Do not call super().mouseDoubleClickEvent(event) to prevent propagation to parent
