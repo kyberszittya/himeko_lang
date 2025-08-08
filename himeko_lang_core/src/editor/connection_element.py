@@ -20,6 +20,7 @@ class VisualGraphConnection(QGraphicsItem):
         self.arrow_size = 10
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setAcceptedMouseButtons(Qt.LeftButton | Qt.RightButton)
+        self.setAcceptHoverEvents(True)
         self.setZValue(1000)
         self.path = QPainterPath()
         self.arrow_head = QPolygonF()

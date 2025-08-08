@@ -57,6 +57,8 @@ class AstHbcmTransformer(object):
             self.clock_source = SystemTimeClock()
         # Meta elements storage
         self.meta_elements = {}
+        # Get path of the current file
+        self.main_file_path = None
         # Logging
         self.logger = logging.getLogger(__name__)
 
@@ -308,10 +310,7 @@ class AstHbcmTransformer(object):
             return self.find_element_by_name_fragments(c, fragments[1:])
         raise AstElementNotFound(f"Element not found: {fragments}")
 
-    def \
-            get_element_references(self,
-                               query_split: typing.List[str],
-                               element: HypergraphElement):
+    def get_element_references(self, query_split: typing.List[str], element: HypergraphElement):
         # Get query root
         root_name = query_split[0]
         root = None
@@ -469,9 +468,14 @@ class AstHbcmTransformer(object):
         # Transformer
         parser = Lark_StandAlone(transformer=transformer)
         # Read file
-        if os.path.exists(path):
-            with open(path) as f:
-                tree = parser.parse(f.read())
+        # Possible paths
+        paths = [os.path.join(self.main_file_path, path), path]
+        tree = None
+        for path in paths:
+            if os.path.exists(path):
+                with open(path) as f:
+                    tree = parser.parse(f.read())
+                break
         if tree is None:
             raise AstGraphPathNotFound(f"Unable to read tree from path {path}")
         return tree
@@ -480,28 +484,26 @@ class AstHbcmTransformer(object):
         # Check if includes are present
         meta = extract_meta_context(ast)
         if meta is not None and hasattr(meta, 'includes'):
-            import_graphs = self.get_importable_graphs(ast)
-            if len(import_graphs) > 0:
-                for import_graph in import_graphs:
+            path_import_graphs = self.get_importable_graphs(ast)
+            if len(path_import_graphs) > 0:
+                for path_import_graph in path_import_graphs:
                     if path is not None:
                         if isinstance(path, list):
                             # Iterate over paths
                             for p in path:
                                 # Check if the file exists in the folder
-                                if os.path.exists(os.path.join(p, import_graph)):
-                                    import_graph = os.path.join(p, import_graph)
+                                if os.path.exists(os.path.join(p, path_import_graph)):
+                                    path_import_graph = os.path.join(p, path_import_graph)
                                     break
                         else:
-                            if not os.path.exists(os.path.join(path, import_graph)):
-                                raise AstGraphPathNotFound("Unable to read tree from path {}".format(import_graph))
-                            import_graph = os.path.join(path, import_graph)
-                    self.logger.info("Importing graph: {}".format(import_graph))
-                    if import_graph in self.meta_elements:
-                        import_ast = self.meta_elements[import_graph]
-
-
+                            if not os.path.exists(os.path.join(path, path_import_graph)):
+                                raise AstGraphPathNotFound("Unable to read tree from path {}".format(path_import_graph))
+                            path_import_graph = os.path.join(path, path_import_graph)
+                    self.logger.info("Importing graph: {}".format(path_import_graph))
+                    if path_import_graph in self.meta_elements:
+                        import_ast = self.meta_elements[path_import_graph]
                     else:
-                        import_ast = self.read_graph(import_graph)
+                        import_ast = self.read_graph(path_import_graph)
                         create_ast(import_ast)
                         meta_elements = self.create_root_hyper_vertices(import_ast)
                     # Extend hyper vertices

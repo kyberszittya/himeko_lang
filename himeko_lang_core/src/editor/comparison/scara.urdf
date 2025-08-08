@@ -1,0 +1,72 @@
+<robot name="scara_robot">
+  <link name="base_link">
+    <inertial>
+      <mass value="2.0"/>
+      <origin xyz="0.0 0.0 0.3"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <cylinder radius="0.1" length="0.6"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.3" rpy="0 0 0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.1" length="0.6"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.3" rpy="0 0 0"/>
+    </collision>
+  </link>
+
+  <link name="shoulder_link">
+    <inertial>
+      <mass value="1.0"/>
+      <origin xyz="0.3 0.0 0.0"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <cylinder radius="0.1" length="0.6"/>
+      </geometry>
+      <origin xyz="0.3 0.0 0.0" rpy="0 1.5708 0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.1" length="0.6"/>
+      </geometry>
+      <origin xyz="0.3 0.0 0.0" rpy="0 1.5708 0"/>
+    </collision>
+  </link>
+
+  <link name="wrist_link">
+    <inertial>
+      <mass value="1.0"/>
+      <origin xyz="0.3 0.0 0.0"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <cylinder radius="0.1" length="0.5"/>
+      </geometry>
+      <origin xyz="0.3 0.0 0.0" rpy="0.0 1.5708 0.0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.1" length="0.5"/>
+      </geometry>
+      <origin xyz="0.3 0.0 0.0" rpy="0.0 1.5708 0.0"/>
+    </collision>
+  </link>
+
+  <joint name="joint_1" type="revolute">
+    <origin xyz="0.0 0.0 0.63" rpy="0.0 0.0 1.5708"/>
+    <parent link="base_link"/>
+    <child link="shoulder_link"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+
+  <joint name="joint_2" type="revolute">
+    <origin xyz="0.5 0.0 0.0" rpy="0.0 0.0 0.0"/>
+    <parent link="shoulder_link"/>
+    <child link="wrist_link"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+</robot>

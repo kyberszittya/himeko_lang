@@ -1,0 +1,43 @@
+scara_robot {
+  base_link {
+    mass = 2.0
+    translation = [0.0, 0.0, 0.3]
+    geometry {
+      type = cylinder
+      dimensions = [0.1, 0.6]
+    }
+    collision -> geometry
+  }
+  shoulder_link {
+    mass = 1.0
+    translation = [0.3, 0.0, 0.0]
+    rotation = [0, 90, 0]
+    geometry {
+      type = cylinder
+      dimensions = [0.1, 0.6]
+      rotation = [0, 90, 0]
+    }
+    collision -> geometry
+  }
+  @joint_1 {
+    [[0.0, 0.0, 0.63],[0.0, 0, 90]] + base_link,
+    REV - shoulder_link,
+    + AXIS_Z
+  }
+  wrist_link {
+    mass = 1.0
+    translation = [0.3, 0.0, 0.0]
+    rotation = [0.0, 90, 0.0]
+    geometry {
+      type = cylinder
+      dimensions = [0.1, 0.5]
+    }
+    collision -> geometry
+  }
+  @joint_2 {
+    [[0.5, 0.0, 0.0],[0.0, 0, 0]] + shoulder_link,
+    REV - wrist_link,
+
+    + AXIS_Z
+  }
+}

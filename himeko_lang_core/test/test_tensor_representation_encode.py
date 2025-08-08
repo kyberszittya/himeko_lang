@@ -178,6 +178,7 @@ class TestBasicTransformationEncoding(TestAncestorTestCase):
         p = os.path.join(EXAMPLES_FOLDER, "fuzzy/fuzzy_signature_example.himeko")
         root = self.read_node(p)
         hbcm_mapper = AstHbcmTransformer(NullClock())
+        hbcm_mapper.main_file_path = os.path.join(EXAMPLES_FOLDER, "fuzzy")
         hyv = hbcm_mapper.convert_tree(root)
         root_el = hyv[-1]
         tr = BijectiveCliqueExpansionTransformation()

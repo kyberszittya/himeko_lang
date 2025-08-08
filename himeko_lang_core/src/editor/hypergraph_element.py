@@ -21,6 +21,8 @@ class VisualHypergraphElement(QGraphicsItem):
         self.setFlag(QGraphicsItem.ItemIsMovable, True)
         self.setFlag(QGraphicsItem.ItemIsSelectable, True)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges, True)
+        self.setAcceptedMouseButtons(Qt.LeftButton | Qt.RightButton)
+        self.setAcceptHoverEvents(True)
 
     def rename(self, new_name):
         old_name = self.name
@@ -83,15 +85,17 @@ class VisualHypergraphElement(QGraphicsItem):
         return QRectF(0, 0, self.rect_width, self.rect_height)
 
     def insert_into(self, parent):
+        # Remove from old parent's children list if present
         if self.parent_element:
-            self.parent_element.children_elements.remove(self)
+            if self in self.parent_element.children_elements:
+                self.parent_element.children_elements.remove(self)
         self.parent_element = parent
-        parent.children_elements.append(self)
+        if self not in parent.children_elements:
+            parent.children_elements.append(self)
         self.setParentItem(parent)
         self.setPos((parent.rect_width / 2) - (self.rect_width / 2), (parent.rect_height / 2) - (self.rect_height / 2))
         # --- Z-order: appear above the container element ---
         self.setZValue(parent.zValue() + 1)
-        print(parent.zValue())
         parent._updateGeometry()
         parent.update()
         self.update()
@@ -185,8 +189,9 @@ class VisualHypergraphElement(QGraphicsItem):
     def mouseDoubleClickEvent(self, event):
         # Only handle double-click if the click is on this element, not a child (like label or attribute)
         if self.isUnderMouse():
-            # Optionally, implement renaming or other logic here for the base element
-            pass
+            name, ok = QInputDialog.getText(None, "Rename", "Enter new name:", text=self.name)
+            if ok and name.strip():
+                self.rename(name.strip())
         else:
             event.ignore()
         # Do not call super().mouseDoubleClickEvent(event) to prevent propagation to parent
@@ -198,6 +203,39 @@ class VisualHypergraphElement(QGraphicsItem):
             return my_pos - parent_pos
         else:
             return self.scenePos()
+
+    def contextMenuEvent(self, event):
+        from PyQt5.QtWidgets import QMenu, QInputDialog
+        menu = QMenu()
+        insert_action = menu.addAction("Insert Into...")
+        remove_action = menu.addAction("Remove From Parent")
+        color_action = menu.addAction("Change Color...")
+        selected_action = menu.exec_(event.screenPos())
+        handled = False
+        if selected_action == insert_action:
+            scene = self.scene()
+            if scene:
+                elements = [i for i in scene.items() if hasattr(i, "name") and i != self]
+                names = [e.name for e in elements]
+                if names:
+                    parent_name, ok = QInputDialog.getItem(None, "Insert Into", "Select parent:", names, editable=False)
+                    if ok:
+                        parent = next(e for e in elements if e.name == parent_name)
+                        self.insert_into(parent)
+                        if scene.parent() and hasattr(scene.parent(), 'updateHierarchyPanel'):
+                            scene.parent().updateHierarchyPanel()
+            handled = True
+        elif selected_action == remove_action:
+            if hasattr(self, "remove_from_parent"):
+                self.remove_from_parent()
+            handled = True
+        elif selected_action == color_action:
+            self.changeColor()
+            handled = True
+        if handled:
+            event.accept()
+        else:
+            super().contextMenuEvent(event)
 
 class Attribute(VisualHypergraphElement):
     def __init__(self, name, parent_element):
@@ -271,6 +309,7 @@ class Attribute(VisualHypergraphElement):
         remove_action = menu.addAction("Remove From Parent")
         color_action = menu.addAction("Change Color...")
         selected_action = menu.exec_(event.screenPos())
+        handled = False
         if selected_action == set_value_action:
             value, ok = QInputDialog.getText(None, "Set Attribute Value", "Enter value:", text=str(self.value))
             if ok:
@@ -282,8 +321,8 @@ class Attribute(VisualHypergraphElement):
                 if self.hypergraph_element is not None:
                     self.hypergraph_element.value = parsed_value
                 self.update()
+            handled = True
         elif selected_action == insert_action:
-            # Show dialog to pick parent from other elements
             scene = self.scene()
             if scene:
                 elements = [i for i in scene.items() if hasattr(i, "name") and i != self]
@@ -295,12 +334,18 @@ class Attribute(VisualHypergraphElement):
                         self.insert_into(parent)
                         if scene.parent() and hasattr(scene.parent(), 'updateHierarchyPanel'):
                             scene.parent().updateHierarchyPanel()
+            handled = True
         elif selected_action == remove_action:
             if hasattr(self, "remove_from_parent"):
                 self.remove_from_parent()
+            handled = True
         elif selected_action == color_action:
             self.changeColor()
+            handled = True
+        if handled:
+            event.accept()
         else:
+            # Do not accept event if not handled, so parent/scene can show its menu
             super().contextMenuEvent(event)
 
     def itemChange(self, change, value):

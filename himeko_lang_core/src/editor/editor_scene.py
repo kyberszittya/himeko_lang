@@ -220,6 +220,7 @@ class HypergraphScene(QGraphicsScene):
             remove_action = menu.addAction("Remove From Parent")  # Add remove option
             color_action = menu.addAction("Change Color...")  # Add color change option
             selected_action = menu.exec_(event.screenPos())
+            event.accept()  # Accept only if a menu was shown for a node/hyperedge
             if selected_action == insert_action:
                 # Show dialog to pick parent from other elements
                 elements = [i for i in self.items() if (isinstance(i, VisualNode) or isinstance(i, VisualHyperedge)) and i != item]
@@ -229,6 +230,9 @@ class HypergraphScene(QGraphicsScene):
                     if ok:
                         parent = next(e for e in elements if e.name == parent_name)
                         item.insert_into(parent)
+                        # Remove from scene if now a child (to avoid duplicate display)
+                        if item.parentItem() is not None and item in self.items():
+                            self.removeItem(item)
                         if hasattr(self.parent(), 'updateHierarchyPanel'):
                             self.parent().updateHierarchyPanel()
             elif selected_action == remove_action:
@@ -238,7 +242,7 @@ class HypergraphScene(QGraphicsScene):
                 item.changeColor()
         else:
             super().contextMenuEvent(event)
-
+            # Do not call event.accept() here, let the default handler decide
 
 
 class HypergraphView(QGraphicsView):

@@ -25,3 +25,11 @@ class VisualNode(VisualHypergraphElement):
             painter.drawEllipse(int(0), int(0), int(self.rect_width), int(self.rect_height))
         # ...existing code for selection, etc...
         # Draw attributes (they are QGraphicsItem children, so will be drawn automatically)
+
+    def mouseDoubleClickEvent(self, event):
+        super().mouseDoubleClickEvent(event)
+
+    def contextMenuEvent(self, event):
+        print("FOS")
+        # Delegate to parent for context menu handling
+        super().contextMenuEvent(event)
